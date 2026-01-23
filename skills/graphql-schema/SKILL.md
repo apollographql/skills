@@ -67,7 +67,7 @@ type User {
 | `[String]!` | Non-null list, nullable items |
 | `[String!]!` | Non-null list, non-null items |
 
-**Best Practice:** Use `[Type!]!` for lists - empty list over null, no null items.
+**Best Practice:** Use **[Type!]!** for lists - empty list over null, no null items.
 
 ### Input vs Output Types
 
@@ -163,7 +163,7 @@ Detailed documentation for specific topics:
 
 - ALWAYS add descriptions to types and fields
 - ALWAYS use non-null (**!**) for fields that cannot be null
-- ALWAYS use `[Type!]!` pattern for lists
+- ALWAYS use **[Type!]!** pattern for lists
 - NEVER expose database internals in schema
 - NEVER break backwards compatibility without deprecation
 - PREFER dedicated input types over many arguments

@@ -122,7 +122,7 @@ type User {
 
 ### List Nullability
 
-Always use `[Type!]!` for lists:
+Always use **[Type!]!** for lists:
 
 ```graphql
 type User {
