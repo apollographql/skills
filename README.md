@@ -81,6 +81,48 @@ npx skills add https://github.com/apollographql/skills --skill apollo-mcp-server
 
 ---
 
+### apollo-server
+
+Build GraphQL servers with Apollo Server 4.x, including schemas, resolvers, authentication, and plugins.
+
+**Install:**
+```bash
+# Skills CLI
+npx skills add https://github.com/apollographql/skills --skill apollo-server
+
+# Claude Code
+/install-skill https://github.com/apollographql/skills --skill apollo-server
+
+# Manual: Copy skills/apollo-server to your .claude/skills directory
+```
+
+**Use when:**
+- Setting up a new Apollo Server project
+- Writing resolvers or defining GraphQL schemas
+- Implementing authentication or authorization
+- Creating plugins or custom data sources
+- Troubleshooting Apollo Server errors or performance issues
+
+**Categories covered:**
+- Quick start setup (standalone and Express)
+- Schema definition and type system
+- Resolver patterns and best practices
+- Context and authentication
+- Plugins and lifecycle hooks
+- Data sources and DataLoader
+- Error handling and formatting
+
+**References:**
+[SKILL.md](skills/apollo-server/SKILL.md) ·
+[Resolvers](skills/apollo-server/references/resolvers.md) ·
+[Context & Auth](skills/apollo-server/references/context-and-auth.md) ·
+[Plugins](skills/apollo-server/references/plugins.md) ·
+[Data Sources](skills/apollo-server/references/data-sources.md) ·
+[Error Handling](skills/apollo-server/references/error-handling.md) ·
+[Troubleshooting](skills/apollo-server/references/troubleshooting.md)
+
+---
+
 ## Usage
 
 Skills activate automatically once installed. The agent uses them when relevant tasks are detected.
@@ -95,6 +137,9 @@ Set up Apollo MCP Server for my GraphQL endpoint
 ```
 Help me write a connector for this OpenAPI spec
 ```
+```
+Create an Apollo Server with user authentication and a posts API
+```
 
 ## Skill Structure
 
@@ -105,6 +150,7 @@ Each skill contains:
 ## Resources
 
 - [Agent Skills Standard](https://agentskills.io/)
+- [Apollo Server Documentation](https://www.apollographql.com/docs/apollo-server/)
 - [Apollo Connectors Documentation](https://www.apollographql.com/docs/graphos/schema-design/connectors/)
 - [Apollo MCP Server](https://www.apollographql.com/docs/apollo-mcp-server/)
 
