@@ -4,6 +4,46 @@ A collection of skills for AI coding agents working with Apollo GraphQL tools an
 
 Skills follow the [Agent Skills](https://agentskills.io/) format and are available on [skill.sh](https://skill.sh/).
 
+## Installation
+
+Install skills using the [Skills CLI](https://skills.sh/docs/cli):
+
+```bash
+npx skills add apollographql/skills
+```
+
+The CLI guides you through an interactive installation:
+
+1. **Select skills** - Choose which skills to install
+2. **Select agents** - Pick target agents (Claude Code, Codex, Cursor, Gemini CLI, Goose, OpenCode)
+3. **Installation scope** - Project (committed with your code) or Global
+4. **Installation method** - Symlink (recommended) or Copy
+
+```
+◇  Found 7 skills
+│
+◆  Select skills to install
+│  ◼ apollo-client
+│  ◼ apollo-connectors
+│  ◼ apollo-server
+│  ○ ...
+└
+
+◇  Detected 6 agents
+│
+◆  Select agents to install skills to
+│  ◼ Claude Code (.claude/skills)
+│  ◼ Cursor
+│  ○ ...
+└
+```
+
+Or in Claude Code:
+
+```
+/install-skill https://github.com/apollographql/skills
+```
+
 ## Available Skills
 
 ### apollo-connectors
