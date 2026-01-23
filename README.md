@@ -2,7 +2,7 @@
 
 A collection of skills for AI coding agents working with Apollo GraphQL tools and technologies.
 
-Skills follow the [Agent Skills](https://agentskills.io/) format.
+Skills follow the [Agent Skills](https://agentskills.io/) format and are available on [skill.sh](https://skill.sh/).
 
 ## Available Skills
 
@@ -162,6 +162,44 @@ npx skills add https://github.com/apollographql/skills --skill apollo-client
 [State Management](skills/apollo-client/references/state-management.md) ·
 [Error Handling](skills/apollo-client/references/error-handling.md) ·
 [Troubleshooting](skills/apollo-client/references/troubleshooting.md)
+
+---
+
+### rover
+
+Manage GraphQL schemas and run local supergraph development with Apollo Rover CLI.
+
+**Install:**
+```bash
+# Skills CLI
+npx skills add https://github.com/apollographql/skills --skill rover
+
+# Claude Code
+/install-skill https://github.com/apollographql/skills --skill rover
+
+# Manual: Copy skills/rover to your .claude/skills directory
+```
+
+**Use when:**
+- Publishing or fetching subgraph schemas to/from GraphOS
+- Composing supergraph schemas locally
+- Running local supergraph development with rover dev
+- Validating schemas with check and lint commands
+
+**Categories covered:**
+- Subgraph commands (fetch, publish, check, lint)
+- Graph commands (monograph management)
+- Supergraph composition
+- Local development with rover dev
+- Authentication and configuration
+
+**References:**
+[SKILL.md](skills/rover/SKILL.md) ·
+[Subgraphs](skills/rover/references/subgraphs.md) ·
+[Graphs](skills/rover/references/graphs.md) ·
+[Supergraphs](skills/rover/references/supergraphs.md) ·
+[Dev](skills/rover/references/dev.md) ·
+[Configuration](skills/rover/references/configuration.md)
 
 ---
 
