@@ -123,6 +123,48 @@ npx skills add https://github.com/apollographql/skills --skill apollo-server
 
 ---
 
+### apollo-client
+
+Build React applications with Apollo Client 4.x for GraphQL data management, caching, and local state.
+
+**Install:**
+```bash
+# Skills CLI
+npx skills add https://github.com/apollographql/skills --skill apollo-client
+
+# Claude Code
+/install-skill https://github.com/apollographql/skills --skill apollo-client
+
+# Manual: Copy skills/apollo-client to your .claude/skills directory
+```
+
+**Use when:**
+- Setting up Apollo Client in a React project
+- Writing GraphQL queries or mutations with hooks
+- Configuring caching or cache policies
+- Managing local state with reactive variables
+- Troubleshooting Apollo Client errors or performance issues
+
+**Categories covered:**
+- Quick start setup (install, client, provider, query)
+- useQuery and useLazyQuery hooks
+- useMutation with optimistic UI
+- InMemoryCache and type policies
+- Reactive variables and local state
+- Error handling and error links
+- Performance optimization
+
+**References:**
+[SKILL.md](skills/apollo-client/SKILL.md) ·
+[Queries](skills/apollo-client/references/queries.md) ·
+[Mutations](skills/apollo-client/references/mutations.md) ·
+[Caching](skills/apollo-client/references/caching.md) ·
+[State Management](skills/apollo-client/references/state-management.md) ·
+[Error Handling](skills/apollo-client/references/error-handling.md) ·
+[Troubleshooting](skills/apollo-client/references/troubleshooting.md)
+
+---
+
 ## Usage
 
 Skills activate automatically once installed. The agent uses them when relevant tasks are detected.
@@ -150,6 +192,7 @@ Each skill contains:
 ## Resources
 
 - [Agent Skills Standard](https://agentskills.io/)
+- [Apollo Client Documentation](https://www.apollographql.com/docs/react/)
 - [Apollo Server Documentation](https://www.apollographql.com/docs/apollo-server/)
 - [Apollo Connectors Documentation](https://www.apollographql.com/docs/graphos/schema-design/connectors/)
 - [Apollo MCP Server](https://www.apollographql.com/docs/apollo-mcp-server/)
