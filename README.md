@@ -34,6 +34,11 @@ npx skills add https://github.com/apollographql/skills --skill apollo-connectors
 - Entity patterns and `@key` directives
 - Batch requests with `@listSize`
 
+**Examples:**
+- "Connect my REST API to my GraphQL schema"
+- "Write a connector for this OpenAPI spec"
+- "Add entity resolvers with batching for my users endpoint"
+
 **References:**
 [SKILL.md](skills/apollo-connectors/SKILL.md) ·
 [Grammar](skills/apollo-connectors/references/grammar.md) ·
@@ -73,6 +78,11 @@ npx skills add https://github.com/apollographql/skills --skill apollo-mcp-server
 - Authentication and security
 - Health checks and debugging
 
+**Examples:**
+- "Set up Apollo MCP Server for my GraphQL endpoint"
+- "Configure MCP tools from my GraphQL operations"
+- "Debug MCP server connection issues"
+
 **References:**
 [SKILL.md](skills/apollo-mcp-server/SKILL.md) ·
 [Tools](skills/apollo-mcp-server/references/tools.md) ·
@@ -111,6 +121,11 @@ npx skills add https://github.com/apollographql/skills --skill apollo-server
 - Plugins and lifecycle hooks
 - Data sources and DataLoader
 - Error handling and formatting
+
+**Examples:**
+- "Create an Apollo Server with user authentication"
+- "Write resolvers for my GraphQL schema"
+- "Add a custom plugin to log all queries"
 
 **References:**
 [SKILL.md](skills/apollo-server/SKILL.md) ·
@@ -154,6 +169,11 @@ npx skills add https://github.com/apollographql/skills --skill apollo-client
 - Error handling and error links
 - Performance optimization
 
+**Examples:**
+- "Set up Apollo Client in my React app"
+- "Implement optimistic UI for my mutation"
+- "Configure cache policies for my queries"
+
 **References:**
 [SKILL.md](skills/apollo-client/SKILL.md) ·
 [Queries](skills/apollo-client/references/queries.md) ·
@@ -192,6 +212,11 @@ npx skills add https://github.com/apollographql/skills --skill rover
 - Supergraph composition
 - Local development with rover dev
 - Authentication and configuration
+
+**Examples:**
+- "Publish my subgraph schema to GraphOS"
+- "Run rover dev to test my supergraph locally"
+- "Check my schema changes before deploying"
 
 **References:**
 [SKILL.md](skills/rover/SKILL.md) ·
@@ -232,6 +257,11 @@ npx skills add https://github.com/apollographql/skills --skill graphql-schema
 - Error modeling and result types
 - Security best practices (depth limiting, complexity, authorization)
 
+**Examples:**
+- "Design a GraphQL schema for my e-commerce API"
+- "Review my schema for best practices"
+- "Add cursor-based pagination to my queries"
+
 **References:**
 [SKILL.md](skills/graphql-schema/SKILL.md) ·
 [Types](skills/graphql-schema/references/types.md) ·
@@ -271,6 +301,11 @@ npx skills add https://github.com/apollographql/skills --skill graphql-operation
 - Variable usage and types
 - Tooling (GraphQL Code Generator, ESLint, IDE extensions)
 
+**Examples:**
+- "Write a query with pagination"
+- "Organize my operations with fragments"
+- "Set up GraphQL Code Generator for type safety"
+
 **References:**
 [SKILL.md](skills/graphql-operations/SKILL.md) ·
 [Queries](skills/graphql-operations/references/queries.md) ·
@@ -284,20 +319,6 @@ npx skills add https://github.com/apollographql/skills --skill graphql-operation
 ## Usage
 
 Skills activate automatically once installed. The agent uses them when relevant tasks are detected.
-
-**Examples:**
-```
-Connect my REST API at api.example.com/users to my GraphQL schema
-```
-```
-Set up Apollo MCP Server for my GraphQL endpoint
-```
-```
-Help me write a connector for this OpenAPI spec
-```
-```
-Create an Apollo Server with user authentication and a posts API
-```
 
 ## Skill Structure
 
@@ -313,6 +334,3 @@ Each skill contains:
 - [Apollo Connectors Documentation](https://www.apollographql.com/docs/graphos/schema-design/connectors/)
 - [Apollo MCP Server](https://www.apollographql.com/docs/apollo-mcp-server/)
 
-## License
-
-Apache-2.0
