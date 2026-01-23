@@ -165,6 +165,84 @@ npx skills add https://github.com/apollographql/skills --skill apollo-client
 
 ---
 
+### graphql-schema
+
+Design GraphQL schemas following industry best practices for type design, naming, pagination, errors, and security.
+
+**Install:**
+```bash
+# Skills CLI
+npx skills add https://github.com/apollographql/skills --skill graphql-schema
+
+# Claude Code
+/install-skill https://github.com/apollographql/skills --skill graphql-schema
+
+# Manual: Copy skills/graphql-schema to your .claude/skills directory
+```
+
+**Use when:**
+- Designing a new GraphQL schema or API
+- Reviewing existing schema for improvements
+- Deciding on type structures or nullability
+- Implementing pagination or error patterns
+- Ensuring security in schema design
+
+**Categories covered:**
+- Type design patterns (interfaces, unions, custom scalars)
+- Naming conventions for types, fields, and arguments
+- Cursor-based pagination (Connection pattern)
+- Error modeling and result types
+- Security best practices (depth limiting, complexity, authorization)
+
+**References:**
+[SKILL.md](skills/graphql-schema/SKILL.md) ·
+[Types](skills/graphql-schema/references/types.md) ·
+[Naming](skills/graphql-schema/references/naming.md) ·
+[Pagination](skills/graphql-schema/references/pagination.md) ·
+[Errors](skills/graphql-schema/references/errors.md) ·
+[Security](skills/graphql-schema/references/security.md)
+
+---
+
+### graphql-operations
+
+Write GraphQL operations (queries, mutations, fragments) following best practices for client-side development.
+
+**Install:**
+```bash
+# Skills CLI
+npx skills add https://github.com/apollographql/skills --skill graphql-operations
+
+# Claude Code
+/install-skill https://github.com/apollographql/skills --skill graphql-operations
+
+# Manual: Copy skills/graphql-operations to your .claude/skills directory
+```
+
+**Use when:**
+- Writing GraphQL queries or mutations
+- Organizing operations with fragments
+- Optimizing data fetching patterns
+- Setting up type generation or linting
+- Reviewing operations for efficiency
+
+**Categories covered:**
+- Query patterns and optimization
+- Mutation patterns and error handling
+- Fragment organization and colocation
+- Variable usage and types
+- Tooling (GraphQL Code Generator, ESLint, IDE extensions)
+
+**References:**
+[SKILL.md](skills/graphql-operations/SKILL.md) ·
+[Queries](skills/graphql-operations/references/queries.md) ·
+[Mutations](skills/graphql-operations/references/mutations.md) ·
+[Fragments](skills/graphql-operations/references/fragments.md) ·
+[Variables](skills/graphql-operations/references/variables.md) ·
+[Tooling](skills/graphql-operations/references/tooling.md)
+
+---
+
 ## Usage
 
 Skills activate automatically once installed. The agent uses them when relevant tasks are detected.
