@@ -360,6 +360,15 @@ npx skills add https://github.com/apollographql/skills --skill graphql-operation
 
 Skills activate automatically once installed. The agent uses them when relevant tasks are detected.
 
+You can also explicitly invoke a skill depending on your tool:
+
+| Tool | Automatic | Explicit Invocation |
+|------|-----------|---------------------|
+| Claude Code | Yes | Slash command (e.g., `/graphql-schema`) |
+| GitHub Copilot | Yes | `/agent` for custom agents, `@github` for GitHub skills |
+| Cursor | Yes | Rules matched by file patterns (no direct invocation) |
+| Windsurf | Yes | Slash command for workflows (e.g., `/workflow-name`) |
+
 ## Skill Structure
 
 Each skill contains:
