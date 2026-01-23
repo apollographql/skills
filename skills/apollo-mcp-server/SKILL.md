@@ -180,9 +180,9 @@ introspection:
 ```
 
 Minified output uses compact notation:
-- `T` = type, `I` = input, `E` = enum
-- `s` = String, `i` = Int, `b` = Boolean, `f` = Float
-- `!` = required, `[]` = list
+- **T** = type, **I** = input, **E** = enum
+- **s** = String, **i** = Int, **b** = Boolean, **f** = Float
+- **!** = required, **[]** = list
 
 ### Mutations
 

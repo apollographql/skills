@@ -263,7 +263,7 @@ Detailed documentation for specific topics:
 
 ### Schema Design
 
-- Use `!` (non-null) for fields that always have values
+- Use **!** (non-null) for fields that always have values
 - Prefer input types for mutations over inline arguments
 - Use interfaces for polymorphic types
 - Keep schema descriptions for documentation

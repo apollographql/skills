@@ -223,11 +223,11 @@ Compact notation reduces token usage by 40-60%. Enable globally or per-request.
 
 | Symbol | Meaning |
 |--------|---------|
-| `!` | Non-null (required) |
-| `[]` | List |
-| `[!]` | List of non-null |
-| `[]!` | Non-null list |
-| `[!]!` | Non-null list of non-null |
+| **!** | Non-null (required) |
+| **[]** | List |
+| **[!]** | List of non-null |
+| **[]!** | Non-null list |
+| **[!]!** | Non-null list of non-null |
 
 ### Examples
 

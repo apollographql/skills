@@ -162,7 +162,7 @@ Detailed documentation for specific topics:
 ## Ground Rules
 
 - ALWAYS add descriptions to types and fields
-- ALWAYS use non-null (`!`) for fields that cannot be null
+- ALWAYS use non-null (**!**) for fields that cannot be null
 - ALWAYS use `[Type!]!` pattern for lists
 - NEVER expose database internals in schema
 - NEVER break backwards compatibility without deprecation
