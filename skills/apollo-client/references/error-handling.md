@@ -1,5 +1,19 @@
 # Error Handling Reference
 
+<!-- TODO: This entire file needs to be rewritten for Apollo Client v4.
+The error handling has been completely changed from v3 to v4.
+See:
+- Error handling guide: https://www.apollographql.com/docs/react/data/error-handling
+- Migration guide: https://www.apollographql.com/docs/react/migrating/apollo-client-4-migration#new-error-handling
+
+Key changes needed:
+1. Update error handling patterns for v4
+2. Update errorPolicy behavior and options
+3. Update error link examples
+4. Update retry logic for v4
+5. Ensure all examples align with v4 best practices
+-->
+
 ## Table of Contents
 
 - [Error Types](#error-types)

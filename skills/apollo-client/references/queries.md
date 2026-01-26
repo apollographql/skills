@@ -1,5 +1,7 @@
 # Queries Reference
 
+> **Note**: In most applications, there should only be one use of a query hook per page. Use fragment-reading hooks (`useFragment`, `useSuspenseFragment`) with component-colocated fragments and data masking for the rest of the page components.
+
 ## Table of Contents
 
 - [useQuery Hook](#usequery-hook)
@@ -12,12 +14,15 @@
 
 ## useQuery Hook
 
-The `useQuery` hook is the primary way to fetch data in Apollo Client.
+The `useQuery` hook is the primary way to fetch data in Apollo Client in non-suspenseful applications. It returns loading and error states that must be handled.
+
+> **Note**: In suspenseful applications, use `useSuspenseQuery` or `useBackgroundQuery` instead. See the suspenseful query usage reference for more details.
 
 ### Basic Usage
 
 ```tsx
-import { useQuery, gql } from '@apollo/client';
+import { gql } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 
 const GET_DOGS = gql`
   query GetDogs {
@@ -53,6 +58,7 @@ const {
   loading,        // True during initial load
   error,          // ApolloError if request failed
   networkStatus,  // Detailed network state (1-8)
+  dataState,      // For TypeScript type narrowing (AC 4.x)
   refetch,        // Function to re-execute query
   fetchMore,      // Function for pagination
   startPolling,   // Start polling at interval
@@ -93,7 +99,12 @@ function DogPhoto({ breed }: { breed: string }) {
 
 ### TypeScript Types
 
+Use `TypedDocumentNode` instead of generic type parameters for better type safety:
+
 ```typescript
+import { gql, TypedDocumentNode } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
+
 interface GetDogData {
   dog: {
     id: string;
@@ -105,7 +116,16 @@ interface GetDogVariables {
   breed: string;
 }
 
-const { data } = useQuery<GetDogData, GetDogVariables>(GET_DOG, {
+const GET_DOG: TypedDocumentNode<GetDogData, GetDogVariables> = gql`
+  query GetDog($breed: String!) {
+    dog(breed: $breed) {
+      id
+      displayImage
+    }
+  }
+`;
+
+const { data } = useQuery(GET_DOG, {
   variables: { breed: 'bulldog' },
 });
 
@@ -182,12 +202,15 @@ function Dogs() {
 
 ## useLazyQuery
 
-Use `useLazyQuery` when you want to execute a query in response to an event (like a button click) rather than on component mount.
+Use `useLazyQuery` when you want to execute a query in response to a user-triggered event (like a button click) rather than on component mount.
+
+**Important**: `useLazyQuery` doesn't guarantee a network request - it just sets variables. If data is already in the cache, this is not a "refetch". Only use `useLazyQuery` if you consume the second tuple value (loading, data, error states) to synchronize cache data with the component. If you only need the promise, use `client.query` directly instead.
 
 ### Basic Usage
 
 ```tsx
-import { useLazyQuery, gql } from '@apollo/client';
+import { gql } from '@apollo/client';
+import { useLazyQuery } from '@apollo/client/react';
 
 const GET_DOG_PHOTO = gql`
   query GetDogPhoto($breed: String!) {
@@ -215,16 +238,21 @@ function DelayedQuery() {
 }
 ```
 
-### Async/Await Pattern
+### When to Use client.query Instead
+
+If you only need the promise result and don't consume the loading/error/data states from the hook, use `client.query` instead:
 
 ```tsx
+import { useApolloClient } from '@apollo/client';
+
 function SearchDogs() {
+  const client = useApolloClient();
   const [search, setSearch] = useState('');
-  const [searchDogs] = useLazyQuery(SEARCH_DOGS);
 
   const handleSearch = async () => {
     try {
-      const { data } = await searchDogs({
+      const { data } = await client.query({
+        query: SEARCH_DOGS,
         variables: { query: search },
       });
       console.log('Found dogs:', data.searchDogs);
@@ -342,7 +370,26 @@ const { data } = useQuery(GET_POSTS, {
 
 ## Conditional Queries
 
-### Skip Option
+### Using skipToken (Recommended)
+
+Use `skipToken` to conditionally skip queries without TypeScript issues:
+
+```tsx
+import { skipToken } from '@apollo/client';
+
+function UserProfile({ userId }: { userId: string | null }) {
+  const { data } = useQuery(
+    GET_USER,
+    !userId ? skipToken : {
+      variables: { id: userId },
+    }
+  );
+
+  return userId ? <Profile user={data?.user} /> : <p>Select a user</p>;
+}
+```
+
+### Skip Option (Alternative)
 
 ```tsx
 function UserProfile({ userId }: { userId: string | null }) {
@@ -355,29 +402,7 @@ function UserProfile({ userId }: { userId: string | null }) {
 }
 ```
 
-### Skip with useLazyQuery Alternative
-
-```tsx
-// Instead of skip, use useLazyQuery for more control
-function UserSearch() {
-  const [query, setQuery] = useState('');
-  const [search, { data, loading }] = useLazyQuery(SEARCH_USERS);
-
-  useEffect(() => {
-    if (query.length >= 3) {
-      search({ variables: { query } });
-    }
-  }, [query, search]);
-
-  return (
-    <div>
-      <input value={query} onChange={(e) => setQuery(e.target.value)} />
-      {loading && <p>Searching...</p>}
-      {data?.searchUsers.map((user) => <UserCard key={user.id} user={user} />)}
-    </div>
-  );
-}
-```
+> **Note**: Using `skipToken` is preferred over `skip` as it avoids TypeScript issues with required variables and the non-null assertion operator.
 
 ### SSR Skip
 

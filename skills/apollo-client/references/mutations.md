@@ -96,7 +96,11 @@ await createUser({
 
 ### TypeScript Types
 
+Use `TypedDocumentNode` instead of generic type parameters:
+
 ```typescript
+import { gql, TypedDocumentNode } from '@apollo/client';
+
 interface CreateUserData {
   createUser: {
     id: string;
@@ -112,9 +116,17 @@ interface CreateUserVariables {
   };
 }
 
-const [createUser] = useMutation<CreateUserData, CreateUserVariables>(
-  CREATE_USER
-);
+const CREATE_USER: TypedDocumentNode<CreateUserData, CreateUserVariables> = gql`
+  mutation CreateUser($input: CreateUserInput!) {
+    createUser(input: $input) {
+      id
+      name
+      email
+    }
+  }
+`;
+
+const [createUser, {data, loading}] = useMutation(CREATE_USER);
 
 const { data } = await createUser({
   variables: {
@@ -162,23 +174,66 @@ function CreatePost() {
 
 ### Async/Await Pattern
 
+If you only need the promise without using the hook's loading/data state, use `client.mutate` instead:
+
 ```tsx
-async function handleSubmit(formData: FormData) {
-  try {
-    const { data } = await createPost({
-      variables: {
-        input: {
-          title: formData.get('title'),
-          content: formData.get('content'),
+import { useApolloClient } from '@apollo/client';
+
+function CreatePost() {
+  const client = useApolloClient();
+  
+  async function handleSubmit(formData: FormData) {
+    try {
+      const { data } = await client.mutate({
+        mutation: CREATE_POST,
+        variables: {
+          input: {
+            title: formData.get('title'),
+            content: formData.get('content'),
+          },
         },
-      },
-    });
-    console.log('Created:', data.createPost);
-    router.push(`/posts/${data.createPost.id}`);
-  } catch (error) {
-    console.error('Failed to create post:', error);
-    // Error is also available in mutation result
+      });
+      console.log('Created:', data.createPost);
+      router.push(`/posts/${data.createPost.id}`);
+    } catch (error) {
+      console.error('Failed to create post:', error);
+    }
   }
+  
+  return <form onSubmit={(e) => { e.preventDefault(); handleSubmit(new FormData(e.currentTarget)); }}>...</form>;
+}
+```
+
+If you do use the hook's state, e.g. because you want to render the `loading` state, errors or returned `data`, you can also use the `useMutation` hook with `async..await` in your handler:
+
+```tsx
+function CreatePost() {
+  const [createPost, { loading }] = useMutation(CREATE_POST);
+
+  async function handleSubmit(formData: FormData) {
+    try {
+      const { data } = await createPost({
+        variables: {
+          input: {
+            title: formData.get('title'),
+            content: formData.get('content'),
+          },
+        },
+      });
+      console.log('Created:', data.createPost);
+      router.push(`/posts/${data.createPost.id}`);
+    } catch (error) {
+      console.error('Failed to create post:', error);
+    }
+  }
+  
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); handleSubmit(new FormData(e.currentTarget)); }}>
+      <button type="submit" disabled={loading}>
+        {loading ? 'Creating...' : 'Create Post'}
+      </button>
+    </form>
+  );
 }
 ```
 
@@ -187,6 +242,8 @@ async function handleSubmit(formData: FormData) {
 Optimistic UI immediately reflects the expected result of a mutation before the server responds.
 
 ### Basic Optimistic Response
+
+**Important**: `optimisticResponse` needs to be a full valid response for the mutation. A partial result might result in subtle errors.
 
 ```tsx
 const [addTodo] = useMutation(ADD_TODO, {
@@ -336,7 +393,20 @@ const [createPost] = useMutation(CREATE_POST, {
 
 ### Basic Refetch
 
+There are three refetch notations:
+
+- **String**: `refetchQueries: ['getTodos']` - refetches all active `getTodos` queries
+- **Query document**: `refetchQueries: [GET_TODOS]` - refetches all active queries using this document
+- **Object**: `refetchQueries: [{ query: GET_TODOS }, { query: GET_TODOS, variables: { page: 25 } }]` - **fetches** the query, regardless if it's actively used in the UI
+
 ```tsx
+const [addTodo] = useMutation(ADD_TODO, {
+  // Refetch all active GET_TODOS queries
+  refetchQueries: ['getTodos'],
+  // Or: refetchQueries: [GET_TODOS],
+});
+
+// Fetch specific query with variables (even if not active)
 const [addTodo] = useMutation(ADD_TODO, {
   refetchQueries: [
     { query: GET_TODOS },
@@ -378,6 +448,8 @@ const [addTodo] = useMutation(ADD_TODO, {
 
 ### onQueryUpdated
 
+Returning `true` from `onQueryUpdated` causes a refetch. Don't call `refetch()` manually inside `onQueryUpdated`, as it won't retain the query and might cancel it early.
+
 ```tsx
 const [addTodo] = useMutation(ADD_TODO, {
   update: (cache, { data }) => {
@@ -386,7 +458,8 @@ const [addTodo] = useMutation(ADD_TODO, {
   onQueryUpdated: (observableQuery) => {
     // Called for each query affected by cache update
     console.log(`Query ${observableQuery.queryName} was updated`);
-    return observableQuery.refetch(); // Optionally refetch
+    // Return true to refetch
+    return true;
   },
 });
 ```
@@ -396,7 +469,7 @@ const [addTodo] = useMutation(ADD_TODO, {
 ### Error Policy
 
 ```tsx
-const [createUser] = useMutation(CREATE_USER, {
+const [createUser, { loading }] = useMutation(CREATE_USER, {
   errorPolicy: 'all', // Return both data and errors
 });
 

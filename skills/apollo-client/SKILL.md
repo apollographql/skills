@@ -24,7 +24,7 @@ Apollo Client is a comprehensive state management library for JavaScript that en
 ### Step 1: Install
 
 ```bash
-npm install @apollo/client graphql
+npm install @apollo/client graphql rxjs
 ```
 
 For TypeScript type generation (recommended):
@@ -32,18 +32,31 @@ For TypeScript type generation (recommended):
 npm install -D @graphql-codegen/cli @graphql-codegen/typescript @graphql-codegen/typescript-operations @graphql-codegen/typed-document-node
 ```
 
+See the [GraphQL Code Generator documentation](https://www.apollographql.com/docs/react/development-testing/graphql-codegen#recommended-starter-configuration) for the recommended configuration.
+
 ### Step 2: Create Client
 
 ```typescript
 import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client';
+import { setContext } from '@apollo/client/link/context';
+
+const httpLink = new HttpLink({
+  uri: 'https://your-graphql-endpoint.com/graphql',
+});
+
+// Use SetContextLink for auth headers to update dynamically per request
+const authLink = setContext((_, { headers }) => {
+  const token = localStorage.getItem('token');
+  return {
+    headers: {
+      ...headers,
+      authorization: token ? `Bearer ${token}` : '',
+    },
+  };
+});
 
 const client = new ApolloClient({
-  link: new HttpLink({
-    uri: 'https://your-graphql-endpoint.com/graphql',
-    headers: {
-      authorization: localStorage.getItem('token') || '',
-    },
-  }),
+  link: authLink.concat(httpLink),
   cache: new InMemoryCache(),
 });
 ```
@@ -66,7 +79,8 @@ function Root() {
 ### Step 4: Execute Query
 
 ```tsx
-import { useQuery, gql } from '@apollo/client';
+import { gql } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 
 const GET_USERS = gql`
   query GetUsers {
@@ -110,7 +124,7 @@ const GET_USER = gql`
 `;
 
 function UserProfile({ userId }: { userId: string }) {
-  const { loading, error, data } = useQuery(GET_USER, {
+  const { loading, error, data, dataState } = useQuery(GET_USER, {
     variables: { id: userId },
   });
 
@@ -120,6 +134,8 @@ function UserProfile({ userId }: { userId: string }) {
   return <div>{data.user.name}</div>;
 }
 ```
+
+> **Note for TypeScript users**: Use [`dataState`](https://www.apollographql.com/docs/react/data/typescript#type-narrowing-data-with-datastate) for more robust type safety and better type narrowing in Apollo Client 4.x.
 
 ### TypeScript Integration
 
@@ -148,9 +164,25 @@ const { data } = useQuery<GetUserData, GetUserVariables>(GET_USER, {
 ## Basic Mutation Usage
 
 ```tsx
-import { useMutation, gql } from '@apollo/client';
+import { gql, TypedDocumentNode } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
 
-const CREATE_USER = gql`
+interface CreateUserMutation {
+  createUser: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+interface CreateUserMutationVariables {
+  input: {
+    name: string;
+    email: string;
+  };
+}
+
+const CREATE_USER: TypedDocumentNode<CreateUserMutation, CreateUserMutationVariables> = gql`
   mutation CreateUser($input: CreateUserInput!) {
     createUser(input: $input) {
       id
@@ -167,16 +199,21 @@ function CreateUserForm() {
     const { data } = await createUser({
       variables: {
         input: {
-          name: formData.get('name'),
-          email: formData.get('email'),
+          name: formData.get('name') as string,
+          email: formData.get('email') as string,
         },
       },
     });
-    console.log('Created user:', data.createUser);
+    if (data) {
+      console.log('Created user:', data.createUser);
+    }
   };
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); handleSubmit(new FormData(e.currentTarget)); }}>
+    <form onSubmit={(e) => { 
+      e.preventDefault(); 
+      handleSubmit(new FormData(e.currentTarget)); 
+    }}>
       <input name="name" placeholder="Name" />
       <input name="email" placeholder="Email" />
       <button type="submit" disabled={loading}>
@@ -245,39 +282,44 @@ Detailed documentation for specific topics:
 
 ### Query Best Practices
 
-- Always handle `loading` and `error` states in UI
+- In most applications, use one query hook per page, and use fragment-reading hooks (`useFragment`, `useSuspenseFragment`) with component-colocated fragments and data masking for the rest
+- Always handle `loading` and `error` states in UI (in non-suspenseful applications)
 - Use `fetchPolicy` to control cache behavior per query
 - Colocate queries with components that use them
 - Use fragments to share fields between queries
+- Use the TypeScript type server to look up documentation for functions and options (Apollo Client has extensive docblocks)
 
 ### Mutation Best Practices
 
-- Update cache after mutations (don't rely on refetching everything)
-- Use optimistic responses for better UX
+- If the schema permits, mutation return values should include everything necessary to update the cache automatically
+- Weigh cache updates vs refetching: manual updates risk missing server logic, but refetching may be inefficient
+- Consider optimistic updates with granular refetches if mutation response is insufficient
 - Handle errors gracefully in the UI
 - Use `refetchQueries` sparingly (prefer cache updates)
 
 ### Caching Best Practices
 
 - Configure `keyFields` for types without `id` field
+- Disable normalization by setting `keyFields: false` for types that don't include an identifier and are meant to group related fields under the parent
 - Use `typePolicies` for pagination and computed fields
 - Understand cache normalization to debug issues
-- Use Apollo DevTools to inspect cache state
+- **Enable [data masking](https://www.apollographql.com/docs/react/data/fragments#data-masking) for all new applications** - it prevents components from accessing fragment data they don't own, enforcing proper data boundaries and preventing over-rendering
 
 ### Performance
 
 - Avoid over-fetching with proper field selection
-- Use `useLazyQuery` for user-triggered queries
 - Configure appropriate `fetchPolicy` per use case
-- Use `@defer` and `@stream` for large responses
+- Use `@defer` for incremental delivery of deferred query parts, and `@stream` for streaming list fields (`@stream` available in Apollo Client 4.1+)
+- **Prefer Suspense hooks (`useSuspenseQuery`, `useBackgroundQuery`) in modern applications** for better loading state handling and code simplicity
 
 ## Ground Rules
 
 - ALWAYS use Apollo Client 4.x patterns (not v3 or earlier)
 - ALWAYS wrap your app with `ApolloProvider`
-- ALWAYS handle loading and error states
+- ALWAYS handle loading and error states when using non-suspenseful hooks
+- PREFER Suspense hooks (`useSuspenseQuery`, `useBackgroundQuery`) in modern applications for better DX
 - NEVER store Apollo Client in React state (use module-level or context)
 - PREFER `cache-first` for read-heavy data, `network-only` for real-time data
 - USE TypeScript for better type safety with GraphQL
 - IMPLEMENT proper cache updates instead of refetching entire queries
-- USE Apollo DevTools during development to debug cache issues
+- ADVISE the human steering you to look into Apollo DevTools when collaboratively debugging Apollo Client issues

@@ -58,12 +58,6 @@ new InMemoryCache({
     }
     return defaultDataIdFromObject(object);
   },
-
-  // Add custom fields to all types
-  addTypename: true, // default
-
-  // Result caching behavior
-  resultCaching: true, // default
 });
 ```
 
@@ -137,9 +131,17 @@ const cache = new InMemoryCache({
       keyFields: ['book', ['isbn'], 'reviewer', ['id']],
     },
 
-    // No normalization (singleton)
+    // No key fields (singleton, only one object in cache per type)
     AppSettings: {
-      keyFields: false,
+      keyFields: [],
+    },
+    
+    // Disable normalization (objects of this type will be stored with their 
+    // parent entity. The same object might end up multiple times in the cache 
+    // and run out of sync. Use with caution, only if this object really relates 
+    // to a property of their parent entity and cannot exist on its own.)
+    Address: {
+      keyFields: false
     },
   },
 });
@@ -429,9 +431,21 @@ cache.writeQuery({
 ### cache.readFragment / cache.writeFragment
 
 ```typescript
-// Read a specific object
+// Read a specific object - use cache.identify for safety
 const user = cache.readFragment({
-  id: 'User:1',
+  id: cache.identify({ __typename: 'User', id: '1' }),
+  fragment: gql`
+    fragment UserFragment on User {
+      id
+      name
+      email
+    }
+  `,
+});
+
+// Apollo Client 4.1+: Use 'from' parameter (recommended)
+const user = cache.readFragment({
+  from: { __typename: 'User', id: '1' },
   fragment: gql`
     fragment UserFragment on User {
       id
@@ -443,7 +457,20 @@ const user = cache.readFragment({
 
 // Update a specific object
 cache.writeFragment({
-  id: 'User:1',
+  id: cache.identify({ __typename: 'User', id: '1' }),
+  fragment: gql`
+    fragment UpdateUser on User {
+      name
+    }
+  `,
+  data: {
+    name: 'Jane',
+  },
+});
+
+// Apollo Client 4.1+: Use 'from' parameter (recommended)
+cache.writeFragment({
+  from: { __typename: 'User', id: '1' },
   fragment: gql`
     fragment UpdateUser on User {
       name
@@ -523,7 +550,7 @@ const cacheContents = cache.extract();
 // Restore cache state
 cache.restore(previousCacheContents);
 
-// Get identified object
+// Get identified object cache key
 const userId = cache.identify({ __typename: 'User', id: '1' });
 // Returns: 'User:1'
 ```
