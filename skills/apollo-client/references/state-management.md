@@ -328,61 +328,34 @@ const ADD_TO_CART = gql`
 ### Persisting Local State
 
 ```typescript
-// Save to localStorage when reactive variable changes
-const cartItemsVar = makeVar<CartItem[]>(
-  typeof window !== 'undefined' && localStorage.getItem('cart')
-    ? JSON.parse(localStorage.getItem('cart')!)
-    : []
-);
-
-// Create a wrapper that persists with error handling
-export function updateCart(items: CartItem[]) {
-  cartItemsVar(items);
-  try {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('cart', JSON.stringify(items));
-    }
-  } catch (error) {
-    console.error('Failed to persist cart to localStorage:', error);
-  }
-}
-
-// Use a listener on the reactive variable for automatic persistence
+// Create a helper function to permanently subscribe to reactive variable changes, without creating memory leaks
 function subscribeToVariable<T>(
   weakRef: WeakRef<ReactiveVar<T>>,
-  callback: (value: T) => void
+  listener: ReactiveListener<T>,
 ) {
-  const reactiveVar = weakRef.deref();
-  if (!reactiveVar) return;
-  
-  reactiveVar.onNextChange(function onNextChange() {
-    const currentVar = weakRef.deref();
-    if (currentVar) {
-      callback(currentVar());
-      currentVar.onNextChange(onNextChange);
-    }
+  weakRef.deref()?.onNextChange((value) => {
+    listener(value);
+    subscribeToVariable(weakRef, listener);
   });
 }
 
 // Create reactive variable with persistence
 const persistentCartVar = makeVar<CartItem[]>(
-  typeof window !== 'undefined' && localStorage.getItem('cart')
-    ? JSON.parse(localStorage.getItem('cart')!)
-    : []
+  typeof window !== "undefined" && localStorage.getItem("cart")
+    ? JSON.parse(localStorage.getItem("cart")!)
+    : [],
 );
 
-subscribeToVariable(
-  new WeakRef(persistentCartVar),
-  (items) => {
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('cart', JSON.stringify(items));
-      }
-    } catch (error) {
-      console.error('Failed to persist cart:', error);
+// Save to localStorage when reactive variable changes
+subscribeToVariable(new WeakRef(persistentCartVar), (items) => {
+  try {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("cart", JSON.stringify(items));
     }
+  } catch (error) {
+    console.error("Failed to persist cart:", error);
   }
-);
+});
 ```
 
 ## useReactiveVar Hook
