@@ -2,7 +2,7 @@
 
 A collection of skills for AI coding agents working with Apollo GraphQL tools and technologies.
 
-Skills follow the [Agent Skills](https://agentskills.io/) format and are available on [skill.sh](https://skill.sh/).
+Apollo Skills follow the [Agent Skills](https://agentskills.io/) format and are available on [skills.sh](https://skills.sh/).
 
 ## Installation
 
@@ -20,7 +20,7 @@ The CLI guides you through an interactive installation:
 4. **Installation method** - Symlink (recommended) or Copy
 
 ```
-◇  Found 7 skills
+◇  Found 8 skills
 │
 ◆  Select skills to install
 │  ◼ apollo-client
@@ -38,12 +38,6 @@ The CLI guides you through an interactive installation:
 └
 ```
 
-Or in Claude Code:
-
-```
-/install-skill https://github.com/apollographql/skills
-```
-
 ## Available Skills
 
 ### apollo-connectors
@@ -51,23 +45,20 @@ Or in Claude Code:
 Write Apollo Connectors schemas to integrate REST APIs into GraphQL.
 
 **Install:**
+
 ```bash
-# Skills CLI
-npx skills add https://github.com/apollographql/skills --skill apollo-connectors
-
-# Claude Code
-/install-skill https://github.com/apollographql/skills --skill apollo-connectors
-
-# Manual: Copy skills/apollo-connectors to your .claude/skills directory
+npx npx skills add apollographql/skills --skill apollo-connectors
 ```
 
 **Use when:**
+
 - Connecting REST APIs to a GraphQL supergraph
 - Writing `@source` and `@connect` directives
 - Implementing entity resolvers with batching
 - Validating connector schemas with `rover`
 
 **Categories covered:**
+
 - Selection mapping grammar
 - HTTP methods and headers
 - Variable interpolation (`$args`, `$this`, `$config`)
@@ -75,6 +66,7 @@ npx skills add https://github.com/apollographql/skills --skill apollo-connectors
 - Batch requests with `@listSize`
 
 **Examples:**
+
 - "Connect my REST API to my GraphQL schema"
 - "Write a connector for this OpenAPI spec"
 - "Add entity resolvers with batching for my users endpoint"
@@ -95,23 +87,20 @@ npx skills add https://github.com/apollographql/skills --skill apollo-connectors
 Configure and use Apollo MCP Server to connect AI agents with GraphQL APIs.
 
 **Install:**
+
 ```bash
-# Skills CLI
-npx skills add https://github.com/apollographql/skills --skill apollo-mcp-server
-
-# Claude Code
-/install-skill https://github.com/apollographql/skills --skill apollo-mcp-server
-
-# Manual: Copy skills/apollo-mcp-server to your .claude/skills directory
+npx npx skills add apollographql/skills --skill apollo-mcp-server
 ```
 
 **Use when:**
+
 - Setting up Apollo MCP Server for Claude or other AI agents
 - Defining MCP tools from GraphQL operations
 - Using introspection tools (introspect, search, validate, execute)
 - Troubleshooting MCP server connectivity issues
 
 **Categories covered:**
+
 - Server configuration (endpoints, schemas, headers)
 - Built-in tools and compact notation
 - Operation sources (files, collections, persisted queries)
@@ -119,6 +108,7 @@ npx skills add https://github.com/apollographql/skills --skill apollo-mcp-server
 - Health checks and debugging
 
 **Examples:**
+
 - "Set up Apollo MCP Server for my GraphQL endpoint"
 - "Configure MCP tools from my GraphQL operations"
 - "Debug MCP server connection issues"
@@ -136,17 +126,13 @@ npx skills add https://github.com/apollographql/skills --skill apollo-mcp-server
 Build GraphQL servers with Apollo Server 4.x, including schemas, resolvers, authentication, and plugins.
 
 **Install:**
+
 ```bash
-# Skills CLI
-npx skills add https://github.com/apollographql/skills --skill apollo-server
-
-# Claude Code
-/install-skill https://github.com/apollographql/skills --skill apollo-server
-
-# Manual: Copy skills/apollo-server to your .claude/skills directory
+npx npx skills add apollographql/skills --skill apollo-server
 ```
 
 **Use when:**
+
 - Setting up a new Apollo Server project
 - Writing resolvers or defining GraphQL schemas
 - Implementing authentication or authorization
@@ -154,6 +140,7 @@ npx skills add https://github.com/apollographql/skills --skill apollo-server
 - Troubleshooting Apollo Server errors or performance issues
 
 **Categories covered:**
+
 - Quick start setup (standalone and Express)
 - Schema definition and type system
 - Resolver patterns and best practices
@@ -163,6 +150,7 @@ npx skills add https://github.com/apollographql/skills --skill apollo-server
 - Error handling and formatting
 
 **Examples:**
+
 - "Create an Apollo Server with user authentication"
 - "Write resolvers for my GraphQL schema"
 - "Add a custom plugin to log all queries"
@@ -183,17 +171,13 @@ npx skills add https://github.com/apollographql/skills --skill apollo-server
 Build React applications with Apollo Client 4.x for GraphQL data management, caching, and local state.
 
 **Install:**
+
 ```bash
-# Skills CLI
-npx skills add https://github.com/apollographql/skills --skill apollo-client
-
-# Claude Code
-/install-skill https://github.com/apollographql/skills --skill apollo-client
-
-# Manual: Copy skills/apollo-client to your .claude/skills directory
+npx npx skills add apollographql/skills --skill apollo-client
 ```
 
 **Use when:**
+
 - Setting up Apollo Client in a React project
 - Writing GraphQL queries or mutations with hooks
 - Configuring caching or cache policies
@@ -201,6 +185,7 @@ npx skills add https://github.com/apollographql/skills --skill apollo-client
 - Troubleshooting Apollo Client errors or performance issues
 
 **Categories covered:**
+
 - Quick start setup (install, client, provider, query)
 - useQuery and useLazyQuery hooks
 - useMutation with optimistic UI
@@ -210,6 +195,7 @@ npx skills add https://github.com/apollographql/skills --skill apollo-client
 - Performance optimization
 
 **Examples:**
+
 - "Set up Apollo Client in my React app"
 - "Implement optimistic UI for my mutation"
 - "Configure cache policies for my queries"
@@ -230,23 +216,20 @@ npx skills add https://github.com/apollographql/skills --skill apollo-client
 Manage GraphQL schemas and run local supergraph development with Apollo Rover CLI.
 
 **Install:**
+
 ```bash
-# Skills CLI
-npx skills add https://github.com/apollographql/skills --skill rover
-
-# Claude Code
-/install-skill https://github.com/apollographql/skills --skill rover
-
-# Manual: Copy skills/rover to your .claude/skills directory
+npx npx skills add apollographql/skills --skill rover
 ```
 
 **Use when:**
+
 - Publishing or fetching subgraph schemas to/from GraphOS
 - Composing supergraph schemas locally
 - Running local supergraph development with rover dev
 - Validating schemas with check and lint commands
 
 **Categories covered:**
+
 - Subgraph commands (fetch, publish, check, lint)
 - Graph commands (monograph management)
 - Supergraph composition
@@ -254,6 +237,7 @@ npx skills add https://github.com/apollographql/skills --skill rover
 - Authentication and configuration
 
 **Examples:**
+
 - "Publish my subgraph schema to GraphOS"
 - "Run rover dev to test my supergraph locally"
 - "Check my schema changes before deploying"
@@ -273,17 +257,13 @@ npx skills add https://github.com/apollographql/skills --skill rover
 Design GraphQL schemas following industry best practices for type design, naming, pagination, errors, and security.
 
 **Install:**
+
 ```bash
-# Skills CLI
-npx skills add https://github.com/apollographql/skills --skill graphql-schema
-
-# Claude Code
-/install-skill https://github.com/apollographql/skills --skill graphql-schema
-
-# Manual: Copy skills/graphql-schema to your .claude/skills directory
+npx npx skills add apollographql/skills --skill graphql-schema
 ```
 
 **Use when:**
+
 - Designing a new GraphQL schema or API
 - Reviewing existing schema for improvements
 - Deciding on type structures or nullability
@@ -291,6 +271,7 @@ npx skills add https://github.com/apollographql/skills --skill graphql-schema
 - Ensuring security in schema design
 
 **Categories covered:**
+
 - Type design patterns (interfaces, unions, custom scalars)
 - Naming conventions for types, fields, and arguments
 - Cursor-based pagination (Connection pattern)
@@ -298,6 +279,7 @@ npx skills add https://github.com/apollographql/skills --skill graphql-schema
 - Security best practices (depth limiting, complexity, authorization)
 
 **Examples:**
+
 - "Design a GraphQL schema for my e-commerce API"
 - "Review my schema for best practices"
 - "Add cursor-based pagination to my queries"
@@ -317,17 +299,13 @@ npx skills add https://github.com/apollographql/skills --skill graphql-schema
 Write GraphQL operations (queries, mutations, fragments) following best practices for client-side development.
 
 **Install:**
+
 ```bash
-# Skills CLI
-npx skills add https://github.com/apollographql/skills --skill graphql-operations
-
-# Claude Code
-/install-skill https://github.com/apollographql/skills --skill graphql-operations
-
-# Manual: Copy skills/graphql-operations to your .claude/skills directory
+npx npx skills add apollographql/skills --skill graphql-operations
 ```
 
 **Use when:**
+
 - Writing GraphQL queries or mutations
 - Organizing operations with fragments
 - Optimizing data fetching patterns
@@ -335,6 +313,7 @@ npx skills add https://github.com/apollographql/skills --skill graphql-operation
 - Reviewing operations for efficiency
 
 **Categories covered:**
+
 - Query patterns and optimization
 - Mutation patterns and error handling
 - Fragment organization and colocation
@@ -342,6 +321,7 @@ npx skills add https://github.com/apollographql/skills --skill graphql-operation
 - Tooling (GraphQL Code Generator, ESLint, IDE extensions)
 
 **Examples:**
+
 - "Write a query with pagination"
 - "Organize my operations with fragments"
 - "Set up GraphQL Code Generator for type safety"
@@ -356,22 +336,70 @@ npx skills add https://github.com/apollographql/skills --skill graphql-operation
 
 ---
 
+### rust-best-practices
+
+Write idiomatic Rust code following Apollo GraphQL's best practices handbook.
+
+**Install:**
+
+```bash
+npx npx skills add apollographql/skills --skill rust-best-practices
+```
+
+**Use when:**
+
+- Writing new Rust code or functions
+- Reviewing or refactoring existing Rust code
+- Deciding between borrowing vs cloning or ownership patterns
+- Implementing error handling with Result types
+- Optimizing Rust code for performance
+- Writing tests or documentation for Rust projects
+
+**Categories covered:**
+
+- Coding style and idioms (borrowing, Option/Result, iterators)
+- Clippy and linting discipline
+- Performance optimization and profiling
+- Error handling with thiserror and anyhow
+- Testing strategies and snapshot testing
+- Generics, static and dynamic dispatch
+- Type state pattern for compile-time safety
+- Documentation best practices
+- Pointer types and thread safety
+
+**Examples:**
+
+- "Review this Rust code for best practices"
+- "Help me decide between cloning and borrowing here"
+- "Add proper error handling to this function"
+
+**References:**
+[SKILL.md](skills/rust-best-practices/SKILL.md) ·
+[Style](skills/rust-best-practices/references/style.md) ·
+[Errors](skills/rust-best-practices/references/errors.md) ·
+[Performance](skills/rust-best-practices/references/performance.md) ·
+[Testing](skills/rust-best-practices/references/testing.md) ·
+[Advanced](skills/rust-best-practices/references/advanced.md)
+
+---
+
 ## Usage
 
 Skills activate automatically once installed. The agent uses them when relevant tasks are detected.
 
 You can also explicitly invoke a skill depending on your tool:
 
-| Tool | Automatic | Explicit Invocation |
-|------|-----------|---------------------|
-| Claude Code | Yes | Slash command (e.g., `/graphql-schema`) |
-| GitHub Copilot | Yes | `/agent` for custom agents, `@github` for GitHub skills |
-| Cursor | Yes | Rules matched by file patterns (no direct invocation) |
-| Windsurf | Yes | Slash command for workflows (e.g., `/workflow-name`) |
+| Tool           | Automatic | Explicit Invocation                                     |
+| -------------- | --------- | ------------------------------------------------------- |
+| Claude Code    | Yes       | Slash command (e.g., `/graphql-schema`)                 |
+| GitHub Copilot | Yes       | `/agent` for custom agents, `@github` for GitHub skills |
+| Cursor         | Yes       | Rules matched by file patterns (no direct invocation)   |
+| Windsurf       | Yes       | Slash command for workflows (e.g., `/workflow-name`)    |
 
 ## Skill Structure
 
 Each skill contains:
+
 - `SKILL.md` - Instructions for the agent (required)
 - `references/` - Supporting documentation (optional)
 
@@ -383,7 +411,7 @@ Each skill contains:
 - [Apollo Connectors Documentation](https://www.apollographql.com/docs/graphos/schema-design/connectors/)
 - [Apollo MCP Server](https://www.apollographql.com/docs/apollo-mcp-server/)
 - [Rover CLI Documentation](https://www.apollographql.com/docs/rover/)
-
+- [Rust Best Practices Handbook](https://github.com/apollographql/rust-best-practices)
 
 ## Disclaimer
 
