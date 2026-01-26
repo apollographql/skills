@@ -65,29 +65,51 @@ function AdminSection() {
 
 **Problem:** New client on every render causes cache loss.
 
-**Solution:** Create client outside component or use `useMemo`:
+**Solution:** Create client outside component or use a ref pattern:
+
 ```tsx
-// Bad - new client on every render
+// Bad - new client on every render (especially bad in SSR scenarios like Next.js)
 function App() {
   const client = new ApolloClient({ /* ... */ }); // Don't do this!
   return <ApolloProvider client={client}>...</ApolloProvider>;
 }
 
-// Good - module-level client
+// Good & simple - module-level client
 const client = new ApolloClient({ /* ... */ });
 function App() {
   return <ApolloProvider client={client}>...</ApolloProvider>;
 }
 
-// Good - useMemo for dynamic config
-function App() {
-  const client = useMemo(() => new ApolloClient({
-    uri: process.env.REACT_APP_GRAPHQL_URL,
-    cache: new InMemoryCache(),
-  }), []);
-
-  return <ApolloProvider client={client}>...</ApolloProvider>;
+// Good - store Apollo Client in a ref that is initialized once
+function useApolloClient(makeApolloClient: () => ApolloClient): ApolloClient {
+  const storeRef = useRef<ApolloClient | null>(null);
+  if (!storeRef.current) {
+    storeRef.current = makeApolloClient();
+  }
+  return storeRef.current;
 }
+
+// Better - singleton global in non-SSR environments to survive unmounts
+const singleton = Symbol.for('ApolloClientSingleton');
+declare global {
+  interface Window {
+    [singleton]?: ApolloClient;
+  }
+}
+
+function useApolloClient(makeApolloClient: () => ApolloClient): ApolloClient {
+  const storeRef = useRef<ApolloClient | null>(null);
+  if (!storeRef.current) {
+    if (typeof window === 'undefined') {
+      storeRef.current = makeApolloClient();
+    } else {
+      window[singleton] ??= makeApolloClient();
+      storeRef.current = window[singleton];
+    }
+  }
+  return storeRef.current;
+}
+// Note: this second option might need manual removal between tests
 ```
 
 ## Cache Issues
@@ -195,32 +217,45 @@ query GetUsers {
 
 **Problem:** No type safety for GraphQL operations.
 
-**Solution:** Set up GraphQL Code Generator:
+**Solution:** Set up GraphQL Code Generator with the [recommended starter configuration](https://www.apollographql.com/docs/react/development-testing/graphql-codegen#recommended-starter-configuration):
+
 ```bash
-npm install -D @graphql-codegen/cli @graphql-codegen/typescript \
-  @graphql-codegen/typescript-operations @graphql-codegen/typed-document-node
+npm install -D @graphql-codegen/cli @graphql-codegen/client-preset
 ```
 
-```yaml
-# codegen.yml
-schema: "http://localhost:4000/graphql"
-documents: "src/**/*.{ts,tsx}"
-generates:
-  src/generated/graphql.ts:
-    plugins:
-      - typescript
-      - typescript-operations
-      - typed-document-node
+```typescript
+// codegen.ts
+import { CodegenConfig } from '@graphql-codegen/cli';
+
+const config: CodegenConfig = {
+  overwrite: true,
+  schema: 'http://localhost:4000/graphql',
+  documents: 'src/**/*.{ts,tsx}',
+  ignoreNoDocuments: true,
+  generates: {
+    './src/gql/': {
+      preset: 'client',
+      config: {
+        documentMode: 'string',
+      },
+    },
+  },
+};
+
+export default config;
 ```
 
 ```json
 // package.json
 {
   "scripts": {
-    "codegen": "graphql-codegen"
+    "codegen": "graphql-codegen",
+    "codegen:watch": "graphql-codegen --watch"
   }
 }
 ```
+
+**Note**: Ensure a lint rule enforcing proper GraphQL operation patterns is active.
 
 ### Using Generated Types
 
@@ -276,7 +311,8 @@ query GetUserNames {
 
 **Problem:** Multiple network requests for related data.
 
-**Solution:** Structure queries to batch requests:
+**Solution:** Structure queries to batch requests. Best practice: use query colocation and compose queries from fragments defined on child components.
+
 ```graphql
 # Bad - separate queries
 query GetUser($id: ID!) { user(id: $id) { id name } }
@@ -299,26 +335,32 @@ query GetUserWithPosts($id: ID!) {
 
 **Problem:** Components re-render when unrelated cache data changes.
 
-**Solution:** Use selective field reading:
+**Solution:** Use `useFragment` and data masking for selective field reading, with a fallback to `useQuery` with `@nonreactive` directives.
+
 ```tsx
-// Read only what you need
+// Prefer useFragment with data masking
+const { data } = useFragment({
+  fragment: USER_FRAGMENT,
+  from: { __typename: 'User', id },
+});
+
+// Fallback: use @nonreactive directive
 const { data } = useQuery(GET_USER, {
   variables: { id },
-  // Only re-render when these fields change
-  returnPartialData: true,
 });
 ```
 
 ### Cache Misses
 
-**Debug:** Enable cache logging:
+**Debug:** Use Apollo DevTools to inspect cache (not cache logging which doesn't exist).
+
 ```typescript
 const client = new ApolloClient({
   cache: new InMemoryCache(),
-  connectToDevTools: true,
+  devtools: {
+    enabled: true, // Only set true when enabling in production
+  },
 });
-
-// Or use Apollo DevTools to inspect cache
 ```
 
 ## DevTools Usage
@@ -334,7 +376,9 @@ Install the browser extension:
 ```typescript
 const client = new ApolloClient({
   cache: new InMemoryCache(),
-  connectToDevTools: process.env.NODE_ENV === 'development',
+  devtools: {
+    enabled: true, // Only needed in production; default in development
+  },
 });
 ```
 
@@ -344,6 +388,8 @@ const client = new ApolloClient({
 2. **Queries**: See active queries and their states
 3. **Mutations**: Track mutation history
 4. **Explorer**: Build and test queries against your schema
+5. **Memoization Limits**: Monitor and track cache memoization
+6. **Cache Writes**: Track all writes to the cache
 
 ### Debugging Cache
 
@@ -351,9 +397,9 @@ const client = new ApolloClient({
 // Log cache contents
 console.log(JSON.stringify(client.cache.extract(), null, 2));
 
-// Check specific object
+// Check specific object using cache.identify
 console.log(client.cache.readFragment({
-  id: 'User:1',
+  id: cache.identify({ __typename: 'User', id: 1 }),
   fragment: gql`fragment _ on User { id name email }`,
 }));
 ```
@@ -374,6 +420,8 @@ query GetUsers {
   }
 }
 ```
+
+**Additional advice**: Read the full error message thoroughly.
 
 ### "Store reset while query was in flight"
 
@@ -397,28 +445,17 @@ await client.resetStore();
 - Check that `gql` tagged templates are valid GraphQL
 - Verify cache configuration matches your schema
 
-### "Query was cancelled"
-
-**Cause:** Component unmounted before query completed.
-
-**Solution:** This is usually expected behavior. If problematic:
-```tsx
-// The query will continue but won't update unmounted component
-const { data } = useQuery(QUERY, {
-  // This prevents the warning
-  fetchPolicy: 'cache-and-network',
-});
-```
-
 ### "Cannot read property 'X' of undefined"
 
 **Cause:** Accessing data before query completes.
 
-**Solution:** Check loading state:
-```tsx
-const { data, loading } = useQuery(GET_USER);
+**Solution:** Check `dataState` (not just loading state) for TypeScript type safety:
 
-if (loading) return <Spinner />;
+```tsx
+const { data, dataState } = useQuery(GET_USER);
+
+// Use dataState for proper type narrowing
+if (dataState === 'loading') return <Spinner />;
 
 // Now data is guaranteed to exist
 return <div>{data.user.name}</div>;

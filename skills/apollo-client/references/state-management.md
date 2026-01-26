@@ -12,6 +12,8 @@
 
 Reactive variables are a way to store local state outside of the Apollo Client cache while still triggering reactive updates.
 
+**Important**: Reactive variables are still variables storing a value. They only notify `ApolloClient` instances when the variable changes, but they do not have one separate value per ApolloClient instance. In a multi-user environment like during SSR, global or module-level reactive variables could be shared between users and cause data leaks. In frameworks that use SSR, always avoid storing reactive variables as globals.
+
 ### Creating Reactive Variables
 
 ```typescript
@@ -91,6 +93,19 @@ export function addNotification(notification: Notification) {
 
 Local-only fields are fields defined in queries but resolved entirely on the client using the `@client` directive.
 
+**Important**: To use any `@client` fields, you need to add `LocalState` to the `ApolloClient` initialization:
+
+```typescript
+import { ApolloClient, InMemoryCache } from '@apollo/client';
+import { LocalState } from '@apollo/client/local-state';
+
+const client = new ApolloClient({
+  cache: new InMemoryCache(),
+  localState: new LocalState({}),
+  // ... other options
+});
+```
+
 ### Basic @client Fields
 
 ```tsx
@@ -123,6 +138,8 @@ function UserCard({ userId }: { userId: string }) {
 
 ### Defining Local Field Resolvers
 
+Local field resolvers are defined in entity-level type policies (different from query-level `@client` resolvers):
+
 ```typescript
 const cache = new InMemoryCache({
   typePolicies: {
@@ -154,42 +171,30 @@ const cache = new InMemoryCache({
 
 ### Query-Level Local Fields
 
+Query-level local fields can be defined using `LocalState` resolvers:
+
 ```typescript
-const cache = new InMemoryCache({
-  typePolicies: {
-    Query: {
-      fields: {
-        // Local state from reactive variable
-        isLoggedIn: {
-          read() {
-            return isLoggedInVar();
-          },
-        },
+import { LocalState } from '@apollo/client/local-state';
 
-        cartItems: {
-          read() {
-            return cartItemsVar();
-          },
-        },
-
-        // Local state with arguments
-        notification: {
-          read(_, { args }) {
-            return notificationsVar().find((n) => n.id === args?.id);
-          },
-        },
-
-        // Combining local and remote
-        currentUser: {
-          read(_, { toReference }) {
-            const userId = currentUserIdVar();
-            if (!userId) return null;
-            return toReference({ __typename: 'User', id: userId });
-          },
+const client = new ApolloClient({
+  cache: new InMemoryCache(),
+  localState: new LocalState({
+    resolvers: {
+      Query: {
+        isLoggedIn: () => isLoggedInVar(),
+        cartItems: () => cartItemsVar(),
+        notification: (_, { id }) => notificationsVar().find((n) => n.id === id),
+        currentUser: (_, __, { cache }) => {
+          const userId = currentUserIdVar();
+          if (!userId) return null;
+          return cache.readFragment({
+            id: cache.identify({ __typename: 'User', id: userId }),
+            fragment: gql`fragment CurrentUser on User { id name email }`,
+          });
         },
       },
     },
-  },
+  }),
 });
 ```
 
@@ -262,28 +267,45 @@ const cache = new InMemoryCache({
 
 ### Local Mutations
 
+Define local mutation resolvers using `LocalState`:
+
 ```tsx
+import { LocalState } from '@apollo/client/local-state';
+
+const client = new ApolloClient({
+  cache: new InMemoryCache(),
+  localState: new LocalState({
+    resolvers: {
+      Mutation: {
+        addToCart: (_, { productId, quantity }) => {
+          const current = cartItemsVar();
+          const existing = current.find((item) => item.productId === productId);
+
+          if (existing) {
+            cartItemsVar(
+              current.map((item) =>
+                item.productId === productId
+                  ? { ...item, quantity: item.quantity + quantity }
+                  : item
+              )
+            );
+          } else {
+            cartItemsVar([...current, { productId, quantity }]);
+          }
+          return true;
+        },
+      },
+    },
+  }),
+});
+
 const ADD_TO_CART = gql`
   mutation AddToCart($productId: ID!, $quantity: Int!) {
     addToCart(productId: $productId, quantity: $quantity) @client
   }
 `;
 
-// Define local mutation resolver
-const cache = new InMemoryCache({
-  typePolicies: {
-    Mutation: {
-      fields: {
-        addToCart: {
-          // Note: This pattern is less common in Apollo Client 4.x
-          // Prefer using reactive variables directly
-        },
-      },
-    },
-  },
-});
-
-// Better approach: Use reactive variable directly
+// Better approach: Use reactive variable directly with a custom hook
 function useAddToCart() {
   return (productId: string, quantity: number) => {
     const current = cartItemsVar();
@@ -318,18 +340,33 @@ export function updateCart(items: CartItem[]) {
   localStorage.setItem('cart', JSON.stringify(items));
 }
 
-// Or use a subscription pattern
-import { useEffect } from 'react';
-
-function CartPersistence() {
-  const cartItems = useReactiveVar(cartItemsVar);
-
-  useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cartItems));
-  }, [cartItems]);
-
-  return null;
+// Use a listener on the reactive variable for automatic persistence
+// This requires careful implementation to avoid memory leaks
+function subscribeToVariable<T>(
+  weakRef: WeakRef<ReactiveVar<T>>,
+  callback: (value: T) => void
+) {
+  const reactiveVar = weakRef.deref();
+  if (!reactiveVar) return;
+  
+  const onNextChange = reactiveVar.onNextChange(() => {
+    const currentVar = weakRef.deref();
+    if (currentVar) {
+      callback(currentVar());
+      onNextChange();
+    }
+  });
 }
+
+// Create reactive variable with persistence
+const cartItemsVar = makeVar<CartItem[]>(
+  JSON.parse(localStorage.getItem('cart') || '[]')
+);
+
+subscribeToVariable(
+  new WeakRef(cartItemsVar),
+  (items) => localStorage.setItem('cart', JSON.stringify(items))
+);
 ```
 
 ## useReactiveVar Hook
@@ -399,7 +436,7 @@ function AppLayout() {
 
 ```tsx
 function NotificationBadge() {
-  // Only renders when notifications change
+  // Component re-renders only when notifications change
   const notifications = useReactiveVar(notificationsVar);
   const unreadCount = notifications.filter((n) => !n.read).length;
 
