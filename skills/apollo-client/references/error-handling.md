@@ -1,123 +1,208 @@
-# Error Handling Reference
+# Error Handling Reference (Apollo Client 4.x)
 
-<!-- TODO: This entire file needs to be rewritten for Apollo Client v4.
-The error handling has been completely changed from v3 to v4.
-See:
-- Error handling guide: https://www.apollographql.com/docs/react/data/error-handling
-- Migration guide: https://www.apollographql.com/docs/react/migrating/apollo-client-4-migration#new-error-handling
-
-Key changes needed:
-1. Update error handling patterns for v4
-2. Update errorPolicy behavior and options
-3. Update error link examples
-4. Update retry logic for v4
-5. Ensure all examples align with v4 best practices
--->
+Apollo Client 4.x introduces significant improvements to error handling with specific error classes and more precise typing.
 
 ## Table of Contents
 
+- [Understanding Errors](#understanding-errors)
 - [Error Types](#error-types)
-- [Error Policy](#error-policy)
+- [Identifying Error Types](#identifying-error-types)
+- [GraphQL Error Policies](#graphql-error-policies)
 - [Error Links](#error-links)
 - [Retry Logic](#retry-logic)
 - [Error Boundaries](#error-boundaries)
 
-## Error Types
+## Understanding Errors
 
-Apollo Client distinguishes between GraphQL errors and network errors.
+Errors in Apollo Client fall into two main categories: **GraphQL errors** and **network errors**. Each category has specific error classes that provide detailed information about what went wrong.
 
 ### GraphQL Errors
 
-GraphQL errors are returned in the `errors` array of the response. The request succeeded at the network level.
+GraphQL errors are related to server-side execution of a GraphQL operation:
 
-```typescript
-// Response with GraphQL error
+- **Syntax errors** (e.g., malformed query)
+- **Validation errors** (e.g., query includes a non-existent schema field)
+- **Resolver errors** (e.g., error while populating a query field)
+
+If a syntax or validation error occurs, the server doesn't execute the operation. If resolver errors occur, the server can still return partial data.
+
+Example server response with GraphQL error:
+
+```json
 {
-  "data": { "user": null },
   "errors": [
     {
-      "message": "User not found",
-      "path": ["user"],
+      "message": "Cannot query field \"nonexistentField\" on type \"Query\".",
+      "locations": [{ "line": 2, "column": 3 }],
       "extensions": {
-        "code": "NOT_FOUND"
+        "code": "GRAPHQL_VALIDATION_FAILED"
       }
     }
-  ]
+  ],
+  "data": null
 }
 ```
 
+In Apollo Client 4.x, GraphQL errors are represented by the [`CombinedGraphQLErrors`](https://apollographql.com/docs/react/api/errors/CombinedGraphQLErrors) error type.
+
 ### Network Errors
 
-Network errors occur when the request fails to reach the server or the server fails to respond.
+Network errors occur when attempting to communicate with your GraphQL server:
+
+- `4xx` or `5xx` HTTP response status codes
+- Network unavailability
+- JSON parsing failures
+- Custom errors from Apollo Link request handlers
+
+## Error Types
+
+Apollo Client 4.x provides specific error classes for different error scenarios:
+
+### CombinedGraphQLErrors
+
+Represents GraphQL errors returned by the server. Most common error type in applications.
 
 ```tsx
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
+
 function UserProfile({ userId }: { userId: string }) {
-  const { data, error, loading } = useQuery(GET_USER, {
+  const { data, error } = useQuery(GET_USER, {
     variables: { id: userId },
   });
 
-  if (error) {
-    // Check error type
-    if (error.networkError) {
-      // Network-level failure
-      console.error('Network error:', error.networkError.message);
-      return <p>Network error. Please check your connection.</p>;
-    }
-
-    if (error.graphQLErrors.length > 0) {
-      // GraphQL-level errors
-      return (
-        <div>
-          {error.graphQLErrors.map((err, i) => (
-            <p key={i}>Error: {err.message}</p>
-          ))}
-        </div>
-      );
-    }
+  if (error && CombinedGraphQLErrors.is(error)) {
+    // Handle GraphQL errors
+    return (
+      <div>
+        {error.graphQLErrors.map((err, i) => (
+          <p key={i}>GraphQL Error: {err.message}</p>
+        ))}
+      </div>
+    );
   }
 
   return data ? <Profile user={data.user} /> : null;
 }
 ```
 
-### ApolloError Structure
+### CombinedProtocolErrors
 
-```typescript
-interface ApolloError extends Error {
-  message: string;
-  graphQLErrors: ReadonlyArray<GraphQLError>;
-  networkError: Error | null;
-  extraInfo: any;
+Represents fatal transport-level errors during multipart HTTP subscription execution.
+
+### ServerError
+
+Occurs when the server responds with a non-200 HTTP status code.
+
+```tsx
+import { ServerError } from '@apollo/client/errors';
+
+if (error && ServerError.is(error)) {
+  console.error('Server error:', error.statusCode, error.result);
 }
 ```
 
-## Error Policy
+### ServerParseError
 
-Control how errors are handled per query/mutation.
-
-| Policy | GraphQL Errors | Network Errors | Data |
-|--------|---------------|----------------|------|
-| `none` (default) | Throws | Throws | Discarded |
-| `ignore` | Ignored | Throws | Used |
-| `all` | Returned in `error` | Throws | Used |
-
-### Using errorPolicy
+Occurs when the server response cannot be parsed as valid JSON.
 
 ```tsx
-// Get both data and errors
-const { data, error } = useQuery(GET_USERS, {
-  errorPolicy: 'all',
-});
+import { ServerParseError } from '@apollo/client/errors';
 
-// Handle partial success
-if (data?.users) {
-  // Some data was returned
-  renderUsers(data.users);
+if (error && ServerParseError.is(error)) {
+  console.error('Invalid JSON response:', error.bodyText);
 }
+```
 
-if (error?.graphQLErrors) {
-  // Some fields had errors
-  showWarning(error.graphQLErrors);
+### LocalStateError
+
+Represents errors in local state configuration or execution.
+
+### UnconventionalError
+
+Wraps non-standard errors (e.g., thrown symbols or objects) to ensure consistent error handling.
+
+## Identifying Error Types
+
+Every Apollo Client error class provides a static `is` method that reliably determines whether an error is of that specific type. This is more robust than `instanceof` because it avoids false positives/negatives.
+
+```ts
+import {
+  CombinedGraphQLErrors,
+  CombinedProtocolErrors,
+  LocalStateError,
+  ServerError,
+  ServerParseError,
+  UnconventionalError,
+} from '@apollo/client/errors';
+
+function handleError(error: unknown) {
+  if (CombinedGraphQLErrors.is(error)) {
+    // Handle GraphQL errors
+    console.error('GraphQL errors:', error.graphQLErrors);
+  } else if (CombinedProtocolErrors.is(error)) {
+    // Handle multipart subscription protocol errors
+  } else if (LocalStateError.is(error)) {
+    // Handle errors thrown by the LocalState class
+  } else if (ServerError.is(error)) {
+    // Handle server HTTP errors
+    console.error('Server error:', error.statusCode);
+  } else if (ServerParseError.is(error)) {
+    // Handle JSON parse errors
+  } else if (UnconventionalError.is(error)) {
+    // Handle errors thrown by irregular types
+  } else {
+    // Handle other errors
+  }
+}
+```
+
+## GraphQL Error Policies
+
+If a GraphQL operation produces errors, the server's response might still include partial data:
+
+```json
+{
+  "data": {
+    "getInt": 12,
+    "getString": null
+  },
+  "errors": [
+    {
+      "message": "Failed to get string!"
+    }
+  ]
+}
+```
+
+By default, Apollo Client throws away partial data and populates the `error` field. You can use partial results by defining an **error policy**:
+
+| Policy   | Description                                                                                                                                                                           |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `none`   | (Default) If the response includes errors, they are returned in `error` and response `data` is set to `undefined` even if the server returns `data`.                                 |
+| `ignore` | Errors are ignored (`error` is not populated), and any returned `data` is cached and rendered as if no errors occurred. `data` may be `undefined` if a network error occurs.          |
+| `all`    | Both `data` and `error` are populated and any returned `data` is cached, enabling you to render both partial results and error information.                                          |
+
+### Setting an Error Policy
+
+```tsx
+const MY_QUERY = gql`
+  query WillFail {
+    badField  # This field's resolver produces an error
+    goodField # This field is populated successfully
+  }
+`;
+
+function ShowingSomeErrors() {
+  const { loading, error, data } = useQuery(MY_QUERY, { errorPolicy: 'all' });
+
+  if (loading) return <span>loading...</span>;
+
+  return (
+    <div>
+      <h2>Good: {data?.goodField}</h2>
+      {error && <pre>Bad: {error.message}</pre>}
+    </div>
+  );
 }
 ```
 
@@ -143,12 +228,13 @@ const client = new ApolloClient({
 
 ## Error Links
 
-Use `onError` link to handle errors globally.
+Use the `onError` link to handle errors globally across your application.
 
 ### Basic Error Link
 
 ```typescript
 import { onError } from '@apollo/client/link/error';
+import { ApolloLink } from '@apollo/client';
 
 const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
   if (graphQLErrors) {
@@ -166,7 +252,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
   }
 
   if (networkError) {
-    console.error(`[Network error]: ${networkError}`);
+    console.error(`[Network error]:`, networkError);
   }
 });
 ```
@@ -174,7 +260,8 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
 ### Composing Links
 
 ```typescript
-import { ApolloClient, HttpLink, from } from '@apollo/client';
+import { ApolloClient, InMemoryCache, ApolloLink } from '@apollo/client';
+import { HttpLink } from '@apollo/client/link/http';
 import { onError } from '@apollo/client/link/error';
 
 const httpLink = new HttpLink({
@@ -187,15 +274,15 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 
 const client = new ApolloClient({
   cache: new InMemoryCache(),
-  link: from([errorLink, httpLink]),
+  link: ApolloLink.from([errorLink, httpLink]),
 });
 ```
 
-### Forwarding Operations
+### Retrying Operations with Error Link
 
 ```typescript
 import { onError } from '@apollo/client/link/error';
-import { Observable } from '@apollo/client';
+import { Observable } from 'rxjs';
 
 const errorLink = onError(({ graphQLErrors, operation, forward }) => {
   if (graphQLErrors) {
