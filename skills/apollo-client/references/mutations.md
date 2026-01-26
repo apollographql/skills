@@ -248,7 +248,6 @@ Optimistic UI immediately reflects the expected result of a mutation before the 
 ```tsx
 const [addTodo] = useMutation(ADD_TODO, {
   optimisticResponse: {
-    __typename: 'Mutation',
     addTodo: {
       __typename: 'Todo',
       id: 'temp-id',

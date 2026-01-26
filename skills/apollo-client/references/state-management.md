@@ -342,33 +342,10 @@ export function updateCart(items: CartItem[]) {
   localStorage.setItem('cart', JSON.stringify(items));
 }
 
-// Use a listener on the reactive variable for automatic persistence
-// This requires careful implementation to avoid memory leaks
-function subscribeToVariable<T>(
-  weakRef: WeakRef<ReactiveVar<T>>,
-  callback: (value: T) => void
-) {
-  const reactiveVar = weakRef.deref();
-  if (!reactiveVar) return;
-  
-  const onNextChange = reactiveVar.onNextChange(() => {
-    const currentVar = weakRef.deref();
-    if (currentVar) {
-      callback(currentVar());
-      onNextChange();
-    }
-  });
-}
-
-// Create reactive variable with persistence
-const cartItemsVar = makeVar<CartItem[]>(
-  JSON.parse(localStorage.getItem('cart') || '[]')
-);
-
-subscribeToVariable(
-  new WeakRef(cartItemsVar),
-  (items) => localStorage.setItem('cart', JSON.stringify(items))
-);
+// TODO: For automatic persistence with reactive variable listeners, 
+// implement a proper subscription mechanism that avoids memory leaks.
+// This requires careful handling of WeakRef and onNextChange to prevent
+// infinite loops and memory issues.
 ```
 
 ## useReactiveVar Hook

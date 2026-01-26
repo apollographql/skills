@@ -143,7 +143,7 @@ const cache = new InMemoryCache({
     // parent entity. The same object might end up multiple times in the cache 
     // and run out of sync. Use with caution, only if this object really relates 
     // to a property of their parent entity and cannot exist on its own.)
-    Author: {
+    Address: {
       keyFields: false
     },
   },
