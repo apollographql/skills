@@ -29,10 +29,14 @@ npm install @apollo/client graphql rxjs
 
 For TypeScript type generation (recommended):
 ```bash
+# Basic setup - generates types only
+npm install -D @graphql-codegen/cli @graphql-codegen/typescript @graphql-codegen/typescript-operations
+
+# OR: With typed-document-node plugin - precompiles queries (larger bundle, fewer runtime inconsistencies)
 npm install -D @graphql-codegen/cli @graphql-codegen/typescript @graphql-codegen/typescript-operations @graphql-codegen/typed-document-node
 ```
 
-See the [GraphQL Code Generator documentation](https://www.apollographql.com/docs/react/development-testing/graphql-codegen#recommended-starter-configuration) for the recommended configuration.
+See the [GraphQL Code Generator documentation](https://www.apollographql.com/docs/react/development-testing/graphql-codegen#recommended-starter-configuration) for the recommended configuration. The typed-document-node plugin has a bundle size tradeoff but can prevent inconsistencies - choose based on your needs.
 
 ### Step 2: Create Client
 
