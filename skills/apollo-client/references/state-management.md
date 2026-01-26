@@ -355,11 +355,11 @@ function subscribeToVariable<T>(
   const reactiveVar = weakRef.deref();
   if (!reactiveVar) return;
   
-  const onNextChange = reactiveVar.onNextChange(() => {
+  reactiveVar.onNextChange(function onNextChange() {
     const currentVar = weakRef.deref();
     if (currentVar) {
       callback(currentVar());
-      onNextChange();
+      currentVar.onNextChange(onNextChange);
     }
   });
 }
