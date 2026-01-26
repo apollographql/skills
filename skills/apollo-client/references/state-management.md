@@ -106,7 +106,7 @@ const client = new ApolloClient({
 });
 ```
 
-> **Note**: `LocalState` is an Apollo Client 4.x concept and did not exist as a class in previous versions.
+> **Note**: `LocalState` is an Apollo Client 4.x concept and did not exist as a class in previous versions. In previous versions, a `localState` option was not necessary, and local resolvers (if used) could be passed directly to the `ApolloClient` constructor.
 
 ### Basic @client Fields
 
@@ -173,7 +173,7 @@ const cache = new InMemoryCache({
 
 ### Query-Level Local Resolvers
 
-Query-level local fields can be defined using `LocalState` resolvers. **Note**: Do not read reactive variables inside LocalState resolvers - this is not a documented feature.
+Query-level local fields can be defined using `LocalState` resolvers. **Note**: Do not read reactive variables inside LocalState resolvers - this is not a documented/tested feature. It might not behave as expected.
 
 ```typescript
 import { LocalState } from '@apollo/client/local-state';

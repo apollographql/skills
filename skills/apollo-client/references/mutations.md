@@ -397,7 +397,7 @@ There are three refetch notations:
 
 - **String**: `refetchQueries: ['getTodos']` - refetches all active `getTodos` queries
 - **Query document**: `refetchQueries: [GET_TODOS]` - refetches all active queries using this document
-- **Object**: `refetchQueries: [{ query: GET_TODOS }, { query: GET_TODOS, variables: { page: 25 } }]` - **fetches** (not necessarily refetches) the query, regardless if it's actively used in the UI
+- **Object**: `refetchQueries: [{ query: GET_TODOS }, { query: GET_TODOS, variables: { page: 25 } }]` - **fetches** the query, regardless if it's actively used in the UI
 
 ```tsx
 const [addTodo] = useMutation(ADD_TODO, {
@@ -448,7 +448,7 @@ const [addTodo] = useMutation(ADD_TODO, {
 
 ### onQueryUpdated
 
-Returning `true` from `onQueryUpdated` causes a refetch. Don't call `refetch()` manually as it won't retain the query and might cancel it early.
+Returning `true` from `onQueryUpdated` causes a refetch. Don't call `refetch()` manually inside `onQueryUpdated`, as it won't retain the query and might cancel it early.
 
 ```tsx
 const [addTodo] = useMutation(ADD_TODO, {

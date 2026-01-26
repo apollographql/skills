@@ -103,6 +103,7 @@ Use `TypedDocumentNode` instead of generic type parameters for better type safet
 
 ```typescript
 import { gql, TypedDocumentNode } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 
 interface GetDogData {
   dog: {
