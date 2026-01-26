@@ -1,0 +1,44 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        skill:
+          - apollo-client
+          - apollo-connectors
+          - apollo-mcp-server
+          - apollo-server
+          - graphql-operations
+          - graphql-schema
+          - rover
+          - rust-best-practices
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install ${{ matrix.skill }}
+        run: |
+          npx skills add apollographql/skills --skill ${{ matrix.skill }} --agent claude-code --yes
+
+      - name: Verify installation
+        run: |
+          echo "=== Installed skill files ==="
+          ls -la .claude/skills/
+
+          echo ""
+          echo "=== Skill content ==="
+          content=$(find -L .claude/skills/ -name "*.md" -exec cat {} \;)
+          if [ -z "$content" ]; then
+            echo "Error: No skill content found"
+            exit 1
+          fi
+          echo "$content"
