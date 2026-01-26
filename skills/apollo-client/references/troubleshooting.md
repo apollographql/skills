@@ -357,8 +357,10 @@ const { data } = useQuery(GET_USER, {
 ```typescript
 const client = new ApolloClient({
   cache: new InMemoryCache(),
+  // DevTools are enabled by default in development
+  // Only configure this when you need to enable them in production
   devtools: {
-    enabled: true, // Only set true when enabling in production
+    enabled: true,
   },
 });
 ```
@@ -373,11 +375,13 @@ Install the browser extension:
 
 ### Enabling DevTools
 
+DevTools are enabled by default in development. Only configure this setting if you need to enable them in production:
+
 ```typescript
 const client = new ApolloClient({
   cache: new InMemoryCache(),
   devtools: {
-    enabled: true, // Only needed in production; default in development
+    enabled: true, // Set to true to enable in production
   },
 });
 ```
