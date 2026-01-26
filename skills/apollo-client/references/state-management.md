@@ -97,8 +97,6 @@ Local-only fields are fields defined in queries but resolved entirely on the cli
 
 ```typescript
 import { ApolloClient, InMemoryCache } from '@apollo/client';
-// TODO: Verify correct import path for LocalState in Apollo Client 4.x
-// May need to be '@apollo/client' instead of '@apollo/client/local-state'
 import { LocalState } from '@apollo/client/local-state';
 
 const client = new ApolloClient({
@@ -107,6 +105,8 @@ const client = new ApolloClient({
   // ... other options
 });
 ```
+
+> **Note**: `LocalState` is an Apollo Client 4.x concept and did not exist as a class in previous versions.
 
 ### Basic @client Fields
 
@@ -138,9 +138,9 @@ function UserCard({ userId }: { userId: string }) {
 }
 ```
 
-### Defining Local Field Resolvers
+### Local Field Read Functions (Type Policies)
 
-Local field resolvers are defined in entity-level type policies (different from query-level `@client` resolvers):
+Local field `read` functions are defined in entity-level type policies. These are **not** called "resolvers". You can use reactive variables inside these `read` functions, along with other calculations or derived values:
 
 ```typescript
 const cache = new InMemoryCache({
@@ -155,7 +155,7 @@ const cache = new InMemoryCache({
           },
         },
 
-        // Computed local field
+        // Computed local field (derived value)
         displayName: {
           read(_, { readField }) {
             const name = readField('name');
@@ -169,11 +169,11 @@ const cache = new InMemoryCache({
 });
 ```
 
-## Type Policies for Local State
+## LocalState Resolvers
 
-### Query-Level Local Fields
+### Query-Level Local Resolvers
 
-Query-level local fields can be defined using `LocalState` resolvers:
+Query-level local fields can be defined using `LocalState` resolvers. **Note**: Do not read reactive variables inside LocalState resolvers - this is not a documented feature. Use type policy `read` functions for that instead.
 
 ```typescript
 import { LocalState } from '@apollo/client/local-state';
@@ -269,7 +269,7 @@ const cache = new InMemoryCache({
 
 ### Local Mutations
 
-Define local mutation resolvers using `LocalState`:
+For local mutations, prefer writing to the cache over using reactive variables:
 
 ```tsx
 import { LocalState } from '@apollo/client/local-state';
@@ -279,21 +279,26 @@ const client = new ApolloClient({
   localState: new LocalState({
     resolvers: {
       Mutation: {
-        addToCart: (_, { productId, quantity }) => {
-          const current = cartItemsVar();
-          const existing = current.find((item) => item.productId === productId);
-
-          if (existing) {
-            cartItemsVar(
-              current.map((item) =>
+        addToCart: (_, { productId, quantity }, { cache }) => {
+          // Read current cart from cache
+          const { cart } = cache.readQuery({ query: GET_CART }) || { cart: [] };
+          
+          const existing = cart.find((item) => item.productId === productId);
+          
+          const updatedCart = existing
+            ? cart.map((item) =>
                 item.productId === productId
                   ? { ...item, quantity: item.quantity + quantity }
                   : item
               )
-            );
-          } else {
-            cartItemsVar([...current, { productId, quantity }]);
-          }
+            : [...cart, { productId, quantity, __typename: 'CartItem' }];
+          
+          // Write updated cart back to cache
+          cache.writeQuery({
+            query: GET_CART,
+            data: { cart: updatedCart },
+          });
+          
           return true;
         },
       },
@@ -307,7 +312,7 @@ const ADD_TO_CART = gql`
   }
 `;
 
-// Better approach: Use reactive variable directly with a custom hook
+// Alternative approach: Use a custom hook with reactive variables
 function useAddToCart() {
   return (productId: string, quantity: number) => {
     const current = cartItemsVar();
@@ -342,10 +347,33 @@ export function updateCart(items: CartItem[]) {
   localStorage.setItem('cart', JSON.stringify(items));
 }
 
-// TODO: For automatic persistence with reactive variable listeners, 
-// implement a proper subscription mechanism that avoids memory leaks.
-// This requires careful handling of WeakRef and onNextChange to prevent
-// infinite loops and memory issues.
+// Use a listener on the reactive variable for automatic persistence
+// This requires careful implementation to avoid memory leaks
+function subscribeToVariable<T>(
+  weakRef: WeakRef<ReactiveVar<T>>,
+  callback: (value: T) => void
+) {
+  const reactiveVar = weakRef.deref();
+  if (!reactiveVar) return;
+  
+  const onNextChange = reactiveVar.onNextChange(() => {
+    const currentVar = weakRef.deref();
+    if (currentVar) {
+      callback(currentVar());
+      onNextChange();
+    }
+  });
+}
+
+// Create reactive variable with persistence
+const cartItemsVar = makeVar<CartItem[]>(
+  JSON.parse(localStorage.getItem('cart') || '[]')
+);
+
+subscribeToVariable(
+  new WeakRef(cartItemsVar),
+  (items) => localStorage.setItem('cart', JSON.stringify(items))
+);
 ```
 
 ## useReactiveVar Hook
@@ -408,19 +436,5 @@ function AppLayout() {
       </main>
     </div>
   );
-}
-```
-
-### Conditional Subscriptions
-
-```tsx
-function NotificationBadge() {
-  // Component re-renders only when notifications change
-  const notifications = useReactiveVar(notificationsVar);
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
-  if (unreadCount === 0) return null;
-
-  return <span className="badge">{unreadCount}</span>;
 }
 ```

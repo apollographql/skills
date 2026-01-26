@@ -74,7 +74,8 @@ function App() {
   return <ApolloProvider client={client}>...</ApolloProvider>;
 }
 
-// Good & simple - module-level client
+// Okay if there is a 100% guarantee this application will never use SSR
+// For SSR-enabled applications, use the ref-based patterns below instead
 const client = new ApolloClient({ /* ... */ });
 function App() {
   return <ApolloProvider client={client}>...</ApolloProvider>;
@@ -220,7 +221,7 @@ query GetUsers {
 **Solution:** Set up GraphQL Code Generator with the [recommended starter configuration](https://www.apollographql.com/docs/react/development-testing/graphql-codegen#recommended-starter-configuration):
 
 ```bash
-npm install -D @graphql-codegen/cli @graphql-codegen/client-preset
+npm install -D @graphql-codegen/cli @graphql-codegen/typescript @graphql-codegen/typescript-operations @graphql-codegen/typed-document-node
 ```
 
 ```typescript
@@ -233,11 +234,19 @@ const config: CodegenConfig = {
   documents: 'src/**/*.{ts,tsx}',
   ignoreNoDocuments: true,
   generates: {
-    './src/gql/': {
+    'src/gql/': {
       preset: 'client',
-      config: {
-        documentMode: 'string',
+      presetConfig: {
+        fragmentMasking: { unmaskFunctionName: 'getFragmentData' },
       },
+      plugins: [],
+    },
+    'src/gql/graphql.ts': {
+      plugins: [
+        'typescript',
+        'typescript-operations',
+        'typed-document-node',
+      ],
     },
   },
 };
@@ -335,7 +344,7 @@ query GetUserWithPosts($id: ID!) {
 
 **Problem:** Components re-render when unrelated cache data changes.
 
-**Solution:** Use `useFragment` and data masking for selective field reading, with a fallback to `useQuery` with `@nonreactive` directives.
+**Solution:** Use `useFragment` and data masking for selective field reading. If that is not possible, `useQuery` with `@nonreactive` directives might be an alternative.
 
 ```tsx
 // Prefer useFragment with data masking
@@ -344,7 +353,21 @@ const { data } = useFragment({
   from: { __typename: 'User', id },
 });
 
-// Fallback: use @nonreactive directive
+// Alternative: use @nonreactive directive
+const GET_USER = gql`
+  query GetUser($id: ID!) {
+    user(id: $id) {
+      id
+      name
+      # This field won't trigger re-renders when it changes
+      metadata @nonreactive {
+        lastSeen
+        preferences
+      }
+    }
+  }
+`;
+
 const { data } = useQuery(GET_USER, {
   variables: { id },
 });
@@ -352,7 +375,7 @@ const { data } = useQuery(GET_USER, {
 
 ### Cache Misses
 
-**Debug:** Use Apollo DevTools to inspect cache (not cache logging which doesn't exist).
+**Debug:** Use Apollo DevTools to inspect cache.
 
 ```typescript
 const client = new ApolloClient({
@@ -453,13 +476,14 @@ await client.resetStore();
 
 **Cause:** Accessing data before query completes.
 
-**Solution:** Check `dataState` (not just loading state) for TypeScript type safety:
+**Solution:** Check `dataState` for proper type narrowing:
 
 ```tsx
 const { data, dataState } = useQuery(GET_USER);
 
-// Use dataState for proper type narrowing
-if (dataState === 'loading') return <Spinner />;
+// dataState can be "complete", "partial", "streaming", or "empty"
+// It describes the completeness of the data, not a loading state
+if (dataState === 'empty') return <Spinner />;
 
 // Now data is guaranteed to exist
 return <div>{data.user.name}</div>;

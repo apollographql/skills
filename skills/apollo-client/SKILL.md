@@ -29,10 +29,10 @@ npm install @apollo/client graphql rxjs
 
 For TypeScript type generation (recommended):
 ```bash
-npm install -D @graphql-codegen/cli @graphql-codegen/typescript @graphql-codegen/typescript-operations @graphql-codegen/client-preset
+npm install -D @graphql-codegen/cli @graphql-codegen/typescript @graphql-codegen/typescript-operations @graphql-codegen/typed-document-node
 ```
 
-See the [GraphQL Code Generator documentation](https://www.apollographql.com/docs/react/development-testing/graphql-codegen) for recommended configuration options. Choose between the client-preset for minimal setup or @graphql-codegen/typed-document-node for precompiled queries based on your bundle size preferences.
+See the [GraphQL Code Generator documentation](https://www.apollographql.com/docs/react/development-testing/graphql-codegen#recommended-starter-configuration) for the recommended configuration.
 
 ### Step 2: Create Client
 
@@ -303,20 +303,21 @@ Detailed documentation for specific topics:
 - Disable normalization by setting `keyFields: false` for types that don't include an identifier and are meant to group related fields under the parent
 - Use `typePolicies` for pagination and computed fields
 - Understand cache normalization to debug issues
-- Recommend [data masking](https://www.apollographql.com/docs/react/data/fragments#data-masking) for all new applications
+- **Enable [data masking](https://www.apollographql.com/docs/react/data/fragments#data-masking) for all new applications** - it prevents components from accessing fragment data they don't own, enforcing proper data boundaries and preventing over-rendering
 
 ### Performance
 
 - Avoid over-fetching with proper field selection
 - Configure appropriate `fetchPolicy` per use case
-- Use `@defer` and `@stream` for large responses (available in Apollo Client 4.1+)
-- Prefer data loading in a suspenseful way when possible
+- Use `@defer` for incremental delivery of deferred query parts, and `@stream` for streaming list fields (`@stream` available in Apollo Client 4.1+)
+- **Prefer Suspense hooks (`useSuspenseQuery`, `useBackgroundQuery`) in modern applications** for better loading state handling and code simplicity
 
 ## Ground Rules
 
 - ALWAYS use Apollo Client 4.x patterns (not v3 or earlier)
 - ALWAYS wrap your app with `ApolloProvider`
-- ALWAYS handle loading and error states (except when using Suspense or framework integrations like TanStack Start)
+- ALWAYS handle loading and error states when using non-suspenseful hooks
+- PREFER Suspense hooks (`useSuspenseQuery`, `useBackgroundQuery`) in modern applications for better DX
 - NEVER store Apollo Client in React state (use module-level or context)
 - PREFER `cache-first` for read-heavy data, `network-only` for real-time data
 - USE TypeScript for better type safety with GraphQL

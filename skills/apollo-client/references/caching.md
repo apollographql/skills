@@ -58,9 +58,6 @@ new InMemoryCache({
     }
     return defaultDataIdFromObject(object);
   },
-
-  // Add __typename to all types (default and recommended)
-  addTypename: true,
 });
 ```
 
@@ -134,7 +131,7 @@ const cache = new InMemoryCache({
       keyFields: ['book', ['isbn'], 'reviewer', ['id']],
     },
 
-    // No key fields (singleton)
+    // No key fields (singleton, only one object in cache per type)
     AppSettings: {
       keyFields: [],
     },

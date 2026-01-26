@@ -204,7 +204,7 @@ function CreatePost() {
 }
 ```
 
-If you do use the hook's state, consume at least the `loading` state:
+If you do use the hook's state, e.g. because you want to render the `loading` state, errors or returned `data`, you can also use the `useMutation` hook with `async..await` in your handler:
 
 ```tsx
 function CreatePost() {
