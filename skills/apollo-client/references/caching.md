@@ -48,10 +48,10 @@ new InMemoryCache({
   // Define how types are identified in cache
   typePolicies: { /* ... */ },
 
-  // Interface/union type mappings for fragments
+  // Interface/union type mappings between supertypes and their subtypes
   possibleTypes: { /* ... */ },
 
-  // Custom function to generate cache IDs
+  // Custom function to generate cache IDs (rare)
   dataIdFromObject: (object) => {
     if (object.__typename === 'Book') {
       return `Book:${object.isbn}`;
