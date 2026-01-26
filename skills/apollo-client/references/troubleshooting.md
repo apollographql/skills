@@ -234,13 +234,6 @@ const config: CodegenConfig = {
   documents: 'src/**/*.{ts,tsx}',
   ignoreNoDocuments: true,
   generates: {
-    'src/gql/': {
-      preset: 'client',
-      presetConfig: {
-        fragmentMasking: { unmaskFunctionName: 'getFragmentData' },
-      },
-      plugins: [],
-    },
     'src/gql/graphql.ts': {
       plugins: [
         'typescript',

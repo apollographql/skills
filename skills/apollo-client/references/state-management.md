@@ -311,26 +311,6 @@ const ADD_TO_CART = gql`
     addToCart(productId: $productId, quantity: $quantity) @client
   }
 `;
-
-// Alternative approach: Use a custom hook with reactive variables
-function useAddToCart() {
-  return (productId: string, quantity: number) => {
-    const current = cartItemsVar();
-    const existing = current.find((item) => item.productId === productId);
-
-    if (existing) {
-      cartItemsVar(
-        current.map((item) =>
-          item.productId === productId
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        )
-      );
-    } else {
-      cartItemsVar([...current, { productId, quantity }]);
-    }
-  };
-}
 ```
 
 ### Persisting Local State
@@ -338,42 +318,22 @@ function useAddToCart() {
 ```typescript
 // Save to localStorage when reactive variable changes
 const cartItemsVar = makeVar<CartItem[]>(
-  JSON.parse(localStorage.getItem('cart') || '[]')
+  typeof window !== 'undefined' && localStorage.getItem('cart')
+    ? JSON.parse(localStorage.getItem('cart')!)
+    : []
 );
 
-// Create a wrapper that persists
+// Create a wrapper that persists with error handling
 export function updateCart(items: CartItem[]) {
   cartItemsVar(items);
-  localStorage.setItem('cart', JSON.stringify(items));
-}
-
-// Use a listener on the reactive variable for automatic persistence
-// This requires careful implementation to avoid memory leaks
-function subscribeToVariable<T>(
-  weakRef: WeakRef<ReactiveVar<T>>,
-  callback: (value: T) => void
-) {
-  const reactiveVar = weakRef.deref();
-  if (!reactiveVar) return;
-  
-  const onNextChange = reactiveVar.onNextChange(() => {
-    const currentVar = weakRef.deref();
-    if (currentVar) {
-      callback(currentVar());
-      onNextChange();
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cart', JSON.stringify(items));
     }
-  });
+  } catch (error) {
+    console.error('Failed to persist cart to localStorage:', error);
+  }
 }
-
-// Create reactive variable with persistence
-const cartItemsVar = makeVar<CartItem[]>(
-  JSON.parse(localStorage.getItem('cart') || '[]')
-);
-
-subscribeToVariable(
-  new WeakRef(cartItemsVar),
-  (items) => localStorage.setItem('cart', JSON.stringify(items))
-);
 ```
 
 ## useReactiveVar Hook
