@@ -12,7 +12,7 @@
 
 Reactive variables are a way to store local state outside of the Apollo Client cache while still triggering reactive updates.
 
-**Important**: Reactive variables are still variables storing a value. They only notify `ApolloClient` instances when the variable changes, but they do not have one separate value per ApolloClient instance. In a multi-user environment like during SSR, global or module-level reactive variables could be shared between users and cause data leaks. In frameworks that use SSR, always avoid storing reactive variables as globals.
+**Important**: Reactive variables store a single value that notifies `ApolloClient` instances when changed. They do not have separate values per ApolloClient instance. In multi-user environments like SSR, global or module-level reactive variables could be shared between users and cause data leaks. In frameworks that use SSR, always avoid storing reactive variables as globals.
 
 ### Creating Reactive Variables
 
@@ -97,6 +97,8 @@ Local-only fields are fields defined in queries but resolved entirely on the cli
 
 ```typescript
 import { ApolloClient, InMemoryCache } from '@apollo/client';
+// TODO: Verify correct import path for LocalState in Apollo Client 4.x
+// May need to be '@apollo/client' instead of '@apollo/client/local-state'
 import { LocalState } from '@apollo/client/local-state';
 
 const client = new ApolloClient({

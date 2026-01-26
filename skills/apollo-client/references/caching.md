@@ -484,7 +484,6 @@ cache.writeFragment({
   },
 });
 ```
-```
 
 ### cache.modify
 
