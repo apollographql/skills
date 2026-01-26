@@ -126,7 +126,7 @@ const CREATE_USER: TypedDocumentNode<CreateUserData, CreateUserVariables> = gql`
   }
 `;
 
-const [createUser] = useMutation(CREATE_USER);
+const [createUser, {data, loading}] = useMutation(CREATE_USER);
 
 const { data } = await createUser({
   variables: {

@@ -68,14 +68,14 @@ function AdminSection() {
 **Solution:** Create client outside component or use a ref pattern:
 
 ```tsx
-// Bad - new client on every render (especially bad in SSR scenarios like Next.js)
+// Bad - new client on every render
 function App() {
   const client = new ApolloClient({ /* ... */ }); // Don't do this!
   return <ApolloProvider client={client}>...</ApolloProvider>;
 }
 
+// Module-level client definition
 // Okay if there is a 100% guarantee this application will never use SSR
-// For SSR-enabled applications, use the ref-based patterns below instead
 const client = new ApolloClient({ /* ... */ });
 function App() {
   return <ApolloProvider client={client}>...</ApolloProvider>;
@@ -226,20 +226,19 @@ npm install -D @graphql-codegen/cli @graphql-codegen/typescript @graphql-codegen
 
 ```typescript
 // codegen.ts
-import { CodegenConfig } from '@graphql-codegen/cli';
+import { CodegenConfig } from "@graphql-codegen/cli";
 
 const config: CodegenConfig = {
   overwrite: true,
-  schema: 'http://localhost:4000/graphql',
-  documents: 'src/**/*.{ts,tsx}',
+  schema: "http://localhost:4000/graphql",
+  documents: "src/**/*.{ts,tsx}",
   ignoreNoDocuments: true,
   generates: {
-    'src/gql/graphql.ts': {
-      plugins: [
-        'typescript',
-        'typescript-operations',
-        'typed-document-node',
-      ],
+    "src/gql/": {
+      preset: "client",
+      presetConfig: {
+        fragmentMasking: { unmaskFunctionName: "getFragmentData" },
+      },
     },
   },
 };

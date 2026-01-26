@@ -140,7 +140,7 @@ function UserCard({ userId }: { userId: string }) {
 
 ### Local Field Read Functions (Type Policies)
 
-Local field `read` functions are defined in entity-level type policies. These are **not** called "resolvers". You can use reactive variables inside these `read` functions, along with other calculations or derived values:
+Local field `read` functions are defined in entity-level type policies. You can use reactive variables inside these `read` functions, along with other calculations or derived values:
 
 ```typescript
 const cache = new InMemoryCache({
@@ -173,7 +173,7 @@ const cache = new InMemoryCache({
 
 ### Query-Level Local Resolvers
 
-Query-level local fields can be defined using `LocalState` resolvers. **Note**: Do not read reactive variables inside LocalState resolvers - this is not a documented feature. Use type policy `read` functions for that instead.
+Query-level local fields can be defined using `LocalState` resolvers. **Note**: Do not read reactive variables inside LocalState resolvers - this is not a documented feature.
 
 ```typescript
 import { LocalState } from '@apollo/client/local-state';
@@ -183,16 +183,30 @@ const client = new ApolloClient({
   localState: new LocalState({
     resolvers: {
       Query: {
-        isLoggedIn: () => isLoggedInVar(),
-        cartItems: () => cartItemsVar(),
-        notification: (_, { id }) => notificationsVar().find((n) => n.id === id),
+        // Read from localStorage
+        theme: () => {
+          if (typeof window !== 'undefined') {
+            return localStorage.getItem('theme') || 'light';
+          }
+          return 'light';
+        },
+        
+        // Read from cache
         currentUser: (_, __, { cache }) => {
-          const userId = currentUserIdVar();
+          const userId = localStorage.getItem('currentUserId');
           if (!userId) return null;
           return cache.readFragment({
             id: cache.identify({ __typename: 'User', id: userId }),
             fragment: gql`fragment CurrentUser on User { id name email }`,
           });
+        },
+        
+        // Compute value
+        isOnline: () => {
+          if (typeof navigator !== 'undefined') {
+            return navigator.onLine;
+          }
+          return true;
         },
       },
     },
@@ -269,8 +283,6 @@ const cache = new InMemoryCache({
 
 ### Local Mutations
 
-For local mutations, prefer writing to the cache over using reactive variables:
-
 ```tsx
 import { LocalState } from '@apollo/client/local-state';
 
@@ -334,6 +346,43 @@ export function updateCart(items: CartItem[]) {
     console.error('Failed to persist cart to localStorage:', error);
   }
 }
+
+// Use a listener on the reactive variable for automatic persistence
+function subscribeToVariable<T>(
+  weakRef: WeakRef<ReactiveVar<T>>,
+  callback: (value: T) => void
+) {
+  const reactiveVar = weakRef.deref();
+  if (!reactiveVar) return;
+  
+  const onNextChange = reactiveVar.onNextChange(() => {
+    const currentVar = weakRef.deref();
+    if (currentVar) {
+      callback(currentVar());
+      onNextChange();
+    }
+  });
+}
+
+// Create reactive variable with persistence
+const persistentCartVar = makeVar<CartItem[]>(
+  typeof window !== 'undefined' && localStorage.getItem('cart')
+    ? JSON.parse(localStorage.getItem('cart')!)
+    : []
+);
+
+subscribeToVariable(
+  new WeakRef(persistentCartVar),
+  (items) => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cart', JSON.stringify(items));
+      }
+    } catch (error) {
+      console.error('Failed to persist cart:', error);
+    }
+  }
+);
 ```
 
 ## useReactiveVar Hook
