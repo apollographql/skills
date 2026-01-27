@@ -28,14 +28,6 @@ The CLI guides you through an interactive installation:
 │  ◼ apollo-server
 │  ○ ...
 └
-
-◇  Detected 6 agents
-│
-◆  Select agents to install skills to
-│  ◼ Claude Code (.claude/skills)
-│  ◼ Cursor
-│  ○ ...
-└
 ```
 
 ## Available Skills
@@ -405,7 +397,6 @@ Each skill contains:
 
 ## Resources
 
-- [Agent Skills Standard](https://agentskills.io/)
 - [Apollo Client Documentation](https://www.apollographql.com/docs/react/)
 - [Apollo Server Documentation](https://www.apollographql.com/docs/apollo-server/)
 - [Apollo Connectors Documentation](https://www.apollographql.com/docs/graphos/schema-design/connectors/)

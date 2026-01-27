@@ -1,4 +1,5 @@
 name: CI
+
 on:
   pull_request:
   push:
@@ -9,6 +10,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
     strategy:
       fail-fast: false
       matrix:
@@ -21,24 +23,64 @@ jobs:
           - graphql-schema
           - rover
           - rust-best-practices
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Install ${{ matrix.skill }}
+      - name: Install ${{ matrix.skill }} (local)
         run: |
-          npx skills add apollographql/skills --skill ${{ matrix.skill }} --agent claude-code --yes
+          npx skills add . --skill ${{ matrix.skill }} --agent claude-code --yes
+          echo "✅ Successfully installed skill: ${{ matrix.skill }}"
 
       - name: Verify installation
         run: |
-          echo "=== Installed skill files ==="
+          echo "📁 Checking installed skill files..."
           ls -la .claude/skills/
 
-          echo ""
-          echo "=== Skill content ==="
-          content=$(find -L .claude/skills/ -name "*.md" -exec cat {} \;)
-          if [ -z "$content" ]; then
-            echo "Error: No skill content found"
+          if [ -f ".claude/skills/${{ matrix.skill }}/SKILL.md" ]; then
+            echo "✅ Found SKILL.md"
+            echo "--- Content preview ---"
+            head -20 ".claude/skills/${{ matrix.skill }}/SKILL.md"
+          else
+            echo "❌ SKILL.md not found"
             exit 1
           fi
-          echo "$content"
+
+  test-remote:
+    runs-on: ubuntu-latest
+    # Only run after merging to main
+    if: github.ref == 'refs/heads/main'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        skill:
+          - apollo-client
+          - apollo-connectors
+          - apollo-mcp-server
+          - apollo-server
+          - graphql-operations
+          - graphql-schema
+          - rover
+          - rust-best-practices
+
+    steps:
+      - name: Install ${{ matrix.skill }} (remote)
+        run: |
+          npx skills add apollographql/skills --skill ${{ matrix.skill }} --agent claude-code --yes
+          echo "✅ Successfully installed skill from GitHub: ${{ matrix.skill }}"
+
+      - name: Verify installation
+        run: |
+          echo "📁 Checking installed skill files..."
+          ls -la .claude/skills/
+
+          if [ -f ".claude/skills/${{ matrix.skill }}/SKILL.md" ]; then
+            echo "✅ Found SKILL.md"
+            echo "--- Content preview ---"
+            head -20 ".claude/skills/${{ matrix.skill }}/SKILL.md"
+          else
+            echo "❌ SKILL.md not found"
+            exit 1
+          fi
