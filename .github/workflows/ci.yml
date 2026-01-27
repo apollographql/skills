@@ -49,8 +49,8 @@ jobs:
 
   test-remote:
     runs-on: ubuntu-latest
-    # Only run after merging to main
-    if: github.ref == 'refs/heads/main'
+    # Run only on push to main
+    if: github.event_name == 'push'
 
     strategy:
       fail-fast: false
