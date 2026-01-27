@@ -23,7 +23,7 @@ The CLI guides you through an interactive installation:
 4. **Installation method** - Symlink (recommended) or Copy
 
 ```
-◇  Found 10 skills
+◇  Found 11 skills
 │
 ◆  Select skills to install
 │  ◼ apollo-client
@@ -74,6 +74,48 @@ npx skills add apollographql/skills@apollo-connectors
 [Entities](skills/apollo-connectors/references/entities.md) ·
 [Validation](skills/apollo-connectors/references/validation.md) ·
 [Troubleshooting](skills/apollo-connectors/references/troubleshooting.md)
+
+---
+
+### apollo-federation
+
+Author Apollo Federation subgraph schemas with entities, sharing, and cross-subgraph field resolution.
+
+**Install:**
+
+```bash
+npx skills add apollographql/skills --skill apollo-federation
+```
+
+**Use when:**
+
+- Creating new subgraph schemas for a federated supergraph
+- Defining or modifying entities with `@key`
+- Sharing types/fields across subgraphs with `@shareable`
+- Working with federation directives (`@external`, `@requires`, `@provides`, `@override`)
+- Troubleshooting composition errors
+
+**Categories covered:**
+
+- Entity definition and `@key` patterns (compound, multiple, differing)
+- Reference resolvers and computed fields
+- Value types with `@shareable`
+- Field migration with `@override` (including progressive rollout)
+- Entity interfaces with `@interfaceObject`
+- Common composition errors and fixes
+
+**Examples:**
+
+- "Create a federated subgraph for my products service"
+- "Add a computed field that requires data from another subgraph"
+- "Migrate this field from one subgraph to another"
+
+**References:**
+[SKILL.md](skills/apollo-federation/SKILL.md) ·
+[Entities](skills/apollo-federation/references/entities.md) ·
+[Sharing](skills/apollo-federation/references/sharing.md) ·
+[Migration](skills/apollo-federation/references/migration.md) ·
+[Errors](skills/apollo-federation/references/errors.md)
 
 ---
 
@@ -480,6 +522,7 @@ Each skill contains:
 - [Apollo Client Documentation](https://www.apollographql.com/docs/react/)
 - [Apollo Server Documentation](https://www.apollographql.com/docs/apollo-server/)
 - [Apollo Connectors Documentation](https://www.apollographql.com/docs/graphos/schema-design/connectors/)
+- [Apollo Federation Documentation](https://www.apollographql.com/docs/graphos/schema-design/federated-schemas/)
 - [Apollo MCP Server](https://www.apollographql.com/docs/apollo-mcp-server/)
 - [Rover CLI Documentation](https://www.apollographql.com/docs/rover/)
 - [Rust Best Practices Handbook](https://github.com/apollographql/rust-best-practices)
