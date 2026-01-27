@@ -47,7 +47,7 @@ Write Apollo Connectors schemas to integrate REST APIs into GraphQL.
 **Install:**
 
 ```bash
-npx npx skills add apollographql/skills --skill apollo-connectors
+npx skills add apollographql/skills --skill apollo-connectors
 ```
 
 **Use when:**
@@ -89,7 +89,7 @@ Configure and use Apollo MCP Server to connect AI agents with GraphQL APIs.
 **Install:**
 
 ```bash
-npx npx skills add apollographql/skills --skill apollo-mcp-server
+npx skills add apollographql/skills --skill apollo-mcp-server
 ```
 
 **Use when:**
@@ -128,7 +128,7 @@ Build GraphQL servers with Apollo Server 4.x, including schemas, resolvers, auth
 **Install:**
 
 ```bash
-npx npx skills add apollographql/skills --skill apollo-server
+npx skills add apollographql/skills --skill apollo-server
 ```
 
 **Use when:**
@@ -173,7 +173,7 @@ Build React applications with Apollo Client 4.x for GraphQL data management, cac
 **Install:**
 
 ```bash
-npx npx skills add apollographql/skills --skill apollo-client
+npx skills add apollographql/skills --skill apollo-client
 ```
 
 **Use when:**
@@ -218,7 +218,7 @@ Manage GraphQL schemas and run local supergraph development with Apollo Rover CL
 **Install:**
 
 ```bash
-npx npx skills add apollographql/skills --skill rover
+npx skills add apollographql/skills --skill rover
 ```
 
 **Use when:**
@@ -259,7 +259,7 @@ Design GraphQL schemas following industry best practices for type design, naming
 **Install:**
 
 ```bash
-npx npx skills add apollographql/skills --skill graphql-schema
+npx skills add apollographql/skills --skill graphql-schema
 ```
 
 **Use when:**
@@ -301,7 +301,7 @@ Write GraphQL operations (queries, mutations, fragments) following best practice
 **Install:**
 
 ```bash
-npx npx skills add apollographql/skills --skill graphql-operations
+npx skills add apollographql/skills --skill graphql-operations
 ```
 
 **Use when:**
@@ -343,7 +343,7 @@ Write idiomatic Rust code following Apollo GraphQL's best practices handbook.
 **Install:**
 
 ```bash
-npx npx skills add apollographql/skills --skill rust-best-practices
+npx skills add apollographql/skills --skill rust-best-practices
 ```
 
 **Use when:**
