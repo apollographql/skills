@@ -288,7 +288,7 @@ type SessionData = {
 // Create isomorphic link that uses different implementations per environment
 const createAuthLink = createIsomorphicFn()
   .server(() => {
-    // Server-only: Access session data using getSession
+    // Server-only: Can access server-side functions like getCookies, getCookie, getSession, etc. exported from @tanstack/react-start/server
     return new SetContextLink(async (prevContext) => {
       const session = await getSession<SessionData>({
         name: "app-session",
