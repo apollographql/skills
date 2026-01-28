@@ -27,30 +27,71 @@ Apollo Client is a comprehensive state management library for JavaScript that en
 npm install @apollo/client graphql rxjs
 ```
 
+### Step 1.5: Set up TypeScript Code Generation (optional but recommended)
+
 For TypeScript type generation (recommended):
+
 ```bash
 npm install -D @graphql-codegen/cli @graphql-codegen/typescript @graphql-codegen/typescript-operations @graphql-codegen/typed-document-node
 ```
 
-See the [GraphQL Code Generator documentation](https://www.apollographql.com/docs/react/development-testing/graphql-codegen#recommended-starter-configuration) for the recommended configuration.
+```typescript
+// codegen.ts
+import { CodegenConfig } from "@graphql-codegen/cli";
+
+const config: CodegenConfig = {
+  overwrite: true,
+  schema: "<URL_OF_YOUR_GRAPHQL_API>",
+  // This assumes that all your source files are in a top-level `src/` directory - you might need to adjust this to your file structure
+  documents: ["src/**/*.{ts,tsx}"],
+  // Don't exit with non-zero status when there are no documents
+  ignoreNoDocuments: true,
+  generates: {
+    // Use a path that works the best for the structure of your application
+    "./src/types/__generated__/graphql.ts": {
+      plugins: ["typescript", "typescript-operations", "typed-document-node"],
+      config: {
+        avoidOptionals: {
+          // Use `null` for nullable fields instead of optionals
+          field: true,
+          // Allow nullable input fields to remain unspecified
+          inputValue: false,
+        },
+        // Use `unknown` instead of `any` for unconfigured scalars
+        defaultScalarType: "unknown",
+        // Apollo Client always includes `__typename` fields
+        nonOptionalTypename: true,
+        // Apollo Client doesn't add the `__typename` field to root types so
+        // don't generate a type for the `__typename` for root operation types.
+        skipTypeNameForRoot: true,
+      },
+    },
+  },
+};
+
+export default config;
+```
+
+The typed-document-node plugin might have a bundle size tradeoff but can prevent inconsistencies and is best suited for usage with LLMs, so it is recommended for most applications.
+See the [GraphQL Code Generator documentation](https://www.apollographql.com/docs/react/development-testing/graphql-codegen#recommended-starter-configuration) for other recommended configuration patterns if required.
 
 ### Step 2: Create Client
 
 ```typescript
-import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client';
-import { setContext } from '@apollo/client/link/context';
+import { ApolloClient, InMemoryCache, HttpLink } from "@apollo/client";
+import { SetContextLink } from "@apollo/client/link/context";
 
 const httpLink = new HttpLink({
-  uri: 'https://your-graphql-endpoint.com/graphql',
+  uri: "https://your-graphql-endpoint.com/graphql",
 });
 
 // Use SetContextLink for auth headers to update dynamically per request
-const authLink = setContext((_, { headers }) => {
-  const token = localStorage.getItem('token');
+const authLink = new SetContextLink(({ headers }) => {
+  const token = localStorage.getItem("token");
   return {
     headers: {
       ...headers,
-      authorization: token ? `Bearer ${token}` : '',
+      authorization: token ? `Bearer ${token}` : "",
     },
   };
 });
@@ -64,8 +105,8 @@ const client = new ApolloClient({
 ### Step 3: Setup Provider
 
 ```tsx
-import { ApolloProvider } from '@apollo/client';
-import App from './App';
+import { ApolloProvider } from "@apollo/client";
+import App from "./App";
 
 function Root() {
   return (
@@ -79,8 +120,8 @@ function Root() {
 ### Step 4: Execute Query
 
 ```tsx
-import { gql } from '@apollo/client';
-import { useQuery } from '@apollo/client/react';
+import { gql } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 
 const GET_USERS = gql`
   query GetUsers {
@@ -140,32 +181,42 @@ function UserProfile({ userId }: { userId: string }) {
 ### TypeScript Integration
 
 ```typescript
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
-
+// Define types for codegen or TypedDocumentNode
 interface GetUserData {
-  user: User;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }
 
 interface GetUserVariables {
   id: string;
 }
 
-const { data } = useQuery<GetUserData, GetUserVariables>(GET_USER, {
+// Types are inferred from TypedDocumentNode - never use manual generics
+const GET_USER: TypedDocumentNode<GetUserData, GetUserVariables> = gql`
+  query GetUser($id: ID!) {
+    user(id: $id) {
+      id
+      name
+      email
+    }
+  }
+`;
+
+const { data } = useQuery(GET_USER, {
   variables: { id: userId },
 });
 
-// data.user is typed as User
+// data.user is automatically typed from GET_USER
 ```
 
 ## Basic Mutation Usage
 
 ```tsx
-import { gql, TypedDocumentNode } from '@apollo/client';
-import { useMutation } from '@apollo/client/react';
+import { gql, TypedDocumentNode } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
 
 interface CreateUserMutation {
   createUser: {
@@ -182,7 +233,10 @@ interface CreateUserMutationVariables {
   };
 }
 
-const CREATE_USER: TypedDocumentNode<CreateUserMutation, CreateUserMutationVariables> = gql`
+const CREATE_USER: TypedDocumentNode<
+  CreateUserMutation,
+  CreateUserMutationVariables
+> = gql`
   mutation CreateUser($input: CreateUserInput!) {
     createUser(input: $input) {
       id
@@ -199,25 +253,27 @@ function CreateUserForm() {
     const { data } = await createUser({
       variables: {
         input: {
-          name: formData.get('name') as string,
-          email: formData.get('email') as string,
+          name: formData.get("name") as string,
+          email: formData.get("email") as string,
         },
       },
     });
     if (data) {
-      console.log('Created user:', data.createUser);
+      console.log("Created user:", data.createUser);
     }
   };
 
   return (
-    <form onSubmit={(e) => { 
-      e.preventDefault(); 
-      handleSubmit(new FormData(e.currentTarget)); 
-    }}>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleSubmit(new FormData(e.currentTarget));
+      }}
+    >
       <input name="name" placeholder="Name" />
       <input name="email" placeholder="Email" />
       <button type="submit" disabled={loading}>
-        {loading ? 'Creating...' : 'Create User'}
+        {loading ? "Creating..." : "Create User"}
       </button>
       {error && <p>Error: {error.message}</p>}
     </form>
@@ -241,29 +297,25 @@ const client = new ApolloClient({
   }),
 
   // Network layer
-  link: new HttpLink({ uri: '/graphql' }),
+  link: new HttpLink({ uri: "/graphql" }),
 
-  // Default options for queries/mutations
-  defaultOptions: {
-    watchQuery: {
-      fetchPolicy: 'cache-and-network',
-      errorPolicy: 'all',
-    },
-    query: {
-      fetchPolicy: 'network-only',
-      errorPolicy: 'all',
-    },
-    mutate: {
-      errorPolicy: 'all',
-    },
+  // Avoid defaultOptions if possible as they break TypeScript expectations.
+  // Configure options per-query/mutation instead for better type safety.
+  // defaultOptions: {
+  //   watchQuery: { fetchPolicy: 'cache-and-network' },
+  // },
+
+  // DevTools are enabled by default in development
+  // Only configure when enabling in production
+  devtools: {
+    enabled: true, // Only needed for production
   },
 
-  // Enable Apollo DevTools (development only)
-  connectToDevTools: process.env.NODE_ENV === 'development',
-
   // Custom name for this client instance
-  name: 'web-client',
-  version: '1.0.0',
+  clientAwareness: {
+    name: "web-client",
+    version: "1.0.0",
+  },
 });
 ```
 
@@ -282,20 +334,18 @@ Detailed documentation for specific topics:
 
 ### Query Best Practices
 
-- In most applications, use one query hook per page, and use fragment-reading hooks (`useFragment`, `useSuspenseFragment`) with component-colocated fragments and data masking for the rest
-- Always handle `loading` and `error` states in UI (in non-suspenseful applications)
+- **Each page should generally only have one query, composed from colocated fragments.** Use `useFragment` or `useSuspenseFragment` in all non-page-components. Use `@defer` to allow slow fields below the fold to stream in later and avoid blocking the page load.
+- **Fragments are for colocation, not reuse.** Each fragment should describe exactly the data needs of a specific component, not be shared across components for common fields. See [Fragment Colocation](https://www.apollographql.com/docs/react/data/fragments#colocating-fragments).
+- Always handle `loading` and `error` states in UI when using non-suspenseful hooks (`useQuery`, `useLazyQuery`). When using Suspense hooks (`useSuspenseQuery`, `useBackgroundQuery`), React handles this through `<Suspense>` boundaries and error boundaries.
 - Use `fetchPolicy` to control cache behavior per query
-- Colocate queries with components that use them
-- Use fragments to share fields between queries
 - Use the TypeScript type server to look up documentation for functions and options (Apollo Client has extensive docblocks)
 
 ### Mutation Best Practices
 
-- If the schema permits, mutation return values should include everything necessary to update the cache automatically
-- Weigh cache updates vs refetching: manual updates risk missing server logic, but refetching may be inefficient
-- Consider optimistic updates with granular refetches if mutation response is insufficient
+- **If the schema permits, mutation return values should return everything necessary to update the cache.** Neither manual updates nor refetching should be necessary.
+- If the mutation response is insufficient, carefully weigh manual cache manipulation vs refetching. Manual updates risk missing server logic. Consider optimistic updates with a granular refetch if needed.
 - Handle errors gracefully in the UI
-- Use `refetchQueries` sparingly (prefer cache updates)
+- Use `refetchQueries` sparingly (prefer letting the cache update automatically)
 
 ### Caching Best Practices
 

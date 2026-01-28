@@ -218,12 +218,12 @@ query GetUsers {
 
 **Problem:** No type safety for GraphQL operations.
 
-**Solution:** Set up GraphQL Code Generator with the [recommended starter configuration](https://www.apollographql.com/docs/react/development-testing/graphql-codegen#recommended-starter-configuration), as described in the [Tooling Reference](./tooling.md).
+**Solution:** Set up GraphQL Code Generator with the [recommended starter configuration](https://www.apollographql.com/docs/react/development-testing/graphql-codegen#recommended-starter-configuration), as described in the [Skill](../SKILL.md).
 
 ### Using Generated Types
 
 ```tsx
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { GetUsersDocument, GetUsersQuery } from './generated/graphql';
 
 function UserList() {
