@@ -5,9 +5,11 @@ This guide covers setting up Apollo Client in a Next.js application using the Ap
 ## Why Use Apollo Client with Next.js?
 
 ### React Server Components
+
 Apollo Client provides a shared client instance across all server components for a single request, preventing duplicate GraphQL requests and optimizing server-side rendering.
 
 ### React Client Components
+
 When using the `app` directory, client components are rendered both on the server (SSR) and in the browser. Apollo Client enables you to execute GraphQL queries on the server and use the results to hydrate your browser-side cache, delivering fully-rendered pages to users.
 
 ## Installation
@@ -174,10 +176,7 @@ import { Suspense } from "react";
 
 export default async function Page() {
   return (
-    <PreloadQuery
-      query={GET_USER}
-      variables={{ id: "1" }}
-    >
+    <PreloadQuery query={GET_USER} variables={{ id: "1" }}>
       <Suspense fallback={<>Loading...</>}>
         <ClientChild />
       </Suspense>
@@ -209,10 +208,7 @@ export function ClientChild() {
 For advanced use cases, you can use `PreloadQuery` with `useReadQuery` to avoid request waterfalls:
 
 ```tsx
-<PreloadQuery
-  query={GET_USER}
-  variables={{ id: "1" }}
->
+<PreloadQuery query={GET_USER} variables={{ id: "1" }}>
   {(queryRef) => (
     <Suspense fallback={<>Loading...</>}>
       <ClientChild queryRef={queryRef} />
@@ -241,9 +237,11 @@ export function ClientChild({ queryRef }: { queryRef: QueryRef<TQueryData> }) {
 When using the `@defer` directive, `useSuspenseQuery` will only suspend until the initial response is received. To handle deferred data properly, you have three strategies:
 
 ### Strategy 1: Use PreloadQuery with useReadQuery
+
 `PreloadQuery` allows deferred data to be fully transported and streamed chunk-by-chunk.
 
 ### Strategy 2: Remove @defer Fragments
+
 Use `RemoveMultipartDirectivesLink` to strip `@defer` directives from queries during SSR:
 
 ```typescript
@@ -266,6 +264,7 @@ query myQuery {
 ```
 
 ### Strategy 3: Wait for Deferred Data
+
 Use `AccumulateMultipartResponsesLink` to debounce the initial response:
 
 ```typescript
@@ -277,6 +276,7 @@ new AccumulateMultipartResponsesLink({
 ```
 
 ### Combined Approach: SSRMultipartLink
+
 Combine both strategies with `SSRMultipartLink`:
 
 ```typescript

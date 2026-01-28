@@ -93,7 +93,7 @@ export default function handleRequest(
     // ... existing code
 
     const client = makeClient(request);
-    
+
     const { pipe, abort } = renderToPipeableStream(
       <ApolloProvider client={client}>
         <ServerRouter
@@ -170,7 +170,7 @@ export const loader = apolloLoader<Route.LoaderArgs>()(({ preloadQuery }) => {
   const userQueryRef = preloadQuery(GET_USER, {
     variables: { id: "1" },
   });
-  
+
   return {
     userQueryRef,
   };
@@ -200,11 +200,11 @@ export const loader = apolloLoader<Route.LoaderArgs>()(({ preloadQuery }) => {
   const userQueryRef = preloadQuery(GET_USER, {
     variables: { id: "1" },
   });
-  
+
   const postsQueryRef = preloadQuery(GET_POSTS, {
     variables: { userId: "1" },
   });
-  
+
   return {
     userQueryRef,
     postsQueryRef,
