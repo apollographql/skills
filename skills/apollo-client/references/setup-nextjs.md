@@ -2,7 +2,7 @@
 
 This guide covers setting up Apollo Client in a Next.js application using the App Router architecture with support for both React Server Components (RSC) and Client Components.
 
-## Why Use Apollo Client with Next.js?
+## What is supported?
 
 ### React Server Components
 
@@ -222,7 +222,11 @@ In your Client Component:
 ```tsx
 "use client";
 
-import { useQueryRefHandlers, useReadQuery, QueryRef } from "@apollo/client/react";
+import {
+  useQueryRefHandlers,
+  useReadQuery,
+  QueryRef,
+} from "@apollo/client/react";
 
 export function ClientChild({ queryRef }: { queryRef: QueryRef<TQueryData> }) {
   const { refetch } = useQueryRefHandlers(queryRef);

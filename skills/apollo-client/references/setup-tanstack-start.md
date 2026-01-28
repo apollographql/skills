@@ -2,10 +2,6 @@
 
 This guide covers setting up Apollo Client in a TanStack Start application with support for modern streaming SSR.
 
-## Why Use Apollo Client with TanStack Start?
-
-TanStack Start (formerly TanStack Router with SSR) provides a modern routing solution with built-in support for data loading and streaming SSR. The Apollo Client integration enables you to execute GraphQL queries during route loading and seamlessly hydrate data on the client side.
-
 > **Note:** When using `npx create-tsrouter-app` to create a new TanStack Start application, you can choose Apollo Client in the setup wizard to have all of this configuration automatically set up for you.
 
 ## Installation
@@ -271,7 +267,10 @@ function UserComponent({ queryRef }: { queryRef: QueryRef<GetUserQuery> }) {
 For authentication in TanStack Start with SSR support, you need to handle both server and client environments differently. Use `createIsomorphicFn` to provide environment-specific implementations:
 
 ```typescript
-import { ApolloClient, InMemoryCache } from "@apollo/client-integration-tanstack-start";
+import {
+  ApolloClient,
+  InMemoryCache,
+} from "@apollo/client-integration-tanstack-start";
 import { ApolloLink, HttpLink } from "@apollo/client";
 import { SetContextLink } from "@apollo/client/link/context";
 import { createIsomorphicFn } from "@tanstack/react-start";
@@ -279,32 +278,21 @@ import { createRouter } from "@tanstack/react-router";
 import { getSession } from "@tanstack/react-start/server";
 import { routeTree } from "./routeTree.gen";
 
-// Define your session data structure
-type SessionData = {
-  userId?: string;
-  authToken?: `******;
-};
-
 // Create isomorphic link that uses different implementations per environment
 const createAuthLink = createIsomorphicFn()
   .server(() => {
-    // Server-only: Can access server-side functions like getCookies, getCookie, getSession, etc. exported from @tanstack/react-start/server
+    // Server-only: Can access server-side functions like `getCookies`, `getCookie`, `getSession`, etc. exported from `"@tanstack/react-start/server"`
     return new SetContextLink(async (prevContext) => {
-      const session = await getSession<SessionData>({
-        name: "app-session",
-        password: process.env.SESSION_SECRET!,
-      });
-
       return {
         headers: {
           ...prevContext.headers,
-          authorization: session.data.authToken ?? "",
+          authorization: getCookie("Authorization"),
         },
       };
     });
   })
   .client(() => {
-    // Client-only: Access localStorage or other browser APIs
+    // Client-only: Can access `localStorage` or other browser APIs
     return new SetContextLink((prevContext) => {
       return {
         headers: {
@@ -338,15 +326,18 @@ export function getRouter() {
 
 > **Important:** The `getRouter` function is called both on the server and client, so it must not contain environment-specific code. Use `createIsomorphicFn` to provide different implementations:
 >
-> - **Server:** Use `getSession` from `@tanstack/react-start/server` to access session data (or other server-only functions like `getCookies`, `getCookie`)
-> - **Client:** Use `localStorage` or other browser APIs to access auth tokens
+> - **Server:** Can access server-only functions like `getSession`, `getCookies`, `getCookie` from `@tanstack/react-start/server` to access authentication information in request or session data
+> - **Client:** Can use `localStorage` or other browser APIs to access auth tokens (if setting `credentials: "include"` is sufficient, try to prefer that over manually setting auth headers client-side)
 >
 > This ensures your authentication works correctly in both SSR and browser contexts.
 
 ### Custom Cache Configuration
 
 ```typescript
-import { ApolloClient, InMemoryCache } from "@apollo/client-integration-tanstack-start";
+import {
+  ApolloClient,
+  InMemoryCache,
+} from "@apollo/client-integration-tanstack-start";
 import { HttpLink } from "@apollo/client";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";

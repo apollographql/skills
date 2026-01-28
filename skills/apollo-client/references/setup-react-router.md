@@ -2,10 +2,6 @@
 
 This guide covers setting up Apollo Client in a React Router 7 application with support for modern streaming SSR.
 
-## Why Use Apollo Client with React Router?
-
-React Router 7's Framework Mode provides a modern routing solution with built-in support for data loading and streaming SSR. The Apollo Client integration enables you to execute GraphQL queries during route loading and seamlessly hydrate data on the client side.
-
 ## Installation
 
 Install Apollo Client and the React Router integration package:
