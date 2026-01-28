@@ -11,7 +11,7 @@ React Router 7's Framework Mode provides a modern routing solution with built-in
 Install Apollo Client and the React Router integration package:
 
 ```bash
-npm install @apollo/client-integration-react-router @apollo/client graphql
+npm install @apollo/client-integration-react-router @apollo/client graphql rxjs
 ```
 
 ## Setup

@@ -6,12 +6,14 @@ This guide covers setting up Apollo Client in a TanStack Start application with 
 
 TanStack Start (formerly TanStack Router with SSR) provides a modern routing solution with built-in support for data loading and streaming SSR. The Apollo Client integration enables you to execute GraphQL queries during route loading and seamlessly hydrate data on the client side.
 
+> **Note:** When using `npx create-tsrouter-app` to create a new TanStack Start application, you can choose Apollo Client in the setup wizard to have all of this configuration automatically set up for you.
+
 ## Installation
 
 Install Apollo Client and the TanStack Start integration package:
 
 ```bash
-npm install @apollo/client-integration-tanstack-start @apollo/client graphql
+npm install @apollo/client-integration-tanstack-start @apollo/client graphql rxjs
 ```
 
 ## Setup
@@ -212,12 +214,14 @@ function RouteComponent() {
 
 When using `useReadQuery`, you can get refetch functionality from `useQueryRefHandlers`:
 
+> **Important:** Always call `useQueryRefHandlers` before `useReadQuery`. These two hooks interact with the same `queryRef`, and calling them in the wrong order could cause subtle bugs.
+
 ```typescript
 import { useReadQuery, useQueryRefHandlers, QueryRef } from "@apollo/client";
 
 function UserComponent({ queryRef }: { queryRef: QueryRef<GetUserQuery> }) {
-  const { data } = useReadQuery(queryRef);
   const { refetch } = useQueryRefHandlers(queryRef);
+  const { data } = useReadQuery(queryRef);
 
   return (
     <div>
@@ -242,38 +246,64 @@ function UserComponent({ queryRef }: { queryRef: QueryRef<GetUserQuery> }) {
 
 5. **Cache Management:** The Apollo Client instance is shared across all routes, so cache updates from one route will be reflected in all routes that use the same data.
 
-6. **Authentication:** Configure auth headers in the `HttpLink` during client creation, or use Apollo Client's `setContext` link for dynamic auth tokens.
+6. **Authentication:** Use Apollo Client's `SetContextLink` for dynamic auth tokens.
 
 ## Advanced Configuration
 
 ### Adding Authentication
 
+For authentication in TanStack Start with SSR support, use `SetContextLink` with session management. This pattern works both on the server and client:
+
 ```typescript
-import { setContext } from "@apollo/client/link/context";
+import { SetContextLink } from "@apollo/client/link/context";
+import { getSession } from "@tanstack/react-start/server";
+
+// Define your session data structure
+type SessionData = {
+  userId?: string;
+  authToken?: `Bearer ${string}`;
+};
+
+// Create an auth link that works in both SSR and browser contexts
+export function createAuthLink() {
+  return new SetContextLink(async (prevContext) => {
+    // Get session data (works in both SSR and browser)
+    const session = await getSession<SessionData>({
+      name: "app-session",
+      password: process.env.SESSION_SECRET!, // Store in environment variable
+    });
+
+    return {
+      headers: {
+        ...prevContext.headers,
+        authorization: session.data.authToken ?? "",
+      },
+    };
+  });
+}
 
 export function getRouter() {
   const httpLink = new HttpLink({
     uri: "https://your-graphql-endpoint.com/graphql",
   });
 
-  const authLink = setContext((_, { headers }) => {
-    const token = localStorage.getItem("token");
-    return {
-      headers: {
-        ...headers,
-        authorization: token ? `Bearer ${token}` : "",
-      },
-    };
-  });
-
   const apolloClient = new ApolloClient({
     cache: new InMemoryCache(),
-    link: authLink.concat(httpLink),
+    link: createAuthLink().concat(httpLink),
   });
 
-  // ... rest of router setup
+  const router = createRouter({
+    routeTree,
+    context: {
+      ...routerWithApolloClient.defaultContext,
+    },
+  });
+
+  return routerWithApolloClient(router, apolloClient);
 }
 ```
+
+> **Important:** Never use `localStorage` in auth links as it's not available during SSR. Use TanStack Start's session management or cookies instead.
 
 ### Custom Cache Configuration
 

@@ -15,14 +15,14 @@ When using the `app` directory, client components are rendered both on the serve
 Install Apollo Client and the Next.js integration package:
 
 ```bash
-npm install @apollo/client@latest @apollo/client-integration-nextjs graphql
+npm install @apollo/client@latest @apollo/client-integration-nextjs graphql rxjs
 ```
 
 ## Setup for React Server Components (RSC)
 
 ### Step 1: Create Apollo Client Configuration
 
-Create an `ApolloClient.js` file in your app directory:
+Create an `ApolloClient.ts` file in your app directory:
 
 ```typescript
 import { HttpLink } from "@apollo/client";
@@ -164,7 +164,7 @@ export function UserProfile({ userId }: { userId: string }) {
 
 ## Preloading Data from RSC to Client Components
 
-Starting with version 0.11, you can preload data in React Server Components to populate the cache of your Client Components.
+You can preload data in React Server Components to populate the cache of your Client Components.
 
 ### Step 1: Use PreloadQuery in Server Components
 
