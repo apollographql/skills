@@ -92,9 +92,13 @@ Use the `preloadQuery` function in your route loader to preload data during navi
 import { gql } from "@apollo/client";
 import { useReadQuery } from "@apollo/client/react";
 import { createFileRoute } from "@tanstack/react-router";
+import type { TypedDocumentNode } from "@apollo/client";
 
-// TypedDocumentNode definition
-const GET_USER = gql`
+// TypedDocumentNode definition with types
+const GET_USER: TypedDocumentNode<
+  { user: { id: string; name: string; email: string } },
+  { id: string }
+> = gql`
   query GetUser($id: ID!) {
     user(id: $id) {
       id
@@ -137,9 +141,12 @@ You can also use Apollo Client's suspenseful hooks directly in your component wi
 ```typescript
 import { gql, useSuspenseQuery } from "@apollo/client/react";
 import { createFileRoute } from "@tanstack/react-router";
+import type { TypedDocumentNode } from "@apollo/client";
 
-// TypedDocumentNode definition
-const GET_POSTS = gql`
+// TypedDocumentNode definition with types
+const GET_POSTS: TypedDocumentNode<{
+  posts: Array<{ id: string; title: string; content: string }>;
+}> = gql`
   query GetPosts {
     posts {
       id

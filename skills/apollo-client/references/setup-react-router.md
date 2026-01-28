@@ -156,9 +156,13 @@ import { gql } from "@apollo/client";
 import { useReadQuery } from "@apollo/client/react";
 import { useLoaderData } from "react-router";
 import type { Route } from "./+types/my-route";
+import type { TypedDocumentNode } from "@apollo/client";
 
-// TypedDocumentNode definition
-const GET_USER = gql`
+// TypedDocumentNode definition with types
+const GET_USER: TypedDocumentNode<
+  { user: { id: string; name: string; email: string } },
+  { id: string }
+> = gql`
   query GetUser($id: ID!) {
     user(id: $id) {
       id
