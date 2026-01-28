@@ -19,6 +19,16 @@ allowed-tools: Bash(npm:*) Bash(npx:*) Bash(node:*) Read Write Edit Glob Grep
 
 Apollo Client is a comprehensive state management library for JavaScript that enables you to manage both local and remote data with GraphQL. Version 4.x brings improved caching, better TypeScript support, and React 19 compatibility.
 
+## Framework-Specific Setup Guides
+
+For modern React frameworks with SSR support, use these specialized setup guides:
+
+- **[Next.js App Router Setup](references/setup-nextjs.md)** - For Next.js applications using the App Router with React Server Components
+- **[React Router Framework Mode Setup](references/setup-react-router.md)** - For React Router 7 applications with streaming SSR
+- **[TanStack Start Setup](references/setup-tanstack-start.md)** - For TanStack Start applications with modern routing
+
+These guides provide framework-specific integration packages and patterns optimized for SSR, streaming, and React Server Components.
+
 ## Quick Start
 
 ### Step 1: Install
