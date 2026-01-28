@@ -152,10 +152,11 @@ export default function App() {
 You can now use the `apolloLoader` function to create Apollo-enabled loaders for your routes:
 
 ```typescript
-import { useReadQuery } from "@apollo/client";
-import { createFileRoute } from "@tanstack/react-router";
+import { gql, useReadQuery } from "@apollo/client";
+import { useLoaderData } from "react-router";
 import type { Route } from "./+types/my-route";
 
+// TypedDocumentNode definition
 const GET_USER = gql`
   query GetUser($id: ID!) {
     user(id: $id) {
@@ -196,6 +197,12 @@ export default function UserPage() {
 You can preload multiple queries in a single loader:
 
 ```typescript
+import { gql, useReadQuery } from "@apollo/client";
+import { useLoaderData } from "react-router";
+import type { Route } from "./+types/my-route";
+
+// TypedDocumentNode definitions omitted for brevity
+
 export const loader = apolloLoader<Route.LoaderArgs>()(({ preloadQuery }) => {
   const userQueryRef = preloadQuery(GET_USER, {
     variables: { id: "1" },

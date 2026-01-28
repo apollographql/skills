@@ -89,9 +89,10 @@ export function getRouter() {
 Use the `preloadQuery` function in your route loader to preload data during navigation:
 
 ```typescript
-import { useReadQuery } from "@apollo/client";
+import { gql, useReadQuery } from "@apollo/client";
 import { createFileRoute } from "@tanstack/react-router";
 
+// TypedDocumentNode definition
 const GET_USER = gql`
   query GetUser($id: ID!) {
     user(id: $id) {
@@ -133,9 +134,10 @@ function RouteComponent() {
 You can also use Apollo Client's suspenseful hooks directly in your component without a loader:
 
 ```typescript
-import { useSuspenseQuery } from "@apollo/client";
+import { gql, useSuspenseQuery } from "@apollo/client";
 import { createFileRoute } from "@tanstack/react-router";
 
+// TypedDocumentNode definition
 const GET_POSTS = gql`
   query GetPosts {
     posts {
@@ -174,6 +176,11 @@ function RouteComponent() {
 You can preload multiple queries in a single loader:
 
 ```typescript
+import { gql, useReadQuery } from "@apollo/client";
+import { createFileRoute } from "@tanstack/react-router";
+
+// TypedDocumentNode definitions omitted for brevity
+
 export const Route = createFileRoute("/dashboard")({
   component: RouteComponent,
   loader: ({ context: { preloadQuery } }) => {
@@ -255,26 +262,40 @@ function UserComponent({ queryRef }: { queryRef: QueryRef<GetUserQuery> }) {
 For authentication in TanStack Start with SSR support, you need to handle both server and client environments differently. Use `createIsomorphicFn` to provide environment-specific implementations:
 
 ```typescript
+import { ApolloClient, InMemoryCache } from "@apollo/client-integration-tanstack-start";
 import { ApolloLink, HttpLink } from "@apollo/client";
 import { SetContextLink } from "@apollo/client/link/context";
 import { createIsomorphicFn } from "@tanstack/react-start";
-import { getCookie } from "@tanstack/react-start/server";
+import { createRouter } from "@tanstack/react-router";
+import { getSession } from "@tanstack/react-start/server";
+import { routeTree } from "./routeTree.gen";
+
+// Define your session data structure
+type SessionData = {
+  userId?: string;
+  authToken?: `******;
+};
 
 // Create isomorphic link that uses different implementations per environment
 const createAuthLink = createIsomorphicFn()
   .server(() => {
-    // Server-only: Can access server-side functions like `getCookies`, `getCookie`, `getSession`, etc. exported from `@tanstack/react-start/server`
+    // Server-only: Access session data using getSession
     return new SetContextLink(async (prevContext) => {
+      const session = await getSession<SessionData>({
+        name: "app-session",
+        password: process.env.SESSION_SECRET!,
+      });
+
       return {
         headers: {
           ...prevContext.headers,
-          authorization: getCookie("Authorization"),
+          authorization: session.data.authToken ?? "",
         },
       };
     });
   })
   .client(() => {
-    // Client-only: Can access `localStorage` or other browser APIs
+    // Client-only: Access localStorage or other browser APIs
     return new SetContextLink((prevContext) => {
       return {
         headers: {
@@ -308,7 +329,7 @@ export function getRouter() {
 
 > **Important:** The `getRouter` function is called both on the server and client, so it must not contain environment-specific code. Use `createIsomorphicFn` to provide different implementations:
 >
-> - **Server:** Use `getSession` from `@tanstack/react-start/server` to access session data
+> - **Server:** Use `getSession` from `@tanstack/react-start/server` to access session data (or other server-only functions like `getCookies`, `getCookie`)
 > - **Client:** Use `localStorage` or other browser APIs to access auth tokens
 >
 > This ensures your authentication works correctly in both SSR and browser contexts.
@@ -316,6 +337,12 @@ export function getRouter() {
 ### Custom Cache Configuration
 
 ```typescript
+import { ApolloClient, InMemoryCache } from "@apollo/client-integration-tanstack-start";
+import { HttpLink } from "@apollo/client";
+import { createRouter } from "@tanstack/react-router";
+import { routeTree } from "./routeTree.gen";
+import { routerWithApolloClient } from "@apollo/client-integration-tanstack-start";
+
 export function getRouter() {
   const apolloClient = new ApolloClient({
     cache: new InMemoryCache({
@@ -334,6 +361,13 @@ export function getRouter() {
     link: new HttpLink({ uri: "https://your-graphql-endpoint.com/graphql" }),
   });
 
-  // ... rest of router setup
+  const router = createRouter({
+    routeTree,
+    context: {
+      ...routerWithApolloClient.defaultContext,
+    },
+  });
+
+  return routerWithApolloClient(router, apolloClient);
 }
 ```
