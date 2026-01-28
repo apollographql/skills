@@ -153,7 +153,7 @@ For optimal streaming SSR, use suspense-enabled hooks like `useSuspenseQuery` an
 ```typescript
 "use client";
 
-import { useSuspenseQuery } from "@apollo/client";
+import { useSuspenseQuery } from "@apollo/client/react";
 
 export function UserProfile({ userId }: { userId: string }) {
   const { data } = useSuspenseQuery(GET_USER, {
@@ -190,7 +190,7 @@ export default async function Page() {
 ```tsx
 "use client";
 
-import { useSuspenseQuery } from "@apollo/client";
+import { useSuspenseQuery } from "@apollo/client/react";
 
 export function ClientChild() {
   const { data } = useSuspenseQuery(GET_USER, {
@@ -222,7 +222,7 @@ In your Client Component:
 ```tsx
 "use client";
 
-import { useQueryRefHandlers, useReadQuery, QueryRef } from "@apollo/client";
+import { useQueryRefHandlers, useReadQuery, QueryRef } from "@apollo/client/react";
 
 export function ClientChild({ queryRef }: { queryRef: QueryRef<TQueryData> }) {
   const { refetch } = useQueryRefHandlers(queryRef);

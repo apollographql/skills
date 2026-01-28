@@ -89,7 +89,8 @@ export function getRouter() {
 Use the `preloadQuery` function in your route loader to preload data during navigation:
 
 ```typescript
-import { gql, useReadQuery } from "@apollo/client";
+import { gql } from "@apollo/client";
+import { useReadQuery } from "@apollo/client/react";
 import { createFileRoute } from "@tanstack/react-router";
 
 // TypedDocumentNode definition
@@ -134,7 +135,7 @@ function RouteComponent() {
 You can also use Apollo Client's suspenseful hooks directly in your component without a loader:
 
 ```typescript
-import { gql, useSuspenseQuery } from "@apollo/client";
+import { gql, useSuspenseQuery } from "@apollo/client/react";
 import { createFileRoute } from "@tanstack/react-router";
 
 // TypedDocumentNode definition
@@ -176,7 +177,8 @@ function RouteComponent() {
 You can preload multiple queries in a single loader:
 
 ```typescript
-import { gql, useReadQuery } from "@apollo/client";
+import { gql } from "@apollo/client";
+import { useReadQuery } from "@apollo/client/react";
 import { createFileRoute } from "@tanstack/react-router";
 
 // TypedDocumentNode definitions omitted for brevity
@@ -224,7 +226,7 @@ When using `useReadQuery`, you can get refetch functionality from `useQueryRefHa
 > **Important:** Always call `useQueryRefHandlers` before `useReadQuery`. These two hooks interact with the same `queryRef`, and calling them in the wrong order could cause subtle bugs.
 
 ```typescript
-import { useReadQuery, useQueryRefHandlers, QueryRef } from "@apollo/client";
+import { useReadQuery, useQueryRefHandlers, QueryRef } from "@apollo/client/react";
 
 function UserComponent({ queryRef }: { queryRef: QueryRef<GetUserQuery> }) {
   const { refetch } = useQueryRefHandlers(queryRef);

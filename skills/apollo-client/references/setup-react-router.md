@@ -152,7 +152,8 @@ export default function App() {
 You can now use the `apolloLoader` function to create Apollo-enabled loaders for your routes:
 
 ```typescript
-import { gql, useReadQuery } from "@apollo/client";
+import { gql } from "@apollo/client";
+import { useReadQuery } from "@apollo/client/react";
 import { useLoaderData } from "react-router";
 import type { Route } from "./+types/my-route";
 
@@ -197,7 +198,8 @@ export default function UserPage() {
 You can preload multiple queries in a single loader:
 
 ```typescript
-import { gql, useReadQuery } from "@apollo/client";
+import { gql } from "@apollo/client";
+import { useReadQuery } from "@apollo/client/react";
 import { useLoaderData } from "react-router";
 import type { Route } from "./+types/my-route";
 
