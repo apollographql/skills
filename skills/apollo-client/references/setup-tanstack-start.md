@@ -252,10 +252,12 @@ function UserComponent({ queryRef }: { queryRef: QueryRef<GetUserQuery> }) {
 
 ### Adding Authentication
 
-For authentication in TanStack Start with SSR support, use `SetContextLink` with session management. This pattern works both on the server and client:
+For authentication in TanStack Start with SSR support, you need to handle both server and client environments differently. Use `createIsomorphicFn` to provide environment-specific implementations:
 
 ```typescript
+import { ApolloLink, HttpLink } from "@apollo/client";
 import { SetContextLink } from "@apollo/client/link/context";
+import { createIsomorphicFn } from "@tanstack/react-start";
 import { getSession } from "@tanstack/react-start/server";
 
 // Define your session data structure
@@ -264,10 +266,9 @@ type SessionData = {
   authToken?: `Bearer ${string}`;
 };
 
-// Create an auth link that works in both SSR and browser contexts
-export function createAuthLink() {
+// Server-only: Create auth link using session management
+function createServerAuthLink() {
   return new SetContextLink(async (prevContext) => {
-    // Get session data (works in both SSR and browser)
     const session = await getSession<SessionData>({
       name: "app-session",
       password: process.env.SESSION_SECRET!, // Store in environment variable
@@ -282,14 +283,39 @@ export function createAuthLink() {
   });
 }
 
-export function getRouter() {
-  const httpLink = new HttpLink({
-    uri: "https://your-graphql-endpoint.com/graphql",
+// Client-only: Create auth link using localStorage
+function createClientAuthLink() {
+  return new SetContextLink((prevContext) => {
+    const token = localStorage.getItem("authToken");
+
+    return {
+      headers: {
+        ...prevContext.headers,
+        authorization: token ?? "",
+      },
+    };
+  });
+}
+
+// Create isomorphic link that uses different implementations per environment
+const getApolloLink = createIsomorphicFn()
+  .server(() => {
+    const httpLink = new HttpLink({
+      uri: "https://your-graphql-endpoint.com/graphql",
+    });
+    return ApolloLink.from([createServerAuthLink(), httpLink]);
+  })
+  .client(() => {
+    const httpLink = new HttpLink({
+      uri: "https://your-graphql-endpoint.com/graphql",
+    });
+    return ApolloLink.from([createClientAuthLink(), httpLink]);
   });
 
+export function getRouter() {
   const apolloClient = new ApolloClient({
     cache: new InMemoryCache(),
-    link: createAuthLink().concat(httpLink),
+    link: getApolloLink(),
   });
 
   const router = createRouter({
@@ -303,7 +329,11 @@ export function getRouter() {
 }
 ```
 
-> **Important:** Never use `localStorage` in auth links as it's not available during SSR. Use TanStack Start's session management or cookies instead.
+> **Important:** The `getRouter` function is called both on the server and client, so it must not contain environment-specific code. Use `createIsomorphicFn` to provide different implementations:
+> - **Server:** Use `getSession` from `@tanstack/react-start/server` to access session data
+> - **Client:** Use `localStorage` or other browser APIs to access auth tokens
+> 
+> This ensures your authentication works correctly in both SSR and browser contexts.
 
 ### Custom Cache Configuration
 
