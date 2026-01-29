@@ -16,7 +16,7 @@
 
 The `useQuery` hook is the primary way to fetch data in Apollo Client in non-suspenseful applications. It returns loading and error states that must be handled.
 
-> **Note**: In suspenseful applications, use `useSuspenseQuery` or `useBackgroundQuery` instead. See the suspenseful query usage reference for more details.
+> **Note**: In suspenseful applications, use `useSuspenseQuery` or `useBackgroundQuery` instead. See the [Suspense Hooks reference](suspense-hooks.md) for more details.
 
 ### Basic Usage
 
