@@ -29,7 +29,7 @@ type User {
 
 ### Offset-Based
 
-Has limitations:
+Straightforward approach with limitations:
 
 ```graphql
 type Query {
@@ -65,7 +65,7 @@ type PostsPage {
 
 **Pros:**
 - Straightforward to build
-- Jump to specific page
+- Allows jumping to specific page
 - Familiar to REST developers
 
 **Cons:**
