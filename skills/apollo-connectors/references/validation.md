@@ -212,8 +212,8 @@ tests:
       connectorRequest:           # Expected request
         method: GET|POST|PUT|PATCH|DELETE
         url: string               # Preferred: full URL
-        origin: string            # Alternative: just origin
-        path: string              # Alternative: just path
+        origin: string            # Alternative: only origin
+        path: string              # Alternative: only path
         queryParams: object
         headers: object
         body: string

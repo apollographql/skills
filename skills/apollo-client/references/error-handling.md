@@ -230,7 +230,7 @@ While it is possible to set a global error policy using `defaultOptions`, in pra
 
 The `ErrorLink` can be used to e.g. log error globally or perform specific side effects based on errors happening.
 
-An `ErrorLink` can not be used to swallow errors fully, but it can be used to retry an operation after handling an error, in which case the error would not propagate. Otherwise, the most common use for `ErrorLink` is logging.
+An `ErrorLink` can't be used to swallow errors fully, but it can be used to retry an operation after handling an error, in which case the error wouldn't propagate. Otherwise, the most common use for `ErrorLink` is logging.
 
 ```ts
 import { ErrorLink } from "@apollo/client/link/error";
