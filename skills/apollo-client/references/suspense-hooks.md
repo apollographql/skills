@@ -91,6 +91,17 @@ const {
 When variables change, `useSuspenseQuery` automatically re-runs the query. If the data is not in the cache, the component suspends again.
 
 ```tsx
+import { useState } from 'react';
+
+const GET_DOGS = gql`
+  query GetDogs {
+    dogs {
+      id
+      name
+    }
+  }
+`;
+
 function DogSelector() {
   const { data } = useSuspenseQuery(GET_DOGS);
   const [selectedDog, setSelectedDog] = useState(data.dogs[0].id);
@@ -138,8 +149,8 @@ function Dog({ id }: { id: string }) {
 
   return (
     <>
-      <div>Name: {data.dog.name}</div>
-      {data.dog.breed && <div>Breed: {data.dog.breed}</div>}
+      <div>Name: {data.dog?.name ?? 'Unknown'}</div>
+      {data.dog?.breed && <div>Breed: {data.dog.breed}</div>}
     </>
   );
 }
@@ -221,6 +232,12 @@ const GET_GREETING = gql`
     }
   }
 `;
+
+interface GreetingData {
+  greeting: {
+    message: string;
+  };
+}
 
 function App() {
   const [loadGreeting, queryRef] = useLoadableQuery(GET_GREETING);
@@ -414,7 +431,7 @@ function DogSelector() {
 
 ## Avoiding Request Waterfalls
 
-Request waterfalls occur when a child component waits for the parent to finish rendering before it can start fetching its own data. Use `useBackgroundQuery` to avoid this.
+Request waterfalls occur when a child component waits for the parent to finish rendering before it can start fetching its own data. Use `useBackgroundQuery` to start fetching child data earlier in the component tree.
 
 ### Problem: Waterfall Pattern
 
@@ -430,6 +447,20 @@ function Parent() {
   );
 }
 
+const GET_DOG_DETAILS = gql`
+  query GetDogDetails($id: String!) {
+    dog(id: $id) {
+      id
+      name
+      breed
+      owner {
+        name
+        email
+      }
+    }
+  }
+`;
+
 function Child({ dogId }: { dogId: string }) {
   // This query can't start until Parent's query completes
   const { data } = useSuspenseQuery(GET_DOG_DETAILS, {
@@ -440,12 +471,28 @@ function Child({ dogId }: { dogId: string }) {
 }
 ```
 
-### Solution: Start Queries in Parallel
+### Solution: Preload with useBackgroundQuery
+
+When the child query depends on parent data, start the child query in the parent as soon as the parent data is available:
 
 ```tsx
-// ✅ Good: Both queries start immediately
+// ✅ Better: Start child query as soon as parent data arrives
+interface DogDetailsData {
+  dog: {
+    id: string;
+    name: string;
+    breed: string;
+    owner: {
+      name: string;
+      email: string;
+    };
+  };
+}
+
 function Parent() {
   const { data } = useSuspenseQuery(GET_DOGS);
+  
+  // Start fetching details immediately after we have the dog ID
   const [dogDetailsRef] = useBackgroundQuery(GET_DOG_DETAILS, {
     variables: { id: data.dogs[0].id },
   });
@@ -466,11 +513,11 @@ function Child({ queryRef }: { queryRef: QueryRef<DogDetailsData> }) {
 
 ## Fragment Hooks
 
-Use fragment hooks (`useFragment` and `useSuspenseFragment`) to read fragment data in child components. This enables proper component colocation and data masking.
+Use `useFragment` to read fragment data in child components. This enables proper component colocation and data masking.
 
 ### useFragment
 
-`useFragment` reads fragment data from the cache without suspending. Use it for non-Suspense applications or when you want to read cached data without triggering loading states.
+`useFragment` reads fragment data from the cache without suspending. Use it to read cached data in child components that don't need to trigger their own queries.
 
 ```tsx
 import { gql } from '@apollo/client';
@@ -585,10 +632,20 @@ const { data } = useSuspenseQuery(GET_POSTS, {
 
 ### Using skipToken
 
-Use `skipToken` to conditionally skip queries without TypeScript issues:
+Use `skipToken` to conditionally skip queries without TypeScript issues. When `skipToken` is used, the component won't suspend and `data` will be `undefined`.
 
 ```tsx
 import { skipToken } from '@apollo/client';
+
+const GET_USER = gql`
+  query GetUser($id: ID!) {
+    user(id: $id) {
+      id
+      name
+      email
+    }
+  }
+`;
 
 function UserProfile({ userId }: { userId: string | null }) {
   const { data } = useSuspenseQuery(
@@ -598,13 +655,17 @@ function UserProfile({ userId }: { userId: string | null }) {
     }
   );
 
-  return userId ? <Profile user={data?.user} /> : <p>Select a user</p>;
+  if (!userId || !data) {
+    return <p>Select a user</p>;
+  }
+
+  return <Profile user={data.user} />;
 }
 ```
 
-### Conditional Rendering
+### Conditional Rendering (Recommended)
 
-Alternatively, use conditional rendering to control when Suspense hooks are called:
+The recommended approach is to use conditional rendering to control when Suspense hooks are called. This provides better type safety and clearer component logic.
 
 ```tsx
 function UserProfile({ userId }: { userId: string | null }) {
@@ -628,14 +689,4 @@ function UserDetails({ userId }: { userId: string }) {
 }
 ```
 
-### SSR Considerations
-
-For server-side rendering, you may need to skip certain queries:
-
-```tsx
-const { data } = useSuspenseQuery(GET_USER_LOCATION, {
-  skip: typeof window === 'undefined',
-});
-```
-
-> **Note**: Using `skipToken` is preferred over `skip` as it provides better type safety and avoids issues with required variables.
+> **Note**: Using conditional rendering with `skipToken` provides better type safety and avoids issues with required variables. The `skip` option is deprecated in favor of `skipToken`.
