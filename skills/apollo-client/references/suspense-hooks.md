@@ -10,7 +10,6 @@
 - [Suspense Boundaries and Error Handling](#suspense-boundaries-and-error-handling)
 - [Transitions](#transitions)
 - [Avoiding Request Waterfalls](#avoiding-request-waterfalls)
-- [Fragment Hooks](#fragment-hooks)
 - [Fetch Policies](#fetch-policies)
 - [Conditional Queries](#conditional-queries)
 
@@ -69,10 +68,10 @@ function Dog({ id }: { id: string }) {
 
 ```typescript
 const {
-  data,           // Query result data (always defined)
+  data,           // Query result data
   dataState,      // "complete" | "streaming" | "partial" | "empty"
   error,          // ApolloError (if errorPolicy allows)
-  networkStatus,  // Detailed network state (1-8)
+  networkStatus,  // NetworkStatus.ready, NetworkStatus.loading, etc.
   client,         // Apollo Client instance
   refetch,        // Function to re-execute query
   fetchMore,      // Function for pagination
@@ -82,7 +81,7 @@ const {
 ### Key Differences from useQuery
 
 - **No `loading` boolean**: Component suspends instead of returning `loading: true`
-- **`data` always defined**: When the component renders, `data` is guaranteed to be present
+- **`data` availability**: With default `errorPolicy` (`none`), `data` is guaranteed to be present when the component renders. With `errorPolicy: "ignore"` or `errorPolicy: "all"`, if `dataState` is `empty`, `data` may be `undefined`.
 - **No inline error handling**: Errors are caught by error boundaries, not returned in the hook result (unless using a custom `errorPolicy`)
 - **Suspense boundaries**: Must wrap component with `<Suspense>` to handle loading state
 
@@ -433,166 +432,56 @@ function DogSelector() {
 
 Request waterfalls occur when a child component waits for the parent to finish rendering before it can start fetching its own data. Use `useBackgroundQuery` to start fetching child data earlier in the component tree.
 
-### Problem: Waterfall Pattern
+> **Note**: When one query depends on the result of another query (e.g., the child query needs an ID from the parent query), the waterfall is unavoidable. The best solution is to restructure your schema to fetch all needed data in a single nested query.
+
+### Example: Independent Queries
+
+When queries don't depend on each other, use `useBackgroundQuery` to start them in parallel:
 
 ```tsx
-// ❌ Bad: Child can't start fetching until Parent finishes
-function Parent() {
-  const { data } = useSuspenseQuery(GET_DOGS);
-
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <Child dogId={data.dogs[0].id} />
-    </Suspense>
-  );
-}
-
-const GET_DOG_DETAILS = gql`
-  query GetDogDetails($id: String!) {
-    dog(id: $id) {
+const GET_USER = gql`
+  query GetUser($id: String!) {
+    user(id: $id) {
       id
       name
-      breed
-      owner {
-        name
-        email
-      }
     }
   }
 `;
 
-function Child({ dogId }: { dogId: string }) {
-  // This query can't start until Parent's query completes
-  const { data } = useSuspenseQuery(GET_DOG_DETAILS, {
-    variables: { id: dogId },
-  });
-
-  return <div>{data.dog.breed}</div>;
-}
-```
-
-### Solution: Preload with useBackgroundQuery
-
-When the child query depends on parent data, start the child query in the parent as soon as the parent data is available:
-
-```tsx
-// ✅ Better: Start child query as soon as parent data arrives
-interface DogDetailsData {
-  dog: {
-    id: string;
-    name: string;
-    breed: string;
-    owner: {
-      name: string;
-      email: string;
-    };
-  };
-}
+const GET_POSTS = gql`
+  query GetPosts {
+    posts {
+      id
+      title
+    }
+  }
+`;
 
 function Parent() {
-  const { data } = useSuspenseQuery(GET_DOGS);
-  
-  // Start fetching details immediately after we have the dog ID
-  const [dogDetailsRef] = useBackgroundQuery(GET_DOG_DETAILS, {
-    variables: { id: data.dogs[0].id },
+  // Both queries can start immediately
+  const { data: userData } = useSuspenseQuery(GET_USER, {
+    variables: { id: '1' },
   });
+  
+  const [postsRef] = useBackgroundQuery(GET_POSTS);
 
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <Child queryRef={dogDetailsRef} />
+      <UserProfile user={userData.user} />
+      <PostsList queryRef={postsRef} />
     </Suspense>
   );
 }
 
-function Child({ queryRef }: { queryRef: QueryRef<DogDetailsData> }) {
+function PostsList({ queryRef }: { queryRef: QueryRef<PostsData> }) {
   const { data } = useReadQuery(queryRef);
-
-  return <div>{data.dog.breed}</div>;
-}
-```
-
-## Fragment Hooks
-
-Use `useFragment` to read fragment data in child components. This enables proper component colocation and data masking.
-
-### useFragment
-
-`useFragment` reads fragment data from the cache without suspending. Use it to read cached data in child components that don't need to trigger their own queries.
-
-```tsx
-import { gql } from '@apollo/client';
-import { useFragment } from '@apollo/client/react';
-
-const DOG_FRAGMENT = gql`
-  fragment DogInfo on Dog {
-    id
-    name
-    breed
-  }
-`;
-
-function DogCard({ id }: { id: string }) {
-  const { data, complete } = useFragment({
-    fragment: DOG_FRAGMENT,
-    from: {
-      __typename: 'Dog',
-      id,
-    },
-  });
-
-  if (!complete) {
-    return <div>Loading...</div>;
-  }
-
-  return (
-    <div>
-      <h3>{data.name}</h3>
-      <p>{data.breed}</p>
-    </div>
-  );
-}
-```
-
-### Component Colocation with Fragments
-
-```tsx
-// Parent component fetches complete query
-const GET_DOGS = gql`
-  query GetDogs {
-    dogs {
-      id
-      ...DogInfo
-    }
-  }
-  ${DOG_FRAGMENT}
-`;
-
-function DogList() {
-  const { data } = useSuspenseQuery(GET_DOGS);
 
   return (
     <ul>
-      {data.dogs.map((dog) => (
-        <li key={dog.id}>
-          <DogCard id={dog.id} />
-        </li>
+      {data.posts.map((post) => (
+        <li key={post.id}>{post.title}</li>
       ))}
     </ul>
-  );
-}
-
-// Child component uses fragment
-function DogCard({ id }: { id: string }) {
-  const { data } = useFragment({
-    fragment: DOG_FRAGMENT,
-    from: { __typename: 'Dog', id },
-  });
-
-  return (
-    <div>
-      <h3>{data.name}</h3>
-      <p>{data.breed}</p>
-    </div>
   );
 }
 ```
@@ -663,9 +552,9 @@ function UserProfile({ userId }: { userId: string | null }) {
 }
 ```
 
-### Conditional Rendering (Recommended)
+### Conditional Rendering
 
-The recommended approach is to use conditional rendering to control when Suspense hooks are called. This provides better type safety and clearer component logic.
+Alternatively, use conditional rendering to control when Suspense hooks are called. This provides better type safety and clearer component logic.
 
 ```tsx
 function UserProfile({ userId }: { userId: string | null }) {
