@@ -204,7 +204,7 @@ function Dogs() {
 
 Use `useLazyQuery` when you want to execute a query in response to a user-triggered event (like a button click) rather than on component mount.
 
-**Important**: `useLazyQuery` doesn't guarantee a network request - it just sets variables. If data is already in the cache, this is not a "refetch". Only use `useLazyQuery` if you consume the second tuple value (loading, data, error states) to synchronize cache data with the component. If you only need the promise, use `client.query` directly instead.
+**Important**: `useLazyQuery` doesn't guarantee a network request - it only sets variables. If data is already in the cache, this isn't a "refetch". Only use `useLazyQuery` if you consume the second tuple value (loading, data, error states) to synchronize cache data with the component. If you only need the promise, use `client.query` directly instead.
 
 ### Basic Usage
 

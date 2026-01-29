@@ -72,7 +72,7 @@ type Query {
       http: { GET: "/orders/{$args.id}" }
       selection: """
       id
-      user: { id: userId }  # Entity stub - just the key field
+      user: { id: userId }  # Entity stub - only the key field
       total
       """
     )

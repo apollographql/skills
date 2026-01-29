@@ -7,7 +7,7 @@ This reference covers pagination patterns for GraphQL schemas, with focus on the
 - [Pagination Approaches](#pagination-approaches)
 - [Offset vs Cursor](#offset-vs-cursor)
 - [Connection Pattern](#connection-pattern)
-- [Implementing Connections](#implementing-connections)
+- [Building Connections](#building-connections)
 - [Sorting and Filtering](#sorting-and-filtering)
 - [Performance Considerations](#performance-considerations)
 
@@ -29,7 +29,7 @@ type User {
 
 ### Offset-Based
 
-Simple but has limitations:
+Has limitations:
 
 ```graphql
 type Query {
@@ -64,8 +64,8 @@ type PostsPage {
 ```
 
 **Pros:**
-- Simple to implement
-- Easy to jump to specific page
+- Straightforward to build
+- Jump to specific page
 - Familiar to REST developers
 
 **Cons:**
@@ -89,7 +89,7 @@ type Query {
 
 **Cons:**
 - Can't jump to arbitrary page
-- More complex to implement
+- Requires more code to build
 - Opaque cursors require explanation
 
 ## Connection Pattern
@@ -169,7 +169,7 @@ type PageInfo {
 }
 ```
 
-## Implementing Connections
+## Building Connections
 
 ### Basic Connection Query
 
