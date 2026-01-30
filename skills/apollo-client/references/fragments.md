@@ -573,6 +573,8 @@ Non-page components should use `useFragment` or `useSuspenseFragment`:
 
 ```tsx
 // ✅ Good: Component reads fragment data
+import { FragmentType } from '@apollo/client';
+import { useSuspenseFragment } from '@apollo/client/react';
 import { UserCard_UserFragmentDoc } from './fragments.generated';
 
 function UserCard({ user }: { user: FragmentType<typeof UserCard_UserFragmentDoc> }) {
@@ -785,6 +787,10 @@ Apollo Client's approach creates more efficient subscriptions:
 ### Example
 
 ```tsx
+import { FragmentType } from '@apollo/client';
+import { useSuspenseQuery, useSuspenseFragment } from '@apollo/client/react';
+import { UserCard_UserFragmentDoc } from './fragments.generated';
+
 function ParentComponent() {
   const { data } = useSuspenseQuery(GET_USER);
   
