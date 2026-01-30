@@ -10,6 +10,22 @@ Follow these rules when working on the Apollo Client AI skill instructions.
 
 - Do not make time-relative statements about the library, like "now provides feature X". If the content is version-specific, refer to the minimal version instead. Generally assume the user uses Apollo Client v4.x unless otherwise specified.
 
+## Rules for discussing fragments
+
+**Fragments are for colocation, not reuse.** When discussing fragments, follow these guidelines based on GraphQL spec PR #1193:
+
+- **DO NOT** describe fragments as being "for reuse" or "reusable units"
+- **DO NOT** suggest sharing fragments between components just because they currently need the same fields
+- **DO** emphasize that fragments are for component colocation - each component should have its own fragment
+- **DO** explain that fragments enable independent evolution of component data requirements
+- **DO** explain that sharing fragments creates artificial dependencies and leads to over-fetching when one component's needs change
+
+Example of correct messaging:
+- ✅ "Each component should declare its data needs in a dedicated fragment"
+- ✅ "Fragments enable components to independently evolve their data requirements"
+- ❌ "Fragments allow for the reuse of common repeated selections"
+- ❌ "Create a shared fragment for fields used by multiple components"
+
 ## Rules for code examples
 
 - always ensure correct imports
