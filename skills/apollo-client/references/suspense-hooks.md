@@ -323,13 +323,6 @@ When `toPromise()` is used, the route transition waits for the query to complete
 
 > **Note**: For Next.js App Router, use the `PreloadQuery` component from `@apollo/client-integration-nextjs` instead. See [setup-nextjs.md](./setup-nextjs.md) for details.
 
-### When to Use
-
-- **Server-side rendering**: Preload data before component hydration
-- **Route transitions**: Start loading data before navigating to a new route
-- **Event handlers**: Begin fetching data in response to user interactions before rendering components
-- **Parallel data fetching**: Initiate multiple queries simultaneously outside of component rendering
-
 ## useQueryRefHandlers
 
 The `useQueryRefHandlers` hook provides access to `refetch` and `fetchMore` functions for queries initiated with `preloadQuery`, `useBackgroundQuery`, or `useLoadableQuery`. This is useful when you need to refetch or paginate data in components where the `queryRef` is passed through.
