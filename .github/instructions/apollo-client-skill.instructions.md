@@ -4,9 +4,9 @@ applyTo: "skills/apollo-client/**/*.md"
 
 ## General rules
 
-- Do not make time-relative statements about the library, like "now provides feature X". If the content is version-specific, refer to the minimal version instead. Generally assume the user uses Apollo Client 4.x unless otherwise specified.
+- Do not make time-relative statements about the library, like "now provides feature X". If the content is version-specific, refer to the minimal version instead. Generally assume the user uses Apollo Client v4.x unless otherwise specified.
 
-## Rules for Code examples
+## Rules for code examples
 
 - always ensure correct imports
   - imports should be complete for the example
@@ -30,16 +30,16 @@ applyTo: "skills/apollo-client/**/*.md"
   - for statements about types, read the actual TypeScript types in the source code - e.g. in `<repo>/src/react/hooks/useSuspenseQuery.ts` for the `useSuspenseQuery` hook
   - for statements about behavior, read the tests in the `__tests__` directories - e.g. in `<repo>/src/react/hooks/__tests__/useSuspenseQuery.test.tsx` for the `useSuspenseQuery` hook
 - for framework-specific integrations, consult the relevant integration package documentation and source code. These integrations share the https://github.com/apollographql/apollo-client-integrations repository.
-  - Next.js (@apollo/client-integration-nextjs):
+  - Next.js (`@apollo/client-integration-nextjs`):
     - Source code: `<repo>/packages/nextjs`
     - Integration test setup as a usage example: `<repo>/integration-test/nextjs`
-  - React Router (@apollo/client-integration-react-router):
+  - React Router (`@apollo/client-integration-react-router`):
     - Source code: `<repo>/packages/react-router`
     - Integration test setup as a usage example: `<repo>/integration-test/react-router`
-  - TanStack Start (@apollo/client-integration-tanstack-start):
+  - TanStack Start (`@apollo/client-integration-tanstack-start`):
     - Source code: `<repo>/packages/tanstack-start`
     - Integration test setup as a usage example: `<repo>/integration-test/tanstack-start`
-  * The integrations share code in the @apollo/client-react-streaming package:
+  * The integrations share code in the `@apollo/client-react-streaming` package:
     - Source code: `<repo>/packages/client-react-streaming`
     - Shared integration tests at `<repo>/integration-test/playwright`
 - for deeper research, consult GitHub issues in the Apollo Client and Apollo Client Integrations repositories
