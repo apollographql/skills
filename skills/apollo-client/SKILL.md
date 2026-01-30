@@ -334,6 +334,7 @@ const client = new ApolloClient({
 Detailed documentation for specific topics:
 
 - [Queries](references/queries.md) - useQuery, useLazyQuery, polling, refetching
+- [Suspense Hooks](references/suspense-hooks.md) - useSuspenseQuery, useBackgroundQuery, useReadQuery, useLoadableQuery
 - [Mutations](references/mutations.md) - useMutation, optimistic UI, cache updates
 - [Caching](references/caching.md) - InMemoryCache, typePolicies, cache manipulation
 - [State Management](references/state-management.md) - Reactive variables, local state
