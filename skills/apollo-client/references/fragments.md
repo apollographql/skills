@@ -258,8 +258,9 @@ Both hooks accept these options:
   // The fragment document (required)
   fragment: TypedDocumentNode,
   
-  // The fragment name (required)
-  fragmentName: string,
+  // The fragment name (optional in most cases)
+  // Only required if the fragment document contains multiple definitions
+  fragmentName?: string,
   
   // The source data containing the fragment (required)
   // Can be a single object or an array of objects
@@ -267,9 +268,6 @@ Both hooks accept these options:
   
   // Variables for the fragment (optional)
   variables?: Variables,
-  
-  // Custom cache behavior (optional)
-  canonizeResults?: boolean,
 }
 ```
 
