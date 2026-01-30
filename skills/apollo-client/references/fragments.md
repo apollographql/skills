@@ -104,20 +104,15 @@ if (false) {
 // This has been created from above fragment definition by CodeGen and is a correctly typed `TypedDocumentNode`
 import { UserCard_UserFragmentDoc } from './fragments.generated.ts';
 
-// Attach fragment to component for easy access
-UserCard.fragments = {
-  user: UserCard_UserFragmentDoc,
-} as const;
-
 // Component receives the (partially masked) parent object
 export function UserCard({ 
   user 
 }: { 
-  user: FragmentType<typeof UserCard.fragments.user> 
+  user: FragmentType<typeof UserCard_UserFragmentDoc> 
 }) {
   // Creates a subscription to the fragment in the cache
   const { data } = useSuspenseFragment({
-    fragment: UserCard.fragments.user,
+    fragment: UserCard_UserFragmentDoc,
     fragmentName: "UserCard_user",
     from: user,
   });
@@ -205,14 +200,15 @@ For components using Suspense and concurrent features:
 ```tsx
 import { useSuspenseFragment } from '@apollo/client/react';
 import { FragmentType } from '@apollo/client';
+import { UserCard_UserFragmentDoc } from './fragments.generated';
 
 function UserCard({ 
   user 
 }: { 
-  user: FragmentType<typeof UserCard.fragments.user> 
+  user: FragmentType<typeof UserCard_UserFragmentDoc> 
 }) {
   const { data } = useSuspenseFragment({
-    fragment: UserCard.fragments.user,
+    fragment: UserCard_UserFragmentDoc,
     fragmentName: "UserCard_user",
     from: user,
   });
@@ -228,14 +224,15 @@ For components not using Suspense:
 ```tsx
 import { useFragment } from '@apollo/client/react';
 import { FragmentType } from '@apollo/client';
+import { UserCard_UserFragmentDoc } from './fragments.generated';
 
 function UserCard({ 
   user 
 }: { 
-  user: FragmentType<typeof UserCard.fragments.user> 
+  user: FragmentType<typeof UserCard_UserFragmentDoc> 
 }) {
   const { data, complete } = useFragment({
-    fragment: UserCard.fragments.user,
+    fragment: UserCard_UserFragmentDoc,
     fragmentName: "UserCard_user",
     from: user,
   });
@@ -313,13 +310,15 @@ With data masking:
 
 ```tsx
 // ✅ With data masking - component can only access its fragment data
+import { UserCard_UserFragmentDoc } from './fragments.generated';
+
 function UserCard({ 
   user 
 }: { 
-  user: FragmentType<typeof UserCard.fragments.user> 
+  user: FragmentType<typeof UserCard_UserFragmentDoc> 
 }) {
   const { data } = useSuspenseFragment({
-    fragment: UserCard.fragments.user,
+    fragment: UserCard_UserFragmentDoc,
     from: user,
   });
   
@@ -380,13 +379,10 @@ With colocated fragments:
 
 ```tsx
 import { fragmentRegistry } from '@/apollo/client';
-
-UserCard.fragments = {
-  user: UserCard_UserFragmentDoc,
-} as const;
+import { UserCard_UserFragmentDoc } from './fragments.generated';
 
 // Register the fragment globally
-fragmentRegistry.register(UserCard.fragments.user);
+fragmentRegistry.register(UserCard_UserFragmentDoc);
 ```
 
 ### Using Registered Fragments
@@ -466,9 +462,11 @@ function UserCard({
 TypeScript infers types from fragment documents automatically:
 
 ```tsx
+import { UserCard_UserFragmentDoc } from './fragments.generated';
+
 // Types are inferred from the fragment
 const { data } = useSuspenseFragment({
-  fragment: UserCard.fragments.user,
+  fragment: UserCard_UserFragmentDoc,
   from: user,
 });
 
@@ -575,9 +573,11 @@ Non-page components should use `useFragment` or `useSuspenseFragment`:
 
 ```tsx
 // ✅ Good: Component reads fragment data
-function UserCard({ user }: { user: FragmentType<typeof UserCard.fragments.user> }) {
+import { UserCard_UserFragmentDoc } from './fragments.generated';
+
+function UserCard({ user }: { user: FragmentType<typeof UserCard_UserFragmentDoc> }) {
   const { data } = useSuspenseFragment({
-    fragment: UserCard.fragments.user,
+    fragment: UserCard_UserFragmentDoc,
     from: user,
   });
   return <div>{data.name}</div>;
@@ -795,10 +795,10 @@ function ParentComponent() {
   return <UserCard user={data.user} />;
 }
 
-function UserCard({ user }: { user: FragmentType<typeof UserCard.fragments.user> }) {
+function UserCard({ user }: { user: FragmentType<typeof UserCard_UserFragmentDoc> }) {
   // Creates a cache subscription specifically for UserCard_user fields
   const { data } = useSuspenseFragment({
-    fragment: UserCard.fragments.user,
+    fragment: UserCard_UserFragmentDoc,
     from: user,
   });
   
