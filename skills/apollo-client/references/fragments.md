@@ -342,7 +342,9 @@ function UserCard({
 
 ## Fragment Registry
 
-The fragment registry allows you to register fragments globally, making them available throughout your application without explicit imports.
+The fragment registry is an **alternative approach** to GraphQL Code Generator's automatic fragment inlining by name. It allows you to register fragments globally, making them available throughout your application by name reference.
+
+**Important**: GraphQL Code Generator automatically inlines fragments by name wherever they're used in your queries. Either approach is sufficient on its own—**you don't need to combine them**.
 
 ### Creating a Fragment Registry
 
@@ -403,15 +405,46 @@ const GET_USER = gql`
 `;
 ```
 
-### When to Use Fragment Registry
+### Approaches for Fragment Composition
 
-The fragment registry is most useful when:
+There are three approaches to make child fragments available in parent queries:
 
-- Using colocated fragments extensively
-- You want fragments available across your application
-- Lazy loading components that define fragments
+1. **GraphQL Code Generator inlining** (Recommended): CodeGen automatically inlines fragments by name. No manual work needed—just reference fragments by name in your queries.
 
-Avoid the fragment registry when using GraphQL Code Generator's client preset, as it precompiles all fragments.
+2. **Fragment Registry**: Manually register fragments to make them available by name. Useful for runtime scenarios where CodeGen isn't available.
+
+3. **Manual interpolation**: Explicitly import and interpolate child fragments into parent fragments:
+   ```typescript
+   import { CHILD_FRAGMENT } from './ChildComponent';
+   
+   const PARENT_FRAGMENT = gql`
+     fragment Parent_data on Data {
+       field
+       ...Child_data
+     }
+     ${CHILD_FRAGMENT}
+   `;
+   ```
+
+### Pros and Cons
+
+**GraphQL Code Generator inlining**:
+- ✅ Less work: Automatic, no manual registration needed
+- ❌ Larger bundle: Fragments are inlined into every query that uses them
+
+**Fragment Registry**:
+- ✅ Smaller bundle: Fragments are registered once, referenced by name
+- ❌ More work: Requires manual registration of each fragment
+- ✅ Best for deeply nested component trees where bundle size matters
+
+**Manual interpolation**:
+- ❌ Most work: Manual imports and interpolation required
+- ❌ Tight coupling: Parent must know about all child fragments
+- ✅ Explicit: Clear fragment dependencies in code
+
+### Recommendation
+
+For most applications using GraphQL Code Generator (as shown in this guide), **use the automatic inlining**—it requires no additional setup and works seamlessly. Consider the fragment registry only if bundle size becomes a concern in applications with deeply nested component trees.
 
 ## TypeScript Integration
 
