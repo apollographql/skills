@@ -473,14 +473,16 @@ When `toPromise()` is used, the route transition waits for the query to complete
 
 The `useQueryRefHandlers` hook provides access to `refetch` and `fetchMore` functions for queries initiated with `preloadQuery`, `useBackgroundQuery`, or `useLoadableQuery`. This is useful when you need to refetch or paginate data in components where the `queryRef` is passed through.
 
+> **Important:** Always call `useQueryRefHandlers` before `useReadQuery`. These two hooks interact with the same `queryRef`, and calling them in the wrong order could cause subtle bugs.
+
 ### Basic Usage
 
 ```tsx
 import { useQueryRefHandlers } from '@apollo/client/react';
 
 function Breeds({ queryRef }: { queryRef: QueryRef<BreedsData> }) {
-  const { data } = useReadQuery(queryRef);
   const { refetch } = useQueryRefHandlers(queryRef);
+  const { data } = useReadQuery(queryRef);
   const [isPending, startTransition] = useTransition();
 
   return (
@@ -511,8 +513,8 @@ Use `fetchMore` to implement pagination:
 
 ```tsx
 function Posts({ queryRef }: { queryRef: QueryRef<PostsData> }) {
-  const { data } = useReadQuery(queryRef);
   const { fetchMore } = useQueryRefHandlers(queryRef);
+  const { data } = useReadQuery(queryRef);
   const [isPending, startTransition] = useTransition();
 
   return (
