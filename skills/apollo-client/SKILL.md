@@ -82,6 +82,18 @@ const config: CodegenConfig = {
 export default config;
 ```
 
+To enable data masking with GraphQL Code Generator, create a type declaration file to inform Apollo Client about the generated types:
+
+```typescript
+// apollo-client.d.ts
+import { GraphQLCodegenDataMasking } from "@apollo/client/masking";
+
+declare module "@apollo/client" {
+  export interface TypeOverrides
+    extends GraphQLCodegenDataMasking.TypeOverrides {}
+}
+```
+
 The typed-document-node plugin might have a bundle size tradeoff but can prevent inconsistencies and is best suited for usage with LLMs, so it is recommended for most applications.
 See the [GraphQL Code Generator documentation](https://www.apollographql.com/docs/react/development-testing/graphql-codegen#recommended-starter-configuration) for other recommended configuration patterns if required.
 

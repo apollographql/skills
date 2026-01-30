@@ -144,6 +144,8 @@ Examples:
 
 This convention makes it clear which component owns which fragment. However, you can choose a different naming convention based on your project's needs.
 
+**Note**: A component might accept fragment data through multiple props, in which case it would have multiple associated fragments. For example, a `CommentCard` component might accept both a `comment` prop and an `author` prop, resulting in `CommentCard_comment` and `CommentCard_author` fragments.
+
 ### Composing Fragments
 
 Parent components compose child fragments to build complete queries:
@@ -629,26 +631,6 @@ function UserCard({ userId }: { userId: string }) {
 }
 ```
 
-### Include __typename for Normalization
-
-Always include `__typename` in fragments for proper cache normalization:
-
-```tsx
-// ✅ Good: Includes __typename
-if (false) {
-  gql`
-    fragment UserCard_user on User {
-      __typename
-      id
-      name
-      email
-    }
-  `;
-}
-```
-
-GraphQL Code Generator automatically includes `__typename` when properly configured.
-
 ### Request Only Required Fields
 
 Keep fragments minimal and only request fields the component actually uses:
@@ -689,6 +671,8 @@ if (false) {
 
 ### Use @defer for Below-the-Fold Content
 
+The `@defer` directive allows you to defer loading of non-critical fields, enabling faster initial page loads by prioritizing essential data. The deferred fields are fetched in a separate request and arrive later, allowing the UI to progressively render as data becomes available.
+
 Defer slow fields that aren't immediately visible:
 
 ```tsx
@@ -720,50 +704,6 @@ if (false) {
       text
       completed
       isSelected @client
-    }
-  `;
-}
-```
-
-### Avoid Deeply Nested Fragments
-
-Keep fragments focused on their component's immediate needs:
-
-```tsx
-// ✅ Good: Focused fragment
-if (false) {
-  gql`
-    fragment UserCard_user on User {
-      id
-      name
-      avatar {
-        url
-        alt
-      }
-    }
-  `;
-}
-```
-
-```tsx
-// ❌ Avoid: Deeply nested data
-if (false) {
-  gql`
-    fragment UserCard_user on User {
-      id
-      name
-      posts {
-        id
-        title
-        comments {
-          id
-          text
-          author {
-            id
-            name
-          }
-        }
-      }
     }
   `;
 }
