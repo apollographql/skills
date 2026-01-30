@@ -435,6 +435,7 @@ There are three approaches to make child fragments available in parent queries:
 **Fragment Registry**:
 - ✅ Smaller bundle: Fragments are registered once, referenced by name
 - ❌ More work: Requires manual registration of each fragment
+- ❌ May cause issues with lazy-loaded modules if the module is not loaded before the query is executed
 - ✅ Best for deeply nested component trees where bundle size matters
 
 **Manual interpolation**:
