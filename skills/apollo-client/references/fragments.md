@@ -134,18 +134,20 @@ export function UserCard({
 
 ### Naming Convention
 
-Follow a consistent naming pattern for fragments:
+A suggested naming pattern for fragments follows this convention:
 
 ```
-{ComponentName}_{fieldName}
+{ComponentName}_{propName}
 ```
+
+Where `propName` is the name of the prop the component receives containing the fragment data.
 
 Examples:
-- `UserCard_user` - User fragment for UserCard component
-- `PostList_posts` - Posts fragment for PostList component
-- `CommentItem_comment` - Comment fragment for CommentItem component
+- `UserCard_user` - Fragment for the `user` prop in the UserCard component
+- `PostList_posts` - Fragment for the `posts` prop in the PostList component
+- `CommentItem_comment` - Fragment for the `comment` prop in the CommentItem component
 
-This convention makes it clear which component owns which fragment.
+This convention makes it clear which component owns which fragment. However, you can choose a different naming convention based on your project's needs.
 
 ### Composing Fragments
 
