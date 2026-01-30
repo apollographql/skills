@@ -260,7 +260,7 @@ export const preloadQuery = createQueryPreloader(client);
 
 ### Using preloadQuery with Route Loaders
 
-> **Note**: This example applies to React Router in non-framework mode. For React Router framework mode, see the [React Router integration guide](https://github.com/apollographql/apollo-client-integrations/tree/main/packages/react-router).
+> **Note**: This example applies to React Router in non-framework mode. For React Router framework mode, see [setup-react-router.md](./setup-react-router.md).
 
 Use the preload function with React Router's `loader` function to begin loading data during route transitions:
 
@@ -321,7 +321,7 @@ When `toPromise()` is used, the route transition waits for the query to complete
 
 ### With Next.js Server Components
 
-> **Note**: For Next.js App Router, use the `PreloadQuery` component from `@apollo/client-integration-nextjs` instead. See the [Next.js integration guide](https://github.com/apollographql/apollo-client-integrations/tree/main/packages/nextjs) for details.
+> **Note**: For Next.js App Router, use the `PreloadQuery` component from `@apollo/client-integration-nextjs` instead. See [setup-nextjs.md](./setup-nextjs.md) for details.
 
 ### When to Use
 
