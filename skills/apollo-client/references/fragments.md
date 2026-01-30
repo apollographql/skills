@@ -260,7 +260,8 @@ Both hooks accept these options:
   fragmentName: string,
   
   // The source data containing the fragment (required)
-  from: FragmentType<typeof fragment>,
+  // Can be a single object or an array of objects
+  from: FragmentType<typeof fragment> | Array<FragmentType<typeof fragment>>,
   
   // Variables for the fragment (optional)
   variables?: Variables,
@@ -269,6 +270,8 @@ Both hooks accept these options:
   canonizeResults?: boolean,
 }
 ```
+
+When `from` is an array, the hook returns an array of results, allowing you to read fragments from multiple objects efficiently.
 
 ## Data Masking
 
