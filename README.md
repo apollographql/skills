@@ -20,7 +20,7 @@ The CLI guides you through an interactive installation:
 4. **Installation method** - Symlink (recommended) or Copy
 
 ```
-◇  Found 8 skills
+◇  Found 9 skills
 │
 ◆  Select skills to install
 │  ◼ apollo-client
@@ -372,6 +372,44 @@ npx skills add apollographql/skills --skill rust-best-practices
 [Performance](skills/rust-best-practices/references/performance.md) ·
 [Testing](skills/rust-best-practices/references/testing.md) ·
 [Advanced](skills/rust-best-practices/references/advanced.md)
+
+---
+
+### skill-creator
+
+Guide for creating effective skills for Apollo GraphQL and GraphQL development.
+
+**Install:**
+
+```bash
+npx skills add apollographql/skills --skill skill-creator
+```
+
+**Use when:**
+
+- Creating a new skill for this repository
+- Updating an existing skill's structure or content
+- Learning skill best practices and patterns
+- Writing SKILL.md files or reference documentation
+
+**Categories covered:**
+
+- SKILL.md format and frontmatter fields
+- Directory structure and reference files
+- Description writing for agent activation triggers
+- Progressive disclosure and context optimization
+- Apollo Voice writing style guidelines
+- Validation checklist for new skills
+
+**Examples:**
+
+- "Create a new skill for Apollo Federation"
+- "Help me write a SKILL.md for my custom skill"
+- "Review my skill structure for best practices"
+
+**References:**
+[SKILL.md](skills/skill-creator/SKILL.md) ·
+[Apollo Skills](skills/skill-creator/references/apollo-skills.md)
 
 ---
 
