@@ -225,7 +225,7 @@ const {
 
 ## useLoadableQuery
 
-Use `useLoadableQuery` to imperatively load a query in response to a user interaction (like a button click) rather than on component mount.
+Use `useLoadableQuery` to imperatively load a query in response to a user interaction (like a button click) instead of on component mount.
 
 ### Basic Usage
 
