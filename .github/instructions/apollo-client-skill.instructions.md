@@ -1,9 +1,11 @@
 ---
 applyTo: "skills/apollo-client/**/*.md"
 ---
-	# Apollo Client Skill Writing Instructions
-	Follow these rules when working on the Apollo Client AI skill instructions.
-	
+
+# Apollo Client Skill Writing Instructions
+
+Follow these rules when working on the Apollo Client AI skill instructions.
+
 ## General rules
 
 - Do not make time-relative statements about the library, like "now provides feature X". If the content is version-specific, refer to the minimal version instead. Generally assume the user uses Apollo Client v4.x unless otherwise specified.
@@ -23,6 +25,7 @@ applyTo: "skills/apollo-client/**/*.md"
 - React hooks should never be shown using explicit generics. Types should always be inferred from the typed query/mutation document.
   - do this: `useQuery(GET_USER, { variables: { id: "1" } })`
   - not this: `useQuery<GetUserQuery, GetUserVariables>(GET_USER, { variables: { id: "1" } })`
+- If both hooks appear in an example, ALWAYS call `useQueryRefHandlers` before `useReadQuery`. These two hooks interact with the same `queryRef`, and calling them in the wrong order could cause subtle bugs.
 
 ## External resources
 
