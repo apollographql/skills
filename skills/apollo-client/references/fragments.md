@@ -1,0 +1,727 @@
+# Fragments Reference
+
+GraphQL fragments are reusable units that define a set of fields for a specific type. In Apollo Client, fragments are especially powerful when colocated with components to define each component's data requirements, creating a clear separation of concerns and enabling better component composition.
+
+## Table of Contents
+
+- [What Are Fragments](#what-are-fragments)
+- [Basic Fragment Syntax](#basic-fragment-syntax)
+- [Fragment Colocation](#fragment-colocation)
+- [Fragment Reading Hooks](#fragment-reading-hooks)
+- [Data Masking](#data-masking)
+- [Fragment Registry](#fragment-registry)
+- [TypeScript Integration](#typescript-integration)
+- [Best Practices](#best-practices)
+
+## What Are Fragments
+
+A GraphQL fragment is a set of fields you can reuse across multiple queries and mutations. Fragments are defined on a specific GraphQL type and can be included in operations using the spread operator (`...`).
+
+Fragments serve two main purposes in Apollo Client applications:
+
+1. **Component colocation**: Define the exact data requirements for a component alongside the component code
+2. **Code organization**: Keep query logic modular and maintainable by splitting it across component boundaries
+
+## Basic Fragment Syntax
+
+### Defining a Fragment
+
+```typescript
+import { gql } from '@apollo/client';
+
+const USER_FRAGMENT = gql`
+  fragment UserFields on User {
+    id
+    name
+    email
+    avatarUrl
+  }
+`;
+```
+
+Every fragment includes:
+- A unique name (`UserFields`)
+- The type it operates on (`User`)
+- The fields to select
+
+### Using Fragments in Queries
+
+Include fragments in queries using the spread operator:
+
+```typescript
+const GET_USER = gql`
+  query GetUser($id: ID!) {
+    user(id: $id) {
+      ...UserFields
+    }
+  }
+  
+  ${USER_FRAGMENT}
+`;
+```
+
+When using GraphQL Code Generator's client preset, the fragment is automatically included and you don't need to interpolate it manually.
+
+## Fragment Colocation
+
+Fragment colocation is the practice of defining fragments in the same file as the component that uses them. This creates a clear contract between components and their data requirements.
+
+### Why Colocate Fragments
+
+- **Locality**: Data requirements live next to the code that uses them
+- **Maintainability**: Changes to component UI and data needs happen together
+- **Type safety**: TypeScript can infer exact types from colocated fragments
+- **Reusability**: Components become self-contained and reusable across different pages
+
+### Colocation Pattern
+
+The recommended pattern for colocating fragments with components:
+
+```tsx
+import { gql, FragmentType } from '@apollo/client';
+import { useSuspenseFragment } from '@apollo/client/react';
+import { UserCard_UserFragmentDoc } from './UserCard.generated';
+
+// Fragment definition (handled by codegen)
+// This would be in your component file for reference only
+if (false) {
+  gql`
+    fragment UserCard_user on User {
+      id
+      name
+      email
+      avatarUrl
+    }
+  `;
+}
+
+// Attach fragment to component for easy access
+UserCard.fragments = {
+  user: UserCard_UserFragmentDoc,
+} as const;
+
+// Component receives masked fragment data
+export function UserCard({ 
+  user 
+}: { 
+  user: FragmentType<typeof UserCard.fragments.user> 
+}) {
+  // Unmask the fragment data
+  const { data } = useSuspenseFragment({
+    fragment: UserCard.fragments.user,
+    fragmentName: "UserCard_user",
+    from: user,
+  });
+
+  return (
+    <div>
+      <img src={data.avatarUrl} alt={data.name} />
+      <h2>{data.name}</h2>
+      <p>{data.email}</p>
+    </div>
+  );
+}
+```
+
+### Naming Convention
+
+Follow a consistent naming pattern for fragments:
+
+```
+{ComponentName}_{fieldName}
+```
+
+Examples:
+- `UserCard_user` - User fragment for UserCard component
+- `PostList_posts` - Posts fragment for PostList component
+- `CommentItem_comment` - Comment fragment for CommentItem component
+
+This convention makes it clear which component owns which fragment.
+
+### Composing Fragments
+
+Parent components compose child fragments to build complete queries:
+
+```tsx
+// Child component
+import { gql } from '@apollo/client';
+
+if (false) {
+  gql`
+    fragment UserAvatar_user on User {
+      id
+      avatarUrl
+      name
+    }
+  `;
+}
+
+// Parent component composes child fragments
+if (false) {
+  gql`
+    fragment UserProfile_user on User {
+      id
+      name
+      email
+      bio
+      ...UserAvatar_user
+    }
+  `;
+}
+
+// Page-level query composes all fragments
+if (false) {
+  gql`
+    query UserProfilePage($id: ID!) {
+      user(id: $id) {
+        ...UserProfile_user
+      }
+    }
+  `;
+}
+```
+
+This creates a hierarchy that mirrors your component tree.
+
+## Fragment Reading Hooks
+
+Apollo Client provides hooks to read fragment data within components. These hooks work with data masking to ensure components only access the data they explicitly requested.
+
+### useSuspenseFragment
+
+For components using Suspense and concurrent features:
+
+```tsx
+import { useSuspenseFragment } from '@apollo/client/react';
+import { FragmentType } from '@apollo/client';
+
+function UserCard({ 
+  user 
+}: { 
+  user: FragmentType<typeof UserCard.fragments.user> 
+}) {
+  const { data } = useSuspenseFragment({
+    fragment: UserCard.fragments.user,
+    fragmentName: "UserCard_user",
+    from: user,
+  });
+
+  return <div>{data.name}</div>;
+}
+```
+
+### useFragment
+
+For components not using Suspense:
+
+```tsx
+import { useFragment } from '@apollo/client/react';
+import { FragmentType } from '@apollo/client';
+
+function UserCard({ 
+  user 
+}: { 
+  user: FragmentType<typeof UserCard.fragments.user> 
+}) {
+  const { data, complete } = useFragment({
+    fragment: UserCard.fragments.user,
+    fragmentName: "UserCard_user",
+    from: user,
+  });
+
+  if (!complete) {
+    return <div>Loading...</div>;
+  }
+
+  return <div>{data.name}</div>;
+}
+```
+
+The `complete` field indicates whether all fragment data is available in the cache.
+
+### Hook Options
+
+Both hooks accept these options:
+
+```typescript
+{
+  // The fragment document (required)
+  fragment: TypedDocumentNode,
+  
+  // The fragment name (required)
+  fragmentName: string,
+  
+  // The source data containing the fragment (required)
+  from: FragmentType<typeof fragment>,
+  
+  // Variables for the fragment (optional)
+  variables?: Variables,
+  
+  // Custom cache behavior (optional)
+  canonizeResults?: boolean,
+}
+```
+
+## Data Masking
+
+Data masking is a feature that prevents components from accessing data they didn't explicitly request through their fragments. This enforces proper data boundaries and prevents over-rendering.
+
+### Enabling Data Masking
+
+Enable data masking when creating your Apollo Client:
+
+```typescript
+import { ApolloClient, InMemoryCache } from '@apollo/client';
+
+const client = new ApolloClient({
+  cache: new InMemoryCache(),
+  dataMasking: true, // Enable data masking
+});
+```
+
+### How Data Masking Works
+
+With data masking enabled:
+
+1. Fragments return opaque `FragmentType` objects
+2. Components must use `useFragment` or `useSuspenseFragment` to unmask data
+3. Components can only access fields defined in their own fragments
+4. TypeScript enforces these boundaries at compile time
+
+Without data masking:
+
+```tsx
+// ❌ Without data masking - component can access any data from parent
+function UserCard({ user }: { user: User }) {
+  // Can access any User field, even if not in fragment
+  return <div>{user.privateData}</div>;
+}
+```
+
+With data masking:
+
+```tsx
+// ✅ With data masking - component can only access its fragment data
+function UserCard({ 
+  user 
+}: { 
+  user: FragmentType<typeof UserCard.fragments.user> 
+}) {
+  const { data } = useSuspenseFragment({
+    fragment: UserCard.fragments.user,
+    from: user,
+  });
+  
+  // TypeScript error: 'privateData' doesn't exist on fragment type
+  // return <div>{data.privateData}</div>;
+  
+  // Only fields from the fragment are accessible
+  return <div>{data.name}</div>;
+}
+```
+
+### Benefits of Data Masking
+
+- **Prevents over-rendering**: Components only re-render when their specific data changes
+- **Enforces boundaries**: Components can't accidentally depend on data they don't own
+- **Better refactoring**: Safe to modify parent queries without breaking child components
+- **Type safety**: TypeScript catches attempts to access unavailable fields
+
+## Fragment Registry
+
+The fragment registry allows you to register fragments globally, making them available throughout your application without explicit imports.
+
+### Creating a Fragment Registry
+
+```typescript
+import { ApolloClient, InMemoryCache } from '@apollo/client';
+import { createFragmentRegistry } from '@apollo/client/cache';
+
+export const fragmentRegistry = createFragmentRegistry();
+
+const client = new ApolloClient({
+  cache: new InMemoryCache({
+    fragments: fragmentRegistry,
+  }),
+});
+```
+
+### Registering Fragments
+
+Register fragments after defining them:
+
+```typescript
+import { gql } from '@apollo/client';
+import { fragmentRegistry } from './apollo/client';
+
+const USER_FRAGMENT = gql`
+  fragment UserFields on User {
+    id
+    name
+    email
+  }
+`;
+
+fragmentRegistry.register(USER_FRAGMENT);
+```
+
+With colocated fragments:
+
+```tsx
+import { fragmentRegistry } from '@/apollo/client';
+
+UserCard.fragments = {
+  user: UserCard_UserFragmentDoc,
+} as const;
+
+// Register the fragment globally
+fragmentRegistry.register(UserCard.fragments.user);
+```
+
+### Using Registered Fragments
+
+Once registered, fragments can be referenced by name in queries without explicit imports:
+
+```tsx
+// Fragment is available by name because it's registered
+const GET_USER = gql`
+  query GetUser($id: ID!) {
+    user(id: $id) {
+      ...UserCard_user
+    }
+  }
+`;
+```
+
+### When to Use Fragment Registry
+
+The fragment registry is most useful when:
+
+- Using colocated fragments extensively
+- You want fragments available across your application
+- Lazy loading components that define fragments
+
+Avoid the fragment registry when using GraphQL Code Generator's client preset, as it precompiles all fragments.
+
+## TypeScript Integration
+
+Apollo Client provides strong TypeScript support for fragments through GraphQL Code Generator.
+
+### Generated Types
+
+GraphQL Code Generator produces typed fragment documents:
+
+```typescript
+// Generated file: UserCard.generated.ts
+export type UserCard_UserFragment = {
+  __typename: 'User';
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl: string;
+} & { ' $fragmentName'?: 'UserCard_UserFragment' };
+
+export const UserCard_UserFragmentDoc: TypedDocumentNode<
+  UserCard_UserFragment,
+  never
+>;
+```
+
+### Type-Safe Fragment Usage
+
+Use `FragmentType` to accept masked fragment data:
+
+```tsx
+import { FragmentType } from '@apollo/client';
+import { UserCard_UserFragmentDoc } from './UserCard.generated';
+
+function UserCard({ 
+  user 
+}: { 
+  user: FragmentType<typeof UserCard_UserFragmentDoc> 
+}) {
+  const { data } = useSuspenseFragment({
+    fragment: UserCard_UserFragmentDoc,
+    from: user,
+  });
+  
+  // 'data' is fully typed as UserCard_UserFragment
+  return <div>{data.name}</div>;
+}
+```
+
+### Fragment Type Inference
+
+TypeScript infers types from fragment documents automatically:
+
+```tsx
+// Types are inferred from the fragment
+const { data } = useSuspenseFragment({
+  fragment: UserCard.fragments.user,
+  from: user,
+});
+
+// data.name is string
+// data.email is string
+// data.nonExistentField is a TypeScript error
+```
+
+### Parent-Child Type Safety
+
+When passing fragment data from parent to child:
+
+```tsx
+// Parent query
+const { data } = useSuspenseQuery(GET_USER);
+
+// TypeScript ensures the query includes UserCard_user fragment
+// before allowing it to be passed to UserCard
+<UserCard user={data.user} />
+```
+
+## Best Practices
+
+### Prefer Colocation Over Reuse
+
+Fragments are primarily for colocation, not reuse. Each component should have its own fragment describing exactly what it needs:
+
+```tsx
+// ✅ Good: Each component has its own fragment
+if (false) {
+  gql`
+    fragment UserCard_user on User {
+      id
+      name
+      email
+      avatarUrl
+    }
+  `;
+  
+  gql`
+    fragment UserListItem_user on User {
+      id
+      name
+      email
+    }
+  `;
+}
+```
+
+```tsx
+// ❌ Avoid: Sharing a generic fragment across components
+const COMMON_USER_FIELDS = gql`
+  fragment CommonUserFields on User {
+    id
+    name
+    email
+  }
+`;
+
+// Both components use the same fragment
+// This couples them together unnecessarily
+```
+
+### One Query Per Page
+
+Compose all page data requirements into a single query at the page level:
+
+```tsx
+// ✅ Good: Single page-level query
+if (false) {
+  gql`
+    query UserProfilePage($id: ID!) {
+      user(id: $id) {
+        ...UserHeader_user
+        ...UserPosts_user
+        ...UserFriends_user
+      }
+    }
+  `;
+}
+```
+
+```tsx
+// ❌ Avoid: Multiple queries in different components
+function UserProfile() {
+  const { data: userData } = useQuery(GET_USER);
+  const { data: postsData } = useQuery(GET_USER_POSTS);
+  const { data: friendsData } = useQuery(GET_USER_FRIENDS);
+  // ...
+}
+```
+
+### Use Fragment-Reading Hooks in Components
+
+Non-page components should use `useFragment` or `useSuspenseFragment`:
+
+```tsx
+// ✅ Good: Component reads fragment data
+function UserCard({ user }: { user: FragmentType<typeof UserCard.fragments.user> }) {
+  const { data } = useSuspenseFragment({
+    fragment: UserCard.fragments.user,
+    from: user,
+  });
+  return <div>{data.name}</div>;
+}
+```
+
+```tsx
+// ❌ Avoid: Component uses query hook
+function UserCard({ userId }: { userId: string }) {
+  const { data } = useQuery(GET_USER, { variables: { id: userId } });
+  return <div>{data.user.name}</div>;
+}
+```
+
+### Include __typename for Normalization
+
+Always include `__typename` in fragments for proper cache normalization:
+
+```tsx
+// ✅ Good: Includes __typename
+if (false) {
+  gql`
+    fragment UserCard_user on User {
+      __typename
+      id
+      name
+      email
+    }
+  `;
+}
+```
+
+GraphQL Code Generator automatically includes `__typename` when properly configured.
+
+### Request Only Required Fields
+
+Keep fragments minimal and only request fields the component actually uses:
+
+```tsx
+// ✅ Good: Only necessary fields
+if (false) {
+  gql`
+    fragment UserListItem_user on User {
+      id
+      name
+    }
+  `;
+}
+```
+
+```tsx
+// ❌ Avoid: Requesting unused fields
+if (false) {
+  gql`
+    fragment UserListItem_user on User {
+      id
+      name
+      email
+      bio
+      friends {
+        id
+        name
+      }
+      posts {
+        id
+        title
+      }
+    }
+  `;
+}
+```
+
+### Use @defer for Below-the-Fold Content
+
+Defer slow fields that aren't immediately visible:
+
+```tsx
+if (false) {
+  gql`
+    query ProductPage($id: ID!) {
+      product(id: $id) {
+        id
+        name
+        price
+        ...ProductReviews_product @defer
+      }
+    }
+  `;
+}
+```
+
+This allows the page to render quickly while reviews load in the background.
+
+### Handle Client-Only Fields
+
+Use the `@client` directive for fields resolved locally:
+
+```tsx
+if (false) {
+  gql`
+    fragment TodoItem_todo on Todo {
+      id
+      text
+      completed
+      isSelected @client
+    }
+  `;
+}
+```
+
+### Avoid Deeply Nested Fragments
+
+Keep fragments focused on their component's immediate needs:
+
+```tsx
+// ✅ Good: Focused fragment
+if (false) {
+  gql`
+    fragment UserCard_user on User {
+      id
+      name
+      avatar {
+        url
+        alt
+      }
+    }
+  `;
+}
+```
+
+```tsx
+// ❌ Avoid: Deeply nested data
+if (false) {
+  gql`
+    fragment UserCard_user on User {
+      id
+      name
+      posts {
+        id
+        title
+        comments {
+          id
+          text
+          author {
+            id
+            name
+          }
+        }
+      }
+    }
+  `;
+}
+```
+
+### Enable Data Masking for New Applications
+
+Always enable data masking in new applications:
+
+```typescript
+const client = new ApolloClient({
+  cache: new InMemoryCache(),
+  dataMasking: true,
+});
+```
+
+This enforces proper boundaries from the start and prevents accidental coupling between components.

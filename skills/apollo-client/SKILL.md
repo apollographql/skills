@@ -336,6 +336,7 @@ Detailed documentation for specific topics:
 - [Queries](references/queries.md) - useQuery, useLazyQuery, polling, refetching
 - [Suspense Hooks](references/suspense-hooks.md) - useSuspenseQuery, useBackgroundQuery, useReadQuery, useLoadableQuery
 - [Mutations](references/mutations.md) - useMutation, optimistic UI, cache updates
+- [Fragments](references/fragments.md) - Fragment colocation, useFragment, useSuspenseFragment, data masking
 - [Caching](references/caching.md) - InMemoryCache, typePolicies, cache manipulation
 - [State Management](references/state-management.md) - Reactive variables, local state
 - [Error Handling](references/error-handling.md) - Error policies, error links, retries
@@ -346,7 +347,7 @@ Detailed documentation for specific topics:
 ### Query Best Practices
 
 - **Each page should generally only have one query, composed from colocated fragments.** Use `useFragment` or `useSuspenseFragment` in all non-page-components. Use `@defer` to allow slow fields below the fold to stream in later and avoid blocking the page load.
-- **Fragments are for colocation, not reuse.** Each fragment should describe exactly the data needs of a specific component, not be shared across components for common fields. See [Fragment Colocation](https://www.apollographql.com/docs/react/data/fragments#colocating-fragments).
+- **Fragments are for colocation, not reuse.** Each fragment should describe exactly the data needs of a specific component, not be shared across components for common fields. See [Fragments reference](references/fragments.md) for details on fragment colocation and data masking.
 - Always handle `loading` and `error` states in UI when using non-suspenseful hooks (`useQuery`, `useLazyQuery`). When using Suspense hooks (`useSuspenseQuery`, `useBackgroundQuery`), React handles this through `<Suspense>` boundaries and error boundaries.
 - Use `fetchPolicy` to control cache behavior per query
 - Use the TypeScript type server to look up documentation for functions and options (Apollo Client has extensive docblocks)
@@ -364,7 +365,7 @@ Detailed documentation for specific topics:
 - Disable normalization by setting `keyFields: false` for types that don't include an identifier and are meant to group related fields under the parent
 - Use `typePolicies` for pagination and computed fields
 - Understand cache normalization to debug issues
-- **Enable [data masking](https://www.apollographql.com/docs/react/data/fragments#data-masking) for all new applications** - it prevents components from accessing fragment data they don't own, enforcing proper data boundaries and preventing over-rendering
+- **Enable [data masking](references/fragments.md#data-masking) for all new applications** - it prevents components from accessing fragment data they don't own, enforcing proper data boundaries and preventing over-rendering
 
 ### Performance
 
