@@ -14,7 +14,7 @@
 - [Transitions](#transitions)
 - [Avoiding Request Waterfalls](#avoiding-request-waterfalls)
 - [Fetch Policies](#fetch-policies)
-- [React Server Components (RSC)](#react-server-components-rsc)
+- [Streaming SSR or React Server Components](#streaming-ssr-or-react-server-components)
 - [Conditional Queries](#conditional-queries)
 
 ## useSuspenseQuery Hook
@@ -694,52 +694,19 @@ const { data } = useSuspenseQuery(GET_POSTS, {
 });
 ```
 
-## React Server Components (RSC)
+## Streaming SSR or React Server Components
 
-Apollo Client integrates seamlessly with React Server Components through the `@apollo/client-integration-nextjs` package for Next.js App Router applications.
+Apollo Client integrates with modern React frameworks that support Streaming SSR and React Server Components. For detailed setup instructions specific to your framework, see:
 
-### Usage with Next.js App Router
+- **Next.js App Router**: [setup-nextjs.md](./setup-nextjs.md) - Includes React Server Components, PreloadQuery component, and streaming SSR
+- **React Router**: [setup-react-router.md](./setup-react-router.md) - Framework mode with SSR support
+- **TanStack Start**: [setup-tanstack-start.md](./setup-tanstack-start.md) - Full-stack React framework with SSR
 
-The `@apollo/client-integration-nextjs` package provides first-class support for React Server Components and Streaming SSR in Next.js 13+:
-
-```bash
-npm install @apollo/client-integration-nextjs
-```
-
-Key features:
-- Seamless integration with React Server Components
-- Support for Streaming SSR
-- Optimized data fetching in Server Components
-- Automatic cache hydration on the client
-
-See the [package README](https://github.com/apollographql/apollo-client-integrations/blob/main/packages/nextjs/README.md) and [introductory blog post](https://www.apollographql.com/blog/apollo-client/next-js/how-to-use-apollo-client-with-next-js-13/) for detailed setup instructions.
-
-### Streaming with useBackgroundQuery
-
-When using `useBackgroundQuery` during streaming SSR (as in Next.js App Router), the server can begin streaming content to the client while data is being fetched. This provides significant performance benefits:
-
-```tsx
-// Server Component
-import { preloadQuery } from '@apollo/client';
-
-export default async function Page() {
-  const queryRef = preloadQuery(client, {
-    query: GET_DATA,
-  });
-
-  return (
-    <Suspense fallback={<Skeleton />}>
-      <ClientComponent queryRef={queryRef} />
-    </Suspense>
-  );
-}
-```
-
-The server starts streaming the HTML immediately, and the Suspense boundary shows the fallback until the query completes.
-
-### Error Handling in SSR
-
-Errors thrown on the server during streaming SSR are treated differently than client-side errors. See the [React documentation on server errors](https://react.dev/reference/react/Suspense#providing-a-fallback-for-server-errors-and-client-only-content) for more information.
+These guides cover:
+- Framework-specific client setup and configuration
+- Preloading queries for optimal performance
+- Streaming SSR with `useBackgroundQuery` and Suspense
+- Error handling in server-rendered environments
 
 ## Conditional Queries
 
