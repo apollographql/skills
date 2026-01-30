@@ -1,6 +1,6 @@
 # Fragments Reference
 
-GraphQL fragments are reusable units that define a set of fields for a specific type. In Apollo Client, fragments are especially powerful when colocated with components to define each component's data requirements, creating a clear separation of concerns and enabling better component composition.
+GraphQL fragments define a set of fields for a specific type. In Apollo Client, fragments are especially powerful when colocated with components to define each component's data requirements independently, creating a clear separation of concerns and enabling better component composition.
 
 ## Table of Contents
 
@@ -15,12 +15,17 @@ GraphQL fragments are reusable units that define a set of fields for a specific 
 
 ## What Are Fragments
 
-A GraphQL fragment is a set of fields you can reuse across multiple queries and mutations. Fragments are defined on a specific GraphQL type and can be included in operations using the spread operator (`...`).
+A GraphQL fragment is a reusable unit that defines a set of fields for a specific GraphQL type. Fragments are defined on a specific GraphQL type and can be included in operations using the spread operator (`...`).
 
-Fragments serve two main purposes in Apollo Client applications:
+In Apollo Client, fragments serve a specific purpose:
+
+**Fragments are for colocation, not reuse.** Each component should declare its data needs in a dedicated fragment. This allows components to independently evolve their data requirements without creating artificial dependencies between unrelated parts of your application.
+
+Fragments enable:
 
 1. **Component colocation**: Define the exact data requirements for a component alongside the component code
-2. **Code organization**: Keep query logic modular and maintainable by splitting it across component boundaries
+2. **Independent evolution**: Change a component's data needs without affecting other components
+3. **Code organization**: Compose fragments together to build complete queries that mirror your component hierarchy
 
 ## Basic Fragment Syntax
 
@@ -71,7 +76,7 @@ Fragment colocation is the practice of defining fragments in the same file as th
 - **Locality**: Data requirements live next to the code that uses them
 - **Maintainability**: Changes to component UI and data needs happen together
 - **Type safety**: TypeScript can infer exact types from colocated fragments
-- **Reusability**: Components become self-contained and reusable across different pages
+- **Independence**: Components can evolve their data requirements without affecting other components
 
 ### Colocation Pattern
 
@@ -483,7 +488,9 @@ const { data } = useSuspenseQuery(GET_USER);
 
 ### Prefer Colocation Over Reuse
 
-Fragments are primarily for colocation, not reuse. Each component should have its own fragment describing exactly what it needs:
+**Fragments are for colocation, not reuse.** Each component should declare its data needs in a dedicated fragment, even if multiple components currently need the same fields.
+
+Sharing fragments between components just because they happen to need the same fields today creates artificial dependencies. When one component's requirements change, the shared fragment must be updated, causing all components using it to over-fetch data they don't need.
 
 ```tsx
 // ✅ Good: Each component has its own fragment
@@ -505,6 +512,9 @@ if (false) {
     }
   `;
 }
+
+// If UserCard later needs 'bio', only UserCard_user changes
+// UserListItem doesn't over-fetch 'bio'
 ```
 
 ```tsx
@@ -517,9 +527,12 @@ const COMMON_USER_FIELDS = gql`
   }
 `;
 
-// Both components use the same fragment
-// This couples them together unnecessarily
+// UserCard and UserListItem both use CommonUserFields
+// When UserCard needs 'bio', adding it to CommonUserFields
+// causes UserListItem to over-fetch unnecessarily
 ```
+
+This independence allows each component to evolve its data requirements without affecting unrelated parts of your application.
 
 ### One Query Per Page
 
