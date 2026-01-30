@@ -87,7 +87,7 @@ import { gql, FragmentType } from '@apollo/client';
 import { useSuspenseFragment } from '@apollo/client/react';
 
 // Fragment definition
-// This will be picked up by Codegen to create `UserCard_UserFragmentDoc` in `./UserCard.generated.ts`.
+// This will be picked up by Codegen to create `UserCard_UserFragmentDoc` in `./fragments.generated.ts`.
 // As that generated fragment document is correctly typed, we use that in the code going forward.
 // This fragment will never be consumed in runtime code, so it is wrapped in `if (false)` so the bundler can omit it when bundling.
 if (false) {
@@ -102,7 +102,7 @@ if (false) {
 }
 
 // This has been created from above fragment definition by CodeGen and is a correctly typed `TypedDocumentNode`
-import { UserCard_UserFragmentDoc } from './UserCard.generated.ts';
+import { UserCard_UserFragmentDoc } from './fragments.generated.ts';
 
 // Attach fragment to component for easy access
 UserCard.fragments = {
@@ -421,7 +421,7 @@ Apollo Client provides strong TypeScript support for fragments through GraphQL C
 GraphQL Code Generator produces typed fragment documents:
 
 ```typescript
-// Generated file: UserCard.generated.ts
+// Generated file: fragments.generated.ts
 export type UserCard_UserFragment = {
   __typename: 'User';
   id: string;
@@ -442,7 +442,7 @@ Use `FragmentType` to accept masked fragment data:
 
 ```tsx
 import { FragmentType } from '@apollo/client';
-import { UserCard_UserFragmentDoc } from './UserCard.generated';
+import { UserCard_UserFragmentDoc } from './fragments.generated';
 
 function UserCard({ 
   user 

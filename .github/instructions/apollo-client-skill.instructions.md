@@ -39,7 +39,7 @@ Example of correct messaging:
   - import it from a generated file in the same directory as the example, treat it as a `TypedDocumentNode` with types defined:
     - `queries.generated.ts` for queries
     - `mutations.generated.ts` for mutations
-    - `fragments.generated.ts` or `{ComponentName}.generated.ts` for fragments
+    - `fragments.generated.ts` for fragments
 - always use TypeScript for code examples unless the context specifically calls for something else
 - React hooks should never be shown using explicit generics. Types should always be inferred from the typed query/mutation document.
   - do this: `useQuery(GET_USER, { variables: { id: "1" } })`
