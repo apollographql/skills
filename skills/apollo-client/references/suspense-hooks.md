@@ -8,10 +8,14 @@
 - [useBackgroundQuery and useReadQuery](#usebackgroundquery-and-usereadquery)
 - [useLoadableQuery](#useloadablequery)
 - [preloadQuery](#preloadquery)
+- [createQueryPreloader](#createquerypreloader)
+- [useQueryRefHandlers](#usequeryrefhandlers)
+- [Distinguishing Queries with queryKey](#distinguishing-queries-with-querykey)
 - [Suspense Boundaries and Error Handling](#suspense-boundaries-and-error-handling)
 - [Transitions](#transitions)
 - [Avoiding Request Waterfalls](#avoiding-request-waterfalls)
 - [Fetch Policies](#fetch-policies)
+- [React Server Components (RSC)](#react-server-components-rsc)
 - [Conditional Queries](#conditional-queries)
 
 ## useSuspenseQuery Hook
@@ -378,6 +382,209 @@ function UserDetails({ queryRef }: { queryRef: QueryRef<UserData> }) {
 - **Event handlers**: Begin fetching data in response to user interactions before rendering components
 - **Parallel data fetching**: Initiate multiple queries simultaneously outside of component rendering
 
+## createQueryPreloader
+
+The `createQueryPreloader` function creates a preload function that can be used to initiate queries outside of React. This is useful when you want to export a preload function alongside your Apollo Client instance.
+
+### Basic Usage
+
+```tsx
+import { ApolloClient, InMemoryCache } from '@apollo/client';
+import { createQueryPreloader } from '@apollo/client/react';
+
+const client = new ApolloClient({
+  uri: 'https://your-graphql-endpoint.com/graphql',
+  cache: new InMemoryCache(),
+});
+
+// Create a preload function
+export const preloadQuery = createQueryPreloader(client);
+```
+
+### Using with Route Loaders
+
+Use the preload function with React Router's `loader` function to begin loading data during route transitions:
+
+```tsx
+import { preloadQuery } from '@/lib/apollo-client';
+
+const GET_DOG = gql`
+  query GetDog($id: String!) {
+    dog(id: $id) {
+      id
+      name
+      breed
+    }
+  }
+`;
+
+// React Router loader function
+export async function loader({ params }: { params: { id: string } }) {
+  return preloadQuery({
+    query: GET_DOG,
+    variables: { id: params.id },
+  });
+}
+
+// Route component
+export default function DogRoute() {
+  const queryRef = useLoaderData();
+
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DogDetails queryRef={queryRef} />
+    </Suspense>
+  );
+}
+
+function DogDetails({ queryRef }: { queryRef: QueryRef<DogData> }) {
+  const { data } = useReadQuery(queryRef);
+
+  return (
+    <div>
+      <h1>{data.dog.name}</h1>
+      <p>Breed: {data.dog.breed}</p>
+    </div>
+  );
+}
+```
+
+### Preventing Route Transitions Until Query Loads
+
+Use the `toPromise()` method to prevent route transitions until the query finishes loading:
+
+```tsx
+export async function loader({ params }: { params: { id: string } }) {
+  const queryRef = preloadQuery({
+    query: GET_DOG,
+    variables: { id: params.id },
+  });
+  
+  // Wait for the query to complete before transitioning
+  return queryRef.toPromise();
+}
+```
+
+When `toPromise()` is used, the route transition waits for the query to complete, and the data renders immediately without showing a loading fallback.
+
+> **Note**: `toPromise()` resolves with the `queryRef` itself (not the data) to encourage using `useReadQuery` for cache updates. If you need raw query data in your loader, use `client.query()` directly.
+
+## useQueryRefHandlers
+
+The `useQueryRefHandlers` hook provides access to `refetch` and `fetchMore` functions for queries initiated with `preloadQuery`, `useBackgroundQuery`, or `useLoadableQuery`. This is useful when you need to refetch or paginate data in components where the `queryRef` is passed through.
+
+### Basic Usage
+
+```tsx
+import { useQueryRefHandlers } from '@apollo/client/react';
+
+function Breeds({ queryRef }: { queryRef: QueryRef<BreedsData> }) {
+  const { data } = useReadQuery(queryRef);
+  const { refetch } = useQueryRefHandlers(queryRef);
+  const [isPending, startTransition] = useTransition();
+
+  return (
+    <div>
+      <button
+        disabled={isPending}
+        onClick={() => {
+          startTransition(() => {
+            refetch();
+          });
+        }}
+      >
+        {isPending ? 'Refetching...' : 'Refetch breeds'}
+      </button>
+      <ul>
+        {data.breeds.map((breed) => (
+          <li key={breed.id}>{breed.name}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+### With Pagination
+
+Use `fetchMore` to implement pagination:
+
+```tsx
+function Posts({ queryRef }: { queryRef: QueryRef<PostsData> }) {
+  const { data } = useReadQuery(queryRef);
+  const { fetchMore } = useQueryRefHandlers(queryRef);
+  const [isPending, startTransition] = useTransition();
+
+  return (
+    <div>
+      <ul>
+        {data.posts.map((post) => (
+          <li key={post.id}>{post.title}</li>
+        ))}
+      </ul>
+      <button
+        disabled={isPending}
+        onClick={() => {
+          startTransition(() => {
+            fetchMore({
+              variables: {
+                offset: data.posts.length,
+              },
+            });
+          });
+        }}
+      >
+        {isPending ? 'Loading...' : 'Load more'}
+      </button>
+    </div>
+  );
+}
+```
+
+### When to Use
+
+- **Preloaded queries**: Access refetch/fetchMore for queries initiated with `preloadQuery`
+- **Background queries**: Use in child components receiving `queryRef` from `useBackgroundQuery`
+- **Loadable queries**: Refetch or paginate queries initiated with `useLoadableQuery`
+- **React transitions**: Integrate with transitions to avoid showing loading fallbacks during refetches
+
+## Distinguishing Queries with queryKey
+
+Apollo Client uses the combination of `query` and `variables` to uniquely identify each query. When multiple components use the same `query` and `variables`, they share the same identity and suspend at the same time, regardless of which component initiates the request.
+
+Use the `queryKey` option to ensure each hook has a unique identity:
+
+```tsx
+function UserProfile() {
+  // First query with unique key
+  const { data: userData } = useSuspenseQuery(GET_USER, {
+    variables: { id: '1' },
+    queryKey: ['user-profile'],
+  });
+
+  // Second query with same query and variables but different key
+  const { data: userPreview } = useSuspenseQuery(GET_USER, {
+    variables: { id: '1' },
+    queryKey: ['user-preview'],
+  });
+
+  return (
+    <div>
+      <UserCard user={userData.user} />
+      <UserSidebar user={userPreview.user} />
+    </div>
+  );
+}
+```
+
+### When to Use
+
+- **Multiple instances**: When rendering multiple components that use the same query and variables
+- **Preventing shared suspension**: When you want independent control over when each query suspends
+- **Separate cache entries**: When you need to maintain separate cache states for the same query
+
+> **Note**: Each item in the `queryKey` array must be a stable identifier to prevent infinite fetches.
+
 ## Suspense Boundaries and Error Handling
 
 ### Suspense Boundaries
@@ -617,6 +824,53 @@ const { data } = useSuspenseQuery(GET_POSTS, {
   fetchPolicy: 'cache-and-network',
 });
 ```
+
+## React Server Components (RSC)
+
+Apollo Client integrates seamlessly with React Server Components through the `@apollo/client-integration-nextjs` package for Next.js App Router applications.
+
+### Usage with Next.js App Router
+
+The `@apollo/client-integration-nextjs` package provides first-class support for React Server Components and Streaming SSR in Next.js 13+:
+
+```bash
+npm install @apollo/client-integration-nextjs
+```
+
+Key features:
+- Seamless integration with React Server Components
+- Support for Streaming SSR
+- Optimized data fetching in Server Components
+- Automatic cache hydration on the client
+
+See the [package README](https://github.com/apollographql/apollo-client-integrations/blob/main/packages/nextjs/README.md) and [introductory blog post](https://www.apollographql.com/blog/apollo-client/next-js/how-to-use-apollo-client-with-next-js-13/) for detailed setup instructions.
+
+### Streaming with useBackgroundQuery
+
+When using `useBackgroundQuery` during streaming SSR (as in Next.js App Router), the server can begin streaming content to the client while data is being fetched. This provides significant performance benefits:
+
+```tsx
+// Server Component
+import { preloadQuery } from '@apollo/client';
+
+export default async function Page() {
+  const queryRef = preloadQuery(client, {
+    query: GET_DATA,
+  });
+
+  return (
+    <Suspense fallback={<Skeleton />}>
+      <ClientComponent queryRef={queryRef} />
+    </Suspense>
+  );
+}
+```
+
+The server starts streaming the HTML immediately, and the Suspense boundary shows the fallback until the query completes.
+
+### Error Handling in SSR
+
+Errors thrown on the server during streaming SSR are treated differently than client-side errors. See the [React documentation on server errors](https://react.dev/reference/react/Suspense#providing-a-fallback-for-server-errors-and-client-only-content) for more information.
 
 ## Conditional Queries
 
