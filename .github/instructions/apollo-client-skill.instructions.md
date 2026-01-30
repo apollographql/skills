@@ -1,7 +1,9 @@
 ---
 applyTo: "skills/apollo-client/**/*.md"
 ---
-
+	# Apollo Client Skill Writing Instructions
+	Follow these rules when working on the Apollo Client AI skill instructions.
+	
 ## General rules
 
 - Do not make time-relative statements about the library, like "now provides feature X". If the content is version-specific, refer to the minimal version instead. Generally assume the user uses Apollo Client v4.x unless otherwise specified.
