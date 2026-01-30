@@ -41,7 +41,7 @@ applyTo: "skills/apollo-client/**/*.md"
   - TanStack Start (`@apollo/client-integration-tanstack-start`):
     - Source code: `<repo>/packages/tanstack-start`
     - Integration test setup as a usage example: `<repo>/integration-test/tanstack-start`
-  * The integrations share code in the `@apollo/client-react-streaming` package:
+  - The integrations share code in the `@apollo/client-react-streaming` package:
     - Source code: `<repo>/packages/client-react-streaming`
     - Shared integration tests at `<repo>/integration-test/playwright`
 - for deeper research, consult GitHub issues in the Apollo Client and Apollo Client Integrations repositories
