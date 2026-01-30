@@ -15,7 +15,7 @@ GraphQL fragments define a set of fields for a specific type. In Apollo Client, 
 
 ## What Are Fragments
 
-A GraphQL fragment is a reusable unit that defines a set of fields for a specific GraphQL type. Fragments are defined on a specific GraphQL type and can be included in operations using the spread operator (`...`).
+A GraphQL fragment defines a set of fields for a specific GraphQL type. Fragments are defined on a specific GraphQL type and can be included in operations using the spread operator (`...`).
 
 In Apollo Client, fragments serve a specific purpose:
 
