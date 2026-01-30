@@ -439,7 +439,6 @@ There are three approaches to make child fragments available in parent queries:
 
 **Manual interpolation**:
 - ❌ Most work: Manual imports and interpolation required
-- ❌ Tight coupling: Parent must know about all child fragments
 - ✅ Explicit: Clear fragment dependencies in code
 
 ### Recommendation
