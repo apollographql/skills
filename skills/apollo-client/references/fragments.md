@@ -65,7 +65,7 @@ const GET_USER = gql`
 `;
 ```
 
-When using GraphQL Code Generator's client preset, the fragment is automatically included and you don't need to interpolate it manually.
+When using GraphQL Code Generator with the recommended configuration (typescript, typescript-operations, and typed-document-node plugins), fragments defined in your source files are automatically picked up and generated into typed document nodes. The generated fragment documents already include the fragment definition, so you don't need to interpolate them manually into queries.
 
 ## Fragment Colocation
 
@@ -85,10 +85,11 @@ The recommended pattern for colocating fragments with components:
 ```tsx
 import { gql, FragmentType } from '@apollo/client';
 import { useSuspenseFragment } from '@apollo/client/react';
-import { UserCard_UserFragmentDoc } from './UserCard.generated';
 
-// Fragment definition (handled by codegen)
-// This would be in your component file for reference only
+// Fragment definition
+// This will be picked up by Codegen to create `UserCard_UserFragmentDoc` in `./UserCard.generated.ts`.
+// As that generated fragment document is correctly typed, we use that in the code going forward.
+// This fragment will never be consumed in runtime code, so it is wrapped in `if (false)` so the bundler can omit it when bundling.
 if (false) {
   gql`
     fragment UserCard_user on User {
@@ -100,18 +101,21 @@ if (false) {
   `;
 }
 
+// This has been created from above fragment definition by CodeGen and is a correctly typed `TypedDocumentNode`
+import { UserCard_UserFragmentDoc } from './UserCard.generated.ts';
+
 // Attach fragment to component for easy access
 UserCard.fragments = {
   user: UserCard_UserFragmentDoc,
 } as const;
 
-// Component receives masked fragment data
+// Component receives the (partially masked) parent object
 export function UserCard({ 
   user 
 }: { 
   user: FragmentType<typeof UserCard.fragments.user> 
 }) {
-  // Unmask the fragment data
+  // Creates a subscription to the fragment in the cache
   const { data } = useSuspenseFragment({
     fragment: UserCard.fragments.user,
     fragmentName: "UserCard_user",
@@ -738,3 +742,67 @@ const client = new ApolloClient({
 ```
 
 This enforces proper boundaries from the start and prevents accidental coupling between components.
+
+## Apollo Client Data Masking vs GraphQL-Codegen Fragment Masking
+
+Apollo Client's data masking and GraphQL Code Generator's fragment masking are different features that serve different purposes:
+
+### GraphQL-Codegen Fragment Masking
+
+GraphQL Code Generator's fragment masking (when using the client preset) is a **type-level** feature:
+
+- Masks data only at the TypeScript type level
+- The actual runtime data remains fully accessible on the object
+- Using their `useFragment` hook simply "unmasks" the data on a type level
+- Does not prevent accidental access to data at runtime
+- Parent components receive all data and pass it down
+
+### Apollo Client Data Masking
+
+Apollo Client's data masking is a **runtime** feature with significant performance benefits:
+
+- Removes data at the runtime level, not just the type level
+- The `useFragment` and `useSuspenseFragment` hooks create cache subscriptions
+- Parent objects are sparse and only contain unmasked data
+- Prevents accidental access to data that should be masked
+
+### Key Benefits of Apollo Client Data Masking
+
+**1. No Accidental Data Access**
+
+With runtime data masking, masked fields are not present in the parent object at all. You cannot accidentally access them, even if you bypass TypeScript type checking.
+
+**2. Fewer Re-renders**
+
+Apollo Client's approach creates more efficient subscriptions:
+
+- **Without data masking**: Parent component subscribes to all fields (including masked ones). When a masked child field changes, the parent re-renders to pass that runtime data down the tree.
+  
+- **With data masking**: Parent component only subscribes to its own unmasked fields. Subscriptions on masked fields happen lower in the React component tree when the child component calls `useSuspenseFragment`. When a masked field changes, only the child component that subscribed to it re-renders.
+
+### Example
+
+```tsx
+function ParentComponent() {
+  const { data } = useSuspenseQuery(GET_USER);
+  
+  // With Apollo Client data masking:
+  // - data.user only contains unmasked fields
+  // - Parent doesn't re-render when child-specific fields change
+  
+  return <UserCard user={data.user} />;
+}
+
+function UserCard({ user }: { user: FragmentType<typeof UserCard.fragments.user> }) {
+  // Creates a cache subscription specifically for UserCard_user fields
+  const { data } = useSuspenseFragment({
+    fragment: UserCard.fragments.user,
+    from: user,
+  });
+  
+  // Only this component re-renders when these fields change
+  return <div>{data.name}</div>;
+}
+```
+
+This granular subscription approach improves performance in large applications with deeply nested component trees.

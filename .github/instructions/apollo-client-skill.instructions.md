@@ -31,12 +31,15 @@ Example of correct messaging:
 - always ensure correct imports
   - imports should be complete for the example
   - React hooks need to be imported from `@apollo/client/react`, NOT from `@apollo/client`
-- when an example needs a query or mutation, use either of the following approaches:
+- when an example needs a query, mutation, or fragment, use either of the following approaches:
   - in-example declaration
-    - use the `gql` tag from `@apollo/client` to define queries/mutations
+    - use the `gql` tag from `@apollo/client` to define queries/mutations/fragments
     - create a constant with an uppercase name (e.g., `GET_USER`, `CREATE_POST`)
     - declare types via `TypedDocumentNode`
-  - import it from a `queries.generated.ts` or `mutations.generated.ts` file in the same directory as the example, treat it as a `TypedDocumentNode` with types defined
+  - import it from a generated file in the same directory as the example, treat it as a `TypedDocumentNode` with types defined:
+    - `queries.generated.ts` for queries
+    - `mutations.generated.ts` for mutations
+    - `fragments.generated.ts` or `{ComponentName}.generated.ts` for fragments
 - always use TypeScript for code examples unless the context specifically calls for something else
 - React hooks should never be shown using explicit generics. Types should always be inferred from the typed query/mutation document.
   - do this: `useQuery(GET_USER, { variables: { id: "1" } })`
