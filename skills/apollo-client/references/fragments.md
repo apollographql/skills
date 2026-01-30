@@ -271,7 +271,7 @@ Both hooks accept these options:
 }
 ```
 
-When `from` is an array, the hook returns an array of results, allowing you to read fragments from multiple objects efficiently.
+When `from` is an array, the hook returns an array of results, allowing you to read fragments from multiple objects efficiently. **Note**: Array support for the `from` parameter was added in Apollo Client 4.1.0.
 
 ## Data Masking
 
