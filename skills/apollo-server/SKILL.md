@@ -28,6 +28,7 @@ npm install @apollo/server graphql
 ```
 
 For Express integration:
+
 ```bash
 npm install @apollo/server express graphql cors
 ```
@@ -53,8 +54,8 @@ const typeDefs = `#graphql
 const resolvers = {
   Query: {
     books: () => [
-      { title: 'The Great Gatsby', author: 'F. Scott Fitzgerald' },
-      { title: '1984', author: 'George Orwell' },
+      { title: "The Great Gatsby", author: "F. Scott Fitzgerald" },
+      { title: "1984", author: "George Orwell" },
     ],
   },
 };
@@ -63,9 +64,10 @@ const resolvers = {
 ### Step 4: Start Server
 
 **Standalone (Recommended for getting started):**
+
 ```typescript
-import { ApolloServer } from '@apollo/server';
-import { startStandaloneServer } from '@apollo/server/standalone';
+import { ApolloServer } from "@apollo/server";
+import { startStandaloneServer } from "@apollo/server/standalone";
 
 const server = new ApolloServer({ typeDefs, resolvers });
 
@@ -77,13 +79,14 @@ console.log(`Server ready at ${url}`);
 ```
 
 **Express v4:**
+
 ```typescript
-import { ApolloServer } from '@apollo/server';
-import { expressMiddleware } from '@apollo/server/express4';
-import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
-import express from 'express';
-import http from 'http';
-import cors from 'cors';
+import { ApolloServer } from "@apollo/server";
+import { expressMiddleware } from "@apollo/server/express4";
+import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
+import express from "express";
+import http from "http";
+import cors from "cors";
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -97,7 +100,7 @@ const server = new ApolloServer({
 await server.start();
 
 app.use(
-  '/graphql',
+  "/graphql",
   cors(),
   express.json(),
   expressMiddleware(server, {
@@ -106,7 +109,7 @@ app.use(
 );
 
 await new Promise<void>((resolve) => httpServer.listen({ port: 4000 }, resolve));
-console.log('Server ready at http://localhost:4000/graphql');
+console.log("Server ready at http://localhost:4000/graphql");
 ```
 
 ## Schema Definition
@@ -193,7 +196,7 @@ const resolvers = {
   },
   Mutation: {
     createPost: async (_, { input }, { dataSources, user }) => {
-      if (!user) throw new GraphQLError('Not authenticated');
+      if (!user) throw new GraphQLError("Not authenticated");
       return dataSources.postsAPI.create({ ...input, authorId: user.id });
     },
   },
@@ -222,7 +225,7 @@ const server = new ApolloServer<MyContext>({
 // Standalone
 const { url } = await startStandaloneServer(server, {
   context: async ({ req }) => {
-    const token = req.headers.authorization || '';
+    const token = req.headers.authorization || "";
     const user = await getUser(token);
     return {
       token,

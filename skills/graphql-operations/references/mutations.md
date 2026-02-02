@@ -26,6 +26,7 @@ mutation CreatePost($input: CreatePostInput!) {
 ```
 
 Variables:
+
 ```json
 {
   "input": {
@@ -151,7 +152,7 @@ mutation UpdatePost($id: ID!, $input: UpdatePostInput!) {
     id
     title
     content
-    updatedAt  # Server-set field
+    updatedAt # Server-set field
   }
 }
 ```
@@ -167,7 +168,7 @@ mutation AddComment($input: AddCommentInput!) {
     body
     post {
       id
-      commentCount  # Updated count
+      commentCount # Updated count
     }
     author {
       id
@@ -184,10 +185,10 @@ Select fields needed to update your cache:
 ```graphql
 mutation DeletePost($id: ID!) {
   deletePost(id: $id) {
-    id  # Needed to remove from cache
+    id # Needed to remove from cache
     author {
       id
-      postCount  # May need to decrement
+      postCount # May need to decrement
     }
   }
 }
@@ -248,19 +249,19 @@ mutation CreateUser($input: CreateUserInput!) {
 ```typescript
 const result = await client.mutate({
   mutation: CREATE_USER,
-  variables: { input }
+  variables: { input },
 });
 
 const { createUser } = result.data;
 
 switch (createUser.__typename) {
-  case 'CreateUserSuccess':
+  case "CreateUserSuccess":
     // Handle success
     return createUser.user;
-  case 'ValidationError':
+  case "ValidationError":
     // Handle validation error
     throw new ValidationError(createUser.field, createUser.message);
-  case 'EmailAlreadyExists':
+  case "EmailAlreadyExists":
     // Handle specific business error
     throw new EmailExistsError(createUser.existingUserId);
 }
@@ -274,14 +275,14 @@ Handle network and GraphQL errors:
 try {
   const result = await client.mutate({
     mutation: CREATE_POST,
-    variables: { input }
+    variables: { input },
   });
   return result.data.createPost;
 } catch (error) {
   if (error.graphQLErrors?.length) {
     // Handle GraphQL errors
     const gqlError = error.graphQLErrors[0];
-    if (gqlError.extensions?.code === 'UNAUTHENTICATED') {
+    if (gqlError.extensions?.code === "UNAUTHENTICATED") {
       // Redirect to login
     }
   }
@@ -311,15 +312,15 @@ mutation LikePost($postId: ID!) {
 ```typescript
 client.mutate({
   mutation: LIKE_POST,
-  variables: { postId: 'post_123' },
+  variables: { postId: "post_123" },
   optimisticResponse: {
     likePost: {
-      __typename: 'Post',
-      id: 'post_123',
+      __typename: "Post",
+      id: "post_123",
       likeCount: currentCount + 1,
       isLikedByViewer: true,
-    }
-  }
+    },
+  },
 });
 ```
 
@@ -348,18 +349,18 @@ client.mutate({
   variables: { input: { postId, body } },
   optimisticResponse: {
     addComment: {
-      __typename: 'Comment',
-      id: `temp-${Date.now()}`,  // Temporary ID
+      __typename: "Comment",
+      id: `temp-${Date.now()}`, // Temporary ID
       body,
       createdAt: new Date().toISOString(),
       author: {
-        __typename: 'User',
+        __typename: "User",
         id: currentUser.id,
         name: currentUser.name,
         avatarUrl: currentUser.avatarUrl,
-      }
-    }
-  }
+      },
+    },
+  },
 });
 ```
 
@@ -367,13 +368,13 @@ client.mutate({
 
 ### Naming Conventions
 
-| Operation | Pattern | Examples |
-|-----------|---------|----------|
-| Create | `Create{Type}` | `CreateUser`, `CreatePost` |
-| Update | `Update{Type}` | `UpdateUser`, `UpdatePost` |
-| Delete | `Delete{Type}` | `DeleteUser`, `DeletePost` |
-| Action | `{Verb}{Type}` | `PublishPost`, `ArchiveProject` |
-| Relationship | `{Add/Remove}{Type}` | `AddTeamMember`, `RemoveTag` |
+| Operation    | Pattern              | Examples                        |
+| ------------ | -------------------- | ------------------------------- |
+| Create       | `Create{Type}`       | `CreateUser`, `CreatePost`      |
+| Update       | `Update{Type}`       | `UpdateUser`, `UpdatePost`      |
+| Delete       | `Delete{Type}`       | `DeleteUser`, `DeletePost`      |
+| Action       | `{Verb}{Type}`       | `PublishPost`, `ArchiveProject` |
+| Relationship | `{Add/Remove}{Type}` | `AddTeamMember`, `RemoveTag`    |
 
 ### Good Names
 

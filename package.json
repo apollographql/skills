@@ -1,0 +1,13 @@
+{
+  "name": "apollo-skills",
+  "version": "1.0.0",
+  "description": "A collection of skills for AI coding agents working with Apollo GraphQL tools and technologies",
+  "private": true,
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2"
+  }
+}

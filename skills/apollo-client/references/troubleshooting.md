@@ -18,9 +18,10 @@
 **Cause:** Component is not wrapped with `ApolloProvider`.
 
 **Solution:**
+
 ```tsx
 // Ensure ApolloProvider wraps your app
-import { ApolloProvider } from '@apollo/client';
+import { ApolloProvider } from "@apollo/client";
 
 function App() {
   return (
@@ -36,9 +37,12 @@ function App() {
 **Problem:** Unintended cache isolation or conflicting states.
 
 **Solution:** Use a single client instance or explicitly manage multiple clients:
+
 ```tsx
 // Single client (recommended)
-const client = new ApolloClient({ /* ... */ });
+const client = new ApolloClient({
+  /* ... */
+});
 
 export function App() {
   return (
@@ -49,8 +53,14 @@ export function App() {
 }
 
 // Multiple clients (rare use case)
-const publicClient = new ApolloClient({ uri: '/public/graphql', cache: new InMemoryCache() });
-const adminClient = new ApolloClient({ uri: '/admin/graphql', cache: new InMemoryCache() });
+const publicClient = new ApolloClient({
+  uri: "/public/graphql",
+  cache: new InMemoryCache(),
+});
+const adminClient = new ApolloClient({
+  uri: "/admin/graphql",
+  cache: new InMemoryCache(),
+});
 
 function AdminSection() {
   return (
@@ -70,13 +80,17 @@ function AdminSection() {
 ```tsx
 // Bad - new client on every render
 function App() {
-  const client = new ApolloClient({ /* ... */ }); // Don't do this!
+  const client = new ApolloClient({
+    /* ... */
+  }); // Don't do this!
   return <ApolloProvider client={client}>...</ApolloProvider>;
 }
 
 // Module-level client definition
 // Okay if there is a 100% guarantee this application will never use SSR
-const client = new ApolloClient({ /* ... */ });
+const client = new ApolloClient({
+  /* ... */
+});
 function App() {
   return <ApolloProvider client={client}>...</ApolloProvider>;
 }
@@ -91,7 +105,7 @@ function useApolloClient(makeApolloClient: () => ApolloClient): ApolloClient {
 }
 
 // Better - singleton global in non-SSR environments to survive unmounts
-const singleton = Symbol.for('ApolloClientSingleton');
+const singleton = Symbol.for("ApolloClientSingleton");
 declare global {
   interface Window {
     [singleton]?: ApolloClient;
@@ -101,7 +115,7 @@ declare global {
 function useApolloClient(makeApolloClient: () => ApolloClient): ApolloClient {
   const storeRef = useRef<ApolloClient | null>(null);
   if (!storeRef.current) {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       storeRef.current = makeApolloClient();
     } else {
       window[singleton] ??= makeApolloClient();
@@ -120,18 +134,20 @@ function useApolloClient(makeApolloClient: () => ApolloClient): ApolloClient {
 **Problem:** UI doesn't reflect mutations or other updates.
 
 **Solution 1:** Verify cache key identification:
+
 ```typescript
 const cache = new InMemoryCache({
   typePolicies: {
     // Ensure proper identification
     Product: {
-      keyFields: ['id'], // or ['sku'] if no id field
+      keyFields: ["id"], // or ['sku'] if no id field
     },
   },
 });
 ```
 
 **Solution 2:** Update cache after mutations:
+
 ```tsx
 const [deleteProduct] = useMutation(DELETE_PRODUCT, {
   update: (cache, { data }) => {
@@ -142,9 +158,10 @@ const [deleteProduct] = useMutation(DELETE_PRODUCT, {
 ```
 
 **Solution 3:** Use appropriate fetch policy:
+
 ```tsx
 const { data } = useQuery(GET_PRODUCTS, {
-  fetchPolicy: 'cache-and-network', // Always fetch fresh data
+  fetchPolicy: "cache-and-network", // Always fetch fresh data
 });
 ```
 
@@ -153,6 +170,7 @@ const { data } = useQuery(GET_PRODUCTS, {
 **Problem:** New items don't appear in lists after creation.
 
 **Solution:** Manually update the cache:
+
 ```tsx
 const [createProduct] = useMutation(CREATE_PRODUCT, {
   update: (cache, { data }) => {
@@ -175,13 +193,14 @@ const [createProduct] = useMutation(CREATE_PRODUCT, {
 **Problem:** Paginated data not merging correctly.
 
 **Solution:** Configure proper type policies:
+
 ```typescript
 const cache = new InMemoryCache({
   typePolicies: {
     Query: {
       fields: {
         products: {
-          keyArgs: ['category'], // Only category creates new cache entries
+          keyArgs: ["category"], // Only category creates new cache entries
           merge(existing = [], incoming) {
             return [...existing, ...incoming];
           },
@@ -197,16 +216,18 @@ const cache = new InMemoryCache({
 **Problem:** Objects with same ID showing different data in different queries.
 
 **Debug:** Check cache contents:
+
 ```typescript
 // In DevTools console or component
 console.log(client.cache.extract());
 ```
 
 **Solution:** Ensure consistent `__typename` and `id` fields:
+
 ```graphql
 query GetUsers {
   users {
-    id  # Always include id
+    id # Always include id
     name
   }
 }
@@ -223,8 +244,8 @@ query GetUsers {
 ### Using Generated Types
 
 ```tsx
-import { useQuery } from '@apollo/client/react';
-import { GetUsersDocument, GetUsersQuery } from './generated/graphql';
+import { useQuery } from "@apollo/client/react";
+import { GetUsersDocument, GetUsersQuery } from "./generated/graphql";
 
 function UserList() {
   // Fully typed without manual type annotations
@@ -248,6 +269,7 @@ function UserList() {
 **Problem:** Fetching more data than needed.
 
 **Solution:** Select only required fields:
+
 ```graphql
 # Bad - fetching everything
 query GetUsers {
@@ -278,8 +300,18 @@ query GetUserNames {
 
 ```graphql
 # Bad - separate queries
-query GetUser($id: ID!) { user(id: $id) { id name } }
-query GetUserPosts($userId: ID!) { posts(userId: $userId) { id title } }
+query GetUser($id: ID!) {
+  user(id: $id) {
+    id
+    name
+  }
+}
+query GetUserPosts($userId: ID!) {
+  posts(userId: $userId) {
+    id
+    title
+  }
+}
 
 # Good - single query
 query GetUserWithPosts($id: ID!) {
@@ -304,7 +336,7 @@ query GetUserWithPosts($id: ID!) {
 // Prefer useFragment with data masking
 const { data } = useFragment({
   fragment: USER_FRAGMENT,
-  from: { __typename: 'User', id },
+  from: { __typename: "User", id },
 });
 
 // Alternative: use @nonreactive directive
@@ -347,6 +379,7 @@ const client = new ApolloClient({
 ### Installing Apollo DevTools
 
 Install the browser extension:
+
 - [Chrome](https://chrome.google.com/webstore/detail/apollo-client-devtools/jdkknkkbebbapilgoeccciglkfbmbnfm)
 - [Firefox](https://addons.mozilla.org/en-US/firefox/addon/apollo-developer-tools/)
 
@@ -379,10 +412,18 @@ const client = new ApolloClient({
 console.log(JSON.stringify(client.cache.extract(), null, 2));
 
 // Check specific object using cache.identify
-console.log(client.cache.readFragment({
-  id: cache.identify({ __typename: 'User', id: 1 }),
-  fragment: gql`fragment _ on User { id name email }`,
-}));
+console.log(
+  client.cache.readFragment({
+    id: cache.identify({ __typename: "User", id: 1 }),
+    fragment: gql`
+      fragment _ on User {
+        id
+        name
+        email
+      }
+    `,
+  }),
+);
 ```
 
 ## Common Error Messages
@@ -392,11 +433,12 @@ console.log(client.cache.readFragment({
 **Cause:** Query doesn't include required field for cache normalization.
 
 **Solution:** Include `id` and `__typename`:
+
 ```graphql
 query GetUsers {
   users {
-    id          # Required for caching
-    __typename  # Usually added automatically
+    id # Required for caching
+    __typename # Usually added automatically
     name
   }
 }
@@ -409,6 +451,7 @@ query GetUsers {
 **Cause:** `client.resetStore()` called during active queries.
 
 **Solution:** Wait for queries to complete or use `clearStore()`:
+
 ```typescript
 // Option 1: Clear without refetching
 await client.clearStore();
@@ -422,6 +465,7 @@ await client.resetStore();
 **Cause:** Various configuration or usage errors.
 
 **Common fixes:**
+
 - Ensure `ApolloProvider` wraps the component tree
 - Check that `gql` tagged templates are valid GraphQL
 - Verify cache configuration matches your schema
@@ -437,7 +481,7 @@ const { data, dataState } = useQuery(GET_USER);
 
 // dataState can be "complete", "partial", "streaming", or "empty"
 // It describes the completeness of the data, not a loading state
-if (dataState === 'empty') return <Spinner />;
+if (dataState === "empty") return <Spinner />;
 
 // Now data is guaranteed to exist
 return <div>{data.user.name}</div>;

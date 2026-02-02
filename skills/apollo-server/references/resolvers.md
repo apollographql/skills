@@ -15,35 +15,38 @@
 Every resolver receives four positional arguments:
 
 ```typescript
-(parent, args, contextValue, info) => result
+(parent, args, contextValue, info) => result;
 ```
 
 ### Arguments
 
-| Argument | Description |
-|----------|-------------|
-| `parent` | Return value of the parent resolver. For root types (Query, Mutation), this is undefined. |
-| `args` | Object containing all arguments passed to the field. |
-| `contextValue` | Shared object for all resolvers in a request. Contains auth, dataSources, etc. |
-| `info` | Contains field name, path, schema, and AST information. Rarely needed. |
+| Argument       | Description                                                                               |
+| -------------- | ----------------------------------------------------------------------------------------- |
+| `parent`       | Return value of the parent resolver. For root types (Query, Mutation), this is undefined. |
+| `args`         | Object containing all arguments passed to the field.                                      |
+| `contextValue` | Shared object for all resolvers in a request. Contains auth, dataSources, etc.            |
+| `info`         | Contains field name, path, schema, and AST information. Rarely needed.                    |
 
 ### TypeScript Typing
 
 ```typescript
-import { GraphQLResolveInfo } from 'graphql';
+import { GraphQLResolveInfo } from "graphql";
 
 type Resolver<TParent, TArgs, TContext, TResult> = (
   parent: TParent,
   args: TArgs,
   context: TContext,
-  info: GraphQLResolveInfo
+  info: GraphQLResolveInfo,
 ) => TResult | Promise<TResult>;
 
 // Example
-const userResolver: Resolver<undefined, { id: string }, MyContext, User | null> =
-  async (_, { id }, { dataSources }) => {
-    return dataSources.usersAPI.getUser(id);
-  };
+const userResolver: Resolver<undefined, { id: string }, MyContext, User | null> = async (
+  _,
+  { id },
+  { dataSources },
+) => {
+  return dataSources.usersAPI.getUser(id);
+};
 ```
 
 ## Resolver Map Structure
@@ -65,7 +68,7 @@ const resolvers = {
 
   Subscription: {
     userCreated: {
-      subscribe: (_, __, { pubsub }) => pubsub.asyncIterator(['USER_CREATED']),
+      subscribe: (_, __, { pubsub }) => pubsub.asyncIterator(["USER_CREATED"]),
     },
   },
 
@@ -76,7 +79,7 @@ const resolvers = {
 
   // Custom scalar
   DateTime: new GraphQLScalarType({
-    name: 'DateTime',
+    name: "DateTime",
     serialize: (value) => value.toISOString(),
     parseValue: (value) => new Date(value),
   }),
@@ -101,8 +104,8 @@ const resolvers = {
     user: async (_, { id }, { dataSources }) => {
       const user = await dataSources.usersAPI.getById(id);
       if (!user) {
-        throw new GraphQLError('User not found', {
-          extensions: { code: 'NOT_FOUND' },
+        throw new GraphQLError("User not found", {
+          extensions: { code: "NOT_FOUND" },
         });
       }
       return user;
@@ -210,10 +213,10 @@ The N+1 problem occurs when fetching related data triggers separate queries for 
 
 const resolvers = {
   Query: {
-    users: () => db.query('SELECT * FROM users'), // 1 query
+    users: () => db.query("SELECT * FROM users"), // 1 query
   },
   User: {
-    posts: (parent) => db.query('SELECT * FROM posts WHERE author_id = ?', [parent.id]), // N queries
+    posts: (parent) => db.query("SELECT * FROM posts WHERE author_id = ?", [parent.id]), // N queries
   },
 };
 ```
@@ -221,18 +224,15 @@ const resolvers = {
 ### Solution: DataLoader
 
 ```typescript
-import DataLoader from 'dataloader';
+import DataLoader from "dataloader";
 
 // Create loader per request (in context)
 const context = async () => ({
   loaders: {
     postsByAuthor: new DataLoader(async (authorIds) => {
-      const posts = await db.query(
-        'SELECT * FROM posts WHERE author_id IN (?)',
-        [authorIds]
-      );
+      const posts = await db.query("SELECT * FROM posts WHERE author_id IN (?)", [authorIds]);
       // Return posts grouped by author_id in same order as input
-      return authorIds.map(id => posts.filter(p => p.author_id === id));
+      return authorIds.map((id) => posts.filter((p) => p.author_id === id));
     }),
   },
 });
@@ -285,7 +285,7 @@ const resolvers = {
     userRequired: async (_, { id }, { dataSources }) => {
       const user = await dataSources.usersAPI.getById(id);
       if (!user) {
-        throw new GraphQLError('User not found');
+        throw new GraphQLError("User not found");
       }
       return user;
     },

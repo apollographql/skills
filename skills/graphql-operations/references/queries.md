@@ -27,6 +27,7 @@ query GetUser($id: ID!) {
 ```
 
 Components:
+
 - `query` - Operation type
 - `GetUser` - Operation name
 - `($id: ID!)` - Variable definitions
@@ -102,10 +103,10 @@ Include `id` for any type you might cache or refetch:
 ```graphql
 query GetPost($id: ID!) {
   post(id: $id) {
-    id  # Always include for caching
+    id # Always include for caching
     title
     author {
-      id  # Include for author cache entry
+      id # Include for author cache entry
       name
     }
   }
@@ -127,13 +128,13 @@ query GetUserPosts($userId: ID!, $first: Int!, $after: String) {
           title
           excerpt
         }
-        cursor  # Only if implementing infinite scroll
+        cursor # Only if implementing infinite scroll
       }
       pageInfo {
         hasNextPage
         endCursor
       }
-      totalCount  # Only if displaying total
+      totalCount # Only if displaying total
     }
   }
 }
@@ -182,10 +183,20 @@ query GetPostsByStatus($userId: ID!) {
   user(id: $userId) {
     id
     publishedPosts: posts(status: PUBLISHED, first: 5) {
-      edges { node { id title } }
+      edges {
+        node {
+          id
+          title
+        }
+      }
     }
     draftPosts: posts(status: DRAFT, first: 5) {
-      edges { node { id title } }
+      edges {
+        node {
+          id
+          title
+        }
+      }
     }
   }
 }
@@ -276,11 +287,11 @@ query GetPost($id: ID!, $showComments: Boolean!, $hideAuthor: Boolean!) {
 
 ### Naming Conventions
 
-| Purpose | Pattern | Examples |
-|---------|---------|----------|
-| Fetch single item | `Get{Type}` | `GetUser`, `GetPost` |
-| Fetch list | `List{Types}` | `ListUsers`, `ListPosts` |
-| Search | `Search{Types}` | `SearchUsers`, `SearchProducts` |
+| Purpose               | Pattern            | Examples                             |
+| --------------------- | ------------------ | ------------------------------------ |
+| Fetch single item     | `Get{Type}`        | `GetUser`, `GetPost`                 |
+| Fetch list            | `List{Types}`      | `ListUsers`, `ListPosts`             |
+| Search                | `Search{Types}`    | `SearchUsers`, `SearchProducts`      |
 | Fetch for specific UI | `Get{Feature}Data` | `GetDashboardData`, `GetProfilePage` |
 
 ### Good Names
@@ -346,7 +357,7 @@ src/
 
 ```typescript
 // With graphql-tag
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const GET_USER = gql`
   query GetUser($id: ID!) {
@@ -358,7 +369,7 @@ export const GET_USER = gql`
 `;
 
 // With .graphql files (requires loader)
-import { GetUserDocument } from './UserProfile.generated';
+import { GetUserDocument } from "./UserProfile.generated";
 ```
 
 ## Performance Optimization
@@ -407,7 +418,8 @@ Never fetch unbounded lists:
 ```graphql
 # Avoid
 query GetAllPosts {
-  posts {  # Could return thousands
+  posts {
+    # Could return thousands
     id
     title
   }
@@ -442,10 +454,20 @@ query GetDashboard($userId: ID!) {
     name
   }
   recentPosts: posts(first: 5, orderBy: { field: CREATED_AT, direction: DESC }) {
-    edges { node { id title } }
+    edges {
+      node {
+        id
+        title
+      }
+    }
   }
   notifications(first: 10, unreadOnly: true) {
-    edges { node { id message } }
+    edges {
+      node {
+        id
+        message
+      }
+    }
   }
 }
 ```

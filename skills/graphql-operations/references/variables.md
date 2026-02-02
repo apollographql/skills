@@ -31,7 +31,8 @@ Variables are referenced with `$` prefix:
 
 ```graphql
 query GetUser($id: ID!) {
-  user(id: $id) {  # $id used here
+  user(id: $id) {
+    # $id used here
     id
     name
   }
@@ -46,8 +47,8 @@ Variables are passed as a separate JSON object:
 const { data } = await client.query({
   query: GET_USER,
   variables: {
-    id: "user_123"
-  }
+    id: "user_123",
+  },
 });
 ```
 
@@ -184,12 +185,14 @@ query GetPosts($first: Int = 10, $status: PostStatus = PUBLISHED) {
 ```
 
 If not provided, uses defaults:
+
 ```json
 {}
 // Equivalent to: { "first": 10, "status": "PUBLISHED" }
 ```
 
 Override defaults:
+
 ```json
 {
   "first": 20
@@ -211,9 +214,7 @@ query GetPosts($first: Int = 10) {
 ### Defaults for Complex Types
 
 ```graphql
-query GetPosts(
-  $orderBy: PostOrderInput = { field: CREATED_AT, direction: DESC }
-) {
+query GetPosts($orderBy: PostOrderInput = { field: CREATED_AT, direction: DESC }) {
   posts(orderBy: $orderBy) {
     id
     title
@@ -224,6 +225,7 @@ query GetPosts(
 ### When to Use Defaults
 
 Use defaults for:
+
 - Pagination limits (`first: Int = 20`)
 - Sort order (`direction: SortDirection = DESC`)
 - Common filter values (`status: Status = ACTIVE`)
@@ -393,7 +395,7 @@ const variables = {
     title: formData.title,
     content: formData.content,
     tags: formData.tags,
-  }
+  },
 };
 
 // Less clear: Flat variables
@@ -410,15 +412,15 @@ const variables = {
 function createPost(input: CreatePostInput) {
   // Validate before sending
   if (!input.title?.trim()) {
-    throw new Error('Title is required');
+    throw new Error("Title is required");
   }
   if (input.title.length > 200) {
-    throw new Error('Title too long');
+    throw new Error("Title too long");
   }
 
   return client.mutate({
     mutation: CREATE_POST,
-    variables: { input }
+    variables: { input },
   });
 }
 ```
@@ -433,6 +435,6 @@ interface GetUserQueryVariables {
 
 // Use with Apollo Client
 const { data } = useQuery<GetUserQuery, GetUserQueryVariables>(GET_USER, {
-  variables: { id: userId }  // Type-checked
+  variables: { id: userId }, // Type-checked
 });
 ```

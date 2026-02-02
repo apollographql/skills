@@ -19,6 +19,7 @@ skills/
 ## Skill File Format
 
 Every `SKILL.md` must include YAML frontmatter with:
+
 - `name`: skill identifier (lowercase, hyphenated)
 - `description`: multi-line description with numbered use cases
 - `license`: MIT
@@ -27,6 +28,7 @@ Every `SKILL.md` must include YAML frontmatter with:
 - `allowed-tools`: permitted tools for the skill
 
 Example frontmatter pattern:
+
 ```yaml
 ---
 name: skill-name
