@@ -11,76 +11,54 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        skill:
-          - apollo-client
-          - apollo-connectors
-          - apollo-mcp-server
-          - apollo-server
-          - graphql-operations
-          - graphql-schema
-          - rover
-          - rust-best-practices
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Install ${{ matrix.skill }} (local)
+      - name: Install all skills (local)
         run: |
-          npx skills add . --skill ${{ matrix.skill }} --agent claude-code --yes
-          echo "✅ Successfully installed skill: ${{ matrix.skill }}"
+          npx skills add . --yes
+          echo "✅ Successfully installed all skills locally"
 
-      - name: Verify installation
+      - name: Verify skills installed
         run: |
           echo "📁 Checking installed skill files..."
-          ls -la .claude/skills/
+          ls -la .agent.skills/
 
-          if [ -f ".claude/skills/${{ matrix.skill }}/SKILL.md" ]; then
-            echo "✅ Found SKILL.md"
-            echo "--- Content preview ---"
-            head -20 ".claude/skills/${{ matrix.skill }}/SKILL.md"
-          else
-            echo "❌ SKILL.md not found"
-            exit 1
-          fi
+          for skill in .agent.skills/*/; do
+            skill_name=$(basename "$skill")
+            if [ -f "$skill/SKILL.md" ]; then
+              echo "✅ Found $skill_name/SKILL.md"
+            else
+              echo "❌ $skill_name/SKILL.md not found"
+              exit 1
+            fi
+          done
+          echo "✅ All skills successfully installed"
 
   test-remote:
     runs-on: ubuntu-latest
     # Run only on push to main
     if: github.event_name == 'push'
 
-    strategy:
-      fail-fast: false
-      matrix:
-        skill:
-          - apollo-client
-          - apollo-connectors
-          - apollo-mcp-server
-          - apollo-server
-          - graphql-operations
-          - graphql-schema
-          - rover
-          - rust-best-practices
-
     steps:
-      - name: Install ${{ matrix.skill }} (remote)
+      - name: Install all skills (remote)
         run: |
-          npx skills add apollographql/skills --skill ${{ matrix.skill }} --agent claude-code --yes
-          echo "✅ Successfully installed skill from GitHub: ${{ matrix.skill }}"
+          npx skills add apollographql/skills --yes
+          echo "✅ Successfully installed all skills from GitHub"
 
-      - name: Verify installation
+      - name: Verify skills installed
         run: |
           echo "📁 Checking installed skill files..."
-          ls -la .claude/skills/
+          ls -la .agent.skills/
 
-          if [ -f ".claude/skills/${{ matrix.skill }}/SKILL.md" ]; then
-            echo "✅ Found SKILL.md"
-            echo "--- Content preview ---"
-            head -20 ".claude/skills/${{ matrix.skill }}/SKILL.md"
-          else
-            echo "❌ SKILL.md not found"
-            exit 1
-          fi
+          for skill in .agent.skills/*/; do
+            skill_name=$(basename "$skill")
+            if [ -f "$skill/SKILL.md" ]; then
+              echo "✅ Found $skill_name/SKILL.md"
+            else
+              echo "❌ $skill_name/SKILL.md not found"
+              exit 1
+            fi
+          done
+          echo "✅ All skills successfully installed"
