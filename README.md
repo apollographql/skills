@@ -4,6 +4,9 @@ A collection of skills for AI coding agents working with Apollo GraphQL tools an
 
 Apollo Skills follow the [Agent Skills](https://agentskills.io/) format and are available on [skills.sh](https://skills.sh/).
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Skills](https://img.shields.io/badge/skills-9-green.svg)](#skills)
+
 ## Installation
 
 Install skills using the [Skills CLI](https://skills.sh/docs/cli):
