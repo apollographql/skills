@@ -1,6 +1,6 @@
-# Apollo Client Setup with TanStack Start
+# Apollo Client Integration with TanStack Start
 
-This guide covers setting up Apollo Client in a TanStack Start application with support for modern streaming SSR.
+This guide covers integrating Apollo Client in a TanStack Start application with support for modern streaming SSR.
 
 > **Note:** When using `npx create-tsrouter-app` to create a new TanStack Start application, you can choose Apollo Client in the setup wizard to have all of this configuration automatically set up for you.
 
@@ -11,6 +11,8 @@ Install Apollo Client and the TanStack Start integration package:
 ```bash
 npm install @apollo/client-integration-tanstack-start @apollo/client graphql rxjs
 ```
+
+> **TypeScript users:** For type-safe GraphQL operations, see the [TypeScript Code Generation guide](typescript-codegen.md).
 
 ## Setup
 
@@ -275,7 +277,7 @@ import { ApolloLink, HttpLink } from "@apollo/client";
 import { SetContextLink } from "@apollo/client/link/context";
 import { createIsomorphicFn } from "@tanstack/react-start";
 import { createRouter } from "@tanstack/react-router";
-import { getSession } from "@tanstack/react-start/server";
+import { getSession, getCookie } from "@tanstack/react-start/server";
 import { routeTree } from "./routeTree.gen";
 
 // Create isomorphic link that uses different implementations per environment
