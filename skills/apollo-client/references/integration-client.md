@@ -78,11 +78,12 @@ const GET_USERS = gql`
 `;
 
 function UserList() {
-  const { loading, error, data } = useQuery(GET_USERS);
+  const { loading, error, data, dataState } = useQuery(GET_USERS);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error.message}</p>;
 
+  // TypeScript: dataState === "ready" provides better type narrowing than just checking data
   return (
     <ul>
       {data.users.map((user) => (
@@ -109,13 +110,14 @@ const GET_USER = gql`
 `;
 
 function UserProfile({ userId }: { userId: string }) {
-  const { loading, error, data } = useQuery(GET_USER, {
+  const { loading, error, data, dataState } = useQuery(GET_USER, {
     variables: { id: userId },
   });
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error.message}</p>;
 
+  // TypeScript: dataState === "ready" provides better type narrowing than just checking data
   return <div>{data.user.name}</div>;
 }
 ```
