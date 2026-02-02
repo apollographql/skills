@@ -165,7 +165,7 @@ const GET_USER = gql`
 `;
 
 function UserProfile({ userId }: { userId: string }) {
-  const { loading, error, data, dataState } = useQuery(GET_USER, {
+  const { loading, error, data } = useQuery(GET_USER, {
     variables: { id: userId },
   });
 

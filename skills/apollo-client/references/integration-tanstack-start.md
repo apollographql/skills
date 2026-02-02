@@ -275,7 +275,7 @@ import { ApolloLink, HttpLink } from "@apollo/client";
 import { SetContextLink } from "@apollo/client/link/context";
 import { createIsomorphicFn } from "@tanstack/react-start";
 import { createRouter } from "@tanstack/react-router";
-import { getSession } from "@tanstack/react-start/server";
+import { getSession, getCookie } from "@tanstack/react-start/server";
 import { routeTree } from "./routeTree.gen";
 
 // Create isomorphic link that uses different implementations per environment
