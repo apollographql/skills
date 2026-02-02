@@ -27,7 +27,7 @@ import { ApolloClient, InMemoryCache, HttpLink } from "@apollo/client";
 // Recommended: Use HttpOnly cookies for authentication
 const httpLink = new HttpLink({
   uri: "https://your-graphql-endpoint.com/graphql",
-  credentials: "include", // Sends cookies with requests (most secure)
+  credentials: "include", // Sends cookies with requests (secure when using HttpOnly cookies)
 });
 
 const client = new ApolloClient({
@@ -332,7 +332,7 @@ const client = new ApolloClient({
 
 2. **Client-Side Only:** This setup is for client-side apps without SSR. The Apollo Client instance is created once and reused throughout the application lifecycle.
 
-3. **Authentication:** Prefer HttpOnly secure cookies with `credentials: "include"` in `HttpLink` options to avoid exposing tokens to JavaScript. If manual token management is necessary, use `SetContextLink` to dynamically add authentication headers from `localStorage` or other client-side storage.
+3. **Authentication:** Prefer HttpOnly cookies with `credentials: "include"` in `HttpLink` options to avoid exposing tokens to JavaScript. If manual token management is necessary, use `SetContextLink` to dynamically add authentication headers from `localStorage` or other client-side storage.
 
 4. **Environment Variables:** Store your GraphQL endpoint URL in environment variables for different environments (development, staging, production).
 
