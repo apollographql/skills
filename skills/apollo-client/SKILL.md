@@ -48,14 +48,19 @@ const GET_USER = gql`
 `;
 
 function UserProfile({ userId }: { userId: string }) {
-  const { loading, error, data } = useQuery(GET_USER, {
+  const { loading, error, data, dataState } = useQuery(GET_USER, {
     variables: { id: userId },
   });
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error.message}</p>;
 
-  return <div>{data.user.name}</div>;
+  // Use dataState for type narrowing in TypeScript
+  if (dataState === "ready") {
+    return <div>{data.user.name}</div>;
+  }
+  
+  return null;
 }
 ```
 
@@ -88,6 +93,7 @@ function CreateUserForm() {
 ### Suspense Query
 
 ```tsx
+import { Suspense } from "react";
 import { useSuspenseQuery } from "@apollo/client/react";
 
 function UserProfile({ userId }: { userId: string }) {
@@ -98,16 +104,20 @@ function UserProfile({ userId }: { userId: string }) {
   return <div>{data.user.name}</div>;
 }
 
-// Wrap with Suspense boundary
-<Suspense fallback={<Loading />}>
-  <UserProfile userId="1" />
-</Suspense>
+function App() {
+  return (
+    <Suspense fallback={<p>Loading user...</p>}>
+      <UserProfile userId="1" />
+    </Suspense>
+  );
+}
 ```
 
 ## Reference Files
 
 Detailed documentation for specific topics:
 
+- [TypeScript Code Generation](references/typescript-codegen.md) - GraphQL Code Generator setup for type-safe operations
 - [Queries](references/queries.md) - useQuery, useLazyQuery, polling, refetching
 - [Suspense Hooks](references/suspense-hooks.md) - useSuspenseQuery, useBackgroundQuery, useReadQuery, useLoadableQuery
 - [Mutations](references/mutations.md) - useMutation, optimistic UI, cache updates

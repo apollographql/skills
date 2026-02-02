@@ -12,6 +12,8 @@ Install Apollo Client and the TanStack Start integration package:
 npm install @apollo/client-integration-tanstack-start @apollo/client graphql rxjs
 ```
 
+> **TypeScript users:** For type-safe GraphQL operations, see the [TypeScript Code Generation guide](typescript-codegen.md).
+
 ## Setup
 
 ### Step 1: Configure Root Route with Context

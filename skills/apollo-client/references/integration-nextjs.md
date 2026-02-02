@@ -20,6 +20,8 @@ Install Apollo Client and the Next.js integration package:
 npm install @apollo/client@latest @apollo/client-integration-nextjs graphql rxjs
 ```
 
+> **TypeScript users:** For type-safe GraphQL operations, see the [TypeScript Code Generation guide](typescript-codegen.md).
+
 ## Setup for React Server Components (RSC)
 
 ### Step 1: Create Apollo Client Configuration

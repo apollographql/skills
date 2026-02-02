@@ -1,6 +1,6 @@
 # Apollo Client Integration for Client-Side Apps
 
-This guide covers setting up Apollo Client in client-side React applications without server-side rendering (SSR). This includes applications using Create React App, Vite, or other bundlers that don't implement SSR.
+This guide covers setting up Apollo Client in client-side React applications without server-side rendering (SSR). This includes applications using Vite, Parcel, Create React App, or other bundlers that don't implement SSR.
 
 For applications with SSR, use one of the framework-specific integration guides instead:
 - [Next.js App Router](integration-nextjs.md)
@@ -15,63 +15,7 @@ npm install @apollo/client graphql rxjs
 
 ## TypeScript Code Generation (optional but recommended)
 
-For TypeScript type generation (recommended):
-
-```bash
-npm install -D @graphql-codegen/cli @graphql-codegen/typescript @graphql-codegen/typescript-operations @graphql-codegen/typed-document-node
-```
-
-```typescript
-// codegen.ts
-import { CodegenConfig } from "@graphql-codegen/cli";
-
-const config: CodegenConfig = {
-  overwrite: true,
-  schema: "<URL_OF_YOUR_GRAPHQL_API>",
-  // This assumes that all your source files are in a top-level `src/` directory - you might need to adjust this to your file structure
-  documents: ["src/**/*.{ts,tsx}"],
-  // Don't exit with non-zero status when there are no documents
-  ignoreNoDocuments: true,
-  generates: {
-    // Use a path that works the best for the structure of your application
-    "./src/types/__generated__/graphql.ts": {
-      plugins: ["typescript", "typescript-operations", "typed-document-node"],
-      config: {
-        avoidOptionals: {
-          // Use `null` for nullable fields instead of optionals
-          field: true,
-          // Allow nullable input fields to remain unspecified
-          inputValue: false,
-        },
-        // Use `unknown` instead of `any` for unconfigured scalars
-        defaultScalarType: "unknown",
-        // Apollo Client always includes `__typename` fields
-        nonOptionalTypename: true,
-        // Apollo Client doesn't add the `__typename` field to root types so
-        // don't generate a type for the `__typename` for root operation types.
-        skipTypeNameForRoot: true,
-      },
-    },
-  },
-};
-
-export default config;
-```
-
-To enable data masking with GraphQL Code Generator, create a type declaration file to inform Apollo Client about the generated types:
-
-```typescript
-// apollo-client.d.ts
-import { GraphQLCodegenDataMasking } from "@apollo/client/masking";
-
-declare module "@apollo/client" {
-  export interface TypeOverrides
-    extends GraphQLCodegenDataMasking.TypeOverrides {}
-}
-```
-
-The typed-document-node plugin might have a bundle size tradeoff but can prevent inconsistencies and is best suited for usage with LLMs, so it is recommended for most applications.
-See the [GraphQL Code Generator documentation](https://www.apollographql.com/docs/react/development-testing/graphql-codegen#recommended-starter-configuration) for other recommended configuration patterns if required.
+For type-safe GraphQL operations with TypeScript, see the [TypeScript Code Generation guide](typescript-codegen.md).
 
 ## Setup Steps
 

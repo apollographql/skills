@@ -10,6 +10,8 @@ Install Apollo Client and the React Router integration package:
 npm install @apollo/client-integration-react-router @apollo/client graphql rxjs
 ```
 
+> **TypeScript users:** For type-safe GraphQL operations, see the [TypeScript Code Generation guide](typescript-codegen.md).
+
 ## Setup
 
 ### Step 1: Create Apollo Configuration
