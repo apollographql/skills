@@ -126,8 +126,48 @@ function UserProfile({ userId }: { userId: string }) {
 
 ### TypeScript Integration
 
+#### Usage with Generated Types
+
+For type-safe operations with code generation, see the [TypeScript Code Generation guide](typescript-codegen.md).
+
+Quick example:
+
 ```typescript
-// Define types for codegen or TypedDocumentNode
+import { gql } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
+import { GetUserDocument } from "./queries.generated";
+
+// Define your query with the if (false) pattern for code generation
+if (false) {
+  gql`
+    query GetUser($id: ID!) {
+      user(id: $id) {
+        id
+        name
+        email
+      }
+    }
+  `;
+}
+
+function UserProfile({ userId }: { userId: string }) {
+  // Types are automatically inferred from GetUserDocument
+  const { data } = useQuery(GetUserDocument, {
+    variables: { id: userId },
+  });
+
+  return <div>{data.user.name}</div>;
+}
+```
+
+#### Usage with Manual Type Annotations
+
+If not using code generation, define types alongside your queries using `TypedDocumentNode`:
+
+```typescript
+import { gql, TypedDocumentNode } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
+
 interface GetUserData {
   user: {
     id: string;
@@ -140,7 +180,7 @@ interface GetUserVariables {
   id: string;
 }
 
-// Types are inferred from TypedDocumentNode - never use manual generics
+// Types should always be defined via TypedDocumentNode alongside your queries/mutations, not at the useQuery/useMutation call site
 const GET_USER: TypedDocumentNode<GetUserData, GetUserVariables> = gql`
   query GetUser($id: ID!) {
     user(id: $id) {
@@ -151,11 +191,14 @@ const GET_USER: TypedDocumentNode<GetUserData, GetUserVariables> = gql`
   }
 `;
 
-const { data } = useQuery(GET_USER, {
-  variables: { id: userId },
-});
+function UserProfile({ userId }: { userId: string }) {
+  const { data } = useQuery(GET_USER, {
+    variables: { id: userId },
+  });
 
-// data.user is automatically typed from GET_USER
+  // data.user is automatically typed from GET_USER
+  return <div>{data.user.name}</div>;
+}
 ```
 
 ## Basic Mutation Usage
