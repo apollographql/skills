@@ -83,15 +83,40 @@ npm run codegen
 
 ## Usage with Apollo Client
 
-The typed-document-node plugin generates `TypedDocumentNode` types that Apollo Client hooks automatically infer:
+The typed-document-node plugin generates `TypedDocumentNode` types that Apollo Client hooks automatically infer.
+
+### Defining Operations
+
+Define your operations inline with the `if (false)` pattern. This allows GraphQL Code Generator to detect and extract operations without executing the code at runtime (bundlers omit this dead code during minification):
+
+```typescript
+import { gql } from "@apollo/client";
+
+// This query will never be consumed in runtime code, so it is wrapped in `if (false)` so the bundler can omit it when bundling.
+if (false) {
+  gql`
+    query GetUser($id: ID!) {
+      user(id: $id) {
+        id
+        name
+        email
+      }
+    }
+  `;
+}
+```
+
+### Using Generated Types
+
+After running `npm run codegen`, import the generated `TypedDocumentNode`:
 
 ```typescript
 import { useQuery } from "@apollo/client/react";
-import { GET_USER } from "./queries.generated";
+import { GetUserDocument } from "./queries.generated";
 
 function UserProfile({ userId }: { userId: string }) {
-  // Types are automatically inferred from GET_USER
-  const { data } = useQuery(GET_USER, {
+  // Types are automatically inferred from GetUserDocument
+  const { data } = useQuery(GetUserDocument, {
     variables: { id: userId },
   });
 
