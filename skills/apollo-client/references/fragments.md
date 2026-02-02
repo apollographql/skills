@@ -670,7 +670,7 @@ if (false) {
 
 ### Use @defer for Below-the-Fold Content
 
-The `@defer` directive allows you to defer loading of non-critical fields, enabling faster initial page loads by prioritizing essential data. The deferred fields are fetched in a separate request and arrive later, allowing the UI to progressively render as data becomes available.
+The `@defer` directive allows you to defer loading of non-critical fields, enabling faster initial page loads by prioritizing essential data. The deferred fields are delivered via incremental delivery and arrive after the non-deferred data, allowing the UI to progressively render as data becomes available.
 
 Defer slow fields that aren't immediately visible:
 
@@ -734,6 +734,7 @@ GraphQL Code Generator's fragment masking (when using the client preset) is a **
 - Using their `useFragment` hook simply "unmasks" the data on a type level
 - Does not prevent accidental access to data at runtime
 - Parent components receive all data and pass it down
+- This means the parent component has to be subscribed to all data
 
 ### Apollo Client Data Masking
 
