@@ -126,6 +126,8 @@ function UserProfile({ userId }: { userId: string }) {
 
 ### TypeScript Integration
 
+For complete examples with loading, error handling, and `dataState` for type narrowing, see [Basic Query Usage](#basic-query-usage) above.
+
 #### Usage with Generated Types
 
 For type-safe operations with code generation, see the [TypeScript Code Generation guide](typescript-codegen.md).
