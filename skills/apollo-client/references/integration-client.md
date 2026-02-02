@@ -312,11 +312,11 @@ const client = new ApolloClient({
 
 ## Important Considerations
 
-1. **Client-Side Only:** This setup is for client-side apps without SSR. The Apollo Client instance is created once and reused throughout the application lifecycle.
+1. **Choose Your Hook Strategy:** Decide if your application should be based on Suspense. If it is, use suspenseful hooks like `useSuspenseQuery` (see [Suspense Hooks guide](suspense-hooks.md)), otherwise use non-suspenseful hooks like `useQuery` (see [Queries guide](queries.md)).
 
-2. **Authentication:** Use `SetContextLink` to dynamically add authentication headers from `localStorage` or other client-side storage.
+2. **Client-Side Only:** This setup is for client-side apps without SSR. The Apollo Client instance is created once and reused throughout the application lifecycle.
 
-3. **Cache Persistence:** Consider using `apollo3-cache-persist` if you need to persist the cache between sessions.
+3. **Authentication:** Use `SetContextLink` to dynamically add authentication headers from `localStorage` or other client-side storage.
 
 4. **Environment Variables:** Store your GraphQL endpoint URL in environment variables for different environments (development, staging, production).
 
