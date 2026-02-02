@@ -23,9 +23,9 @@ jobs:
       - name: Verify skills installed
         run: |
           echo "📁 Checking installed skill files..."
-          ls -la .agent.skills/
+          ls -la .agents/skills/
 
-          for skill in .agent.skills/*/; do
+          for skill in .agents/skills/*/; do
             skill_name=$(basename "$skill")
             if [ -f "$skill/SKILL.md" ]; then
               echo "✅ Found $skill_name/SKILL.md"
@@ -50,9 +50,9 @@ jobs:
       - name: Verify skills installed
         run: |
           echo "📁 Checking installed skill files..."
-          ls -la .agent.skills/
+          ls -la .agents/skills/
 
-          for skill in .agent.skills/*/; do
+          for skill in .agents/skills/*/; do
             skill_name=$(basename "$skill")
             if [ -f "$skill/SKILL.md" ]; then
               echo "✅ Found $skill_name/SKILL.md"
