@@ -55,12 +55,8 @@ function UserProfile({ userId }: { userId: string }) {
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error.message}</p>;
 
-  // Use dataState for type narrowing in TypeScript
-  if (dataState === "ready") {
-    return <div>{data.user.name}</div>;
-  }
-  
-  return null;
+  // TypeScript: dataState === "ready" provides better type narrowing than just checking data
+  return <div>{data.user.name}</div>;
 }
 ```
 
