@@ -42,6 +42,4 @@ This formatting requirement applies to the following skills:
 
 - `apollo-client` - React applications with Apollo Client
 - `apollo-server` - GraphQL servers with Apollo Server
-- `apollo-mcp-server` - Apollo MCP Server configuration
 - `graphql-operations` - GraphQL operations and queries
-- `skill-creator` - Skill creation documentation (when it includes JS/TS examples)
