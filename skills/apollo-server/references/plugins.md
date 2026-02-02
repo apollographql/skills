@@ -13,38 +13,38 @@
 Plugins are objects that implement lifecycle hooks:
 
 ```typescript
-import { ApolloServerPlugin } from '@apollo/server';
+import { ApolloServerPlugin } from "@apollo/server";
 
 const myPlugin: ApolloServerPlugin<MyContext> = {
   // Server lifecycle
   async serverWillStart(service) {
-    console.log('Server starting');
+    console.log("Server starting");
     return {
       async drainServer() {
-        console.log('Server draining');
+        console.log("Server draining");
       },
       async serverWillStop() {
-        console.log('Server stopping');
+        console.log("Server stopping");
       },
     };
   },
 
   // Request lifecycle
   async requestDidStart(requestContext) {
-    console.log('Request started');
+    console.log("Request started");
     return {
       async parsingDidStart() {
         return async (err) => {
-          if (err) console.log('Parsing error:', err);
+          if (err) console.log("Parsing error:", err);
         };
       },
       async validationDidStart() {
         return async (errs) => {
-          if (errs) console.log('Validation errors:', errs);
+          if (errs) console.log("Validation errors:", errs);
         };
       },
       async didResolveOperation(requestContext) {
-        console.log('Operation:', requestContext.operationName);
+        console.log("Operation:", requestContext.operationName);
       },
       async executionDidStart() {
         return {
@@ -57,7 +57,7 @@ const myPlugin: ApolloServerPlugin<MyContext> = {
         };
       },
       async willSendResponse(requestContext) {
-        console.log('Sending response');
+        console.log("Sending response");
       },
     };
   },
@@ -82,7 +82,7 @@ const plugin: ApolloServerPlugin = {
     // service.schema - the GraphQL schema
     // service.apollo - Apollo config (if using Apollo Studio)
 
-    console.log('Schema types:', Object.keys(service.schema.getTypeMap()));
+    console.log("Schema types:", Object.keys(service.schema.getTypeMap()));
 
     // Return object with cleanup hooks
     return {
@@ -100,7 +100,7 @@ const plugin: ApolloServerPlugin = {
 
       schemaDidLoadOrUpdate(schemaContext) {
         // Called when schema changes (e.g., with gateway)
-        console.log('Schema updated');
+        console.log("Schema updated");
       },
     };
   },
@@ -110,8 +110,8 @@ const plugin: ApolloServerPlugin = {
 ### drainServer Pattern
 
 ```typescript
-import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
-import http from 'http';
+import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
+import http from "http";
 
 const httpServer = http.createServer(app);
 
@@ -162,8 +162,8 @@ const plugin: ApolloServerPlugin<MyContext> = {
     const start = Date.now();
     const { request, contextValue } = requestContext;
 
-    console.log('Query:', request.query);
-    console.log('Variables:', request.variables);
+    console.log("Query:", request.query);
+    console.log("Variables:", request.variables);
 
     return {
       async didResolveSource(requestContext) {
@@ -174,7 +174,7 @@ const plugin: ApolloServerPlugin<MyContext> = {
         // Return end hook for when parsing completes
         return async (err) => {
           if (err) {
-            console.error('Parse error:', err);
+            console.error("Parse error:", err);
           }
         };
       },
@@ -182,15 +182,15 @@ const plugin: ApolloServerPlugin<MyContext> = {
       async validationDidStart(requestContext) {
         return async (errs) => {
           if (errs?.length) {
-            console.error('Validation errors:', errs);
+            console.error("Validation errors:", errs);
           }
         };
       },
 
       async didResolveOperation(requestContext) {
         // Operation name and type are now available
-        console.log('Operation:', requestContext.operationName);
-        console.log('Type:', requestContext.operation?.operation);
+        console.log("Operation:", requestContext.operationName);
+        console.log("Type:", requestContext.operation?.operation);
       },
 
       async responseForOperation(requestContext) {
@@ -215,7 +215,7 @@ const plugin: ApolloServerPlugin<MyContext> = {
 
       async didEncounterErrors(requestContext) {
         for (const error of requestContext.errors) {
-          console.error('GraphQL Error:', error);
+          console.error("GraphQL Error:", error);
         }
       },
 
@@ -237,23 +237,25 @@ const loggingPlugin: ApolloServerPlugin<MyContext> = {
     const start = Date.now();
     const requestId = crypto.randomUUID();
 
-    console.log(JSON.stringify({
-      type: 'request_start',
-      requestId,
-      operationName: request.operationName,
-      userId: contextValue.user?.id,
-    }));
+    console.log(
+      JSON.stringify({
+        type: "request_start",
+        requestId,
+        operationName: request.operationName,
+        userId: contextValue.user?.id,
+      }),
+    );
 
     return {
       async willSendResponse({ response }) {
-        console.log(JSON.stringify({
-          type: 'request_end',
-          requestId,
-          duration: Date.now() - start,
-          errors: response.body.kind === 'single'
-            ? response.body.singleResult.errors?.length ?? 0
-            : 0,
-        }));
+        console.log(
+          JSON.stringify({
+            type: "request_end",
+            requestId,
+            duration: Date.now() - start,
+            errors: response.body.kind === "single" ? (response.body.singleResult.errors?.length ?? 0) : 0,
+          }),
+        );
       },
     };
   },
@@ -284,7 +286,7 @@ const timingPlugin: ApolloServerPlugin = {
       },
 
       async willSendResponse({ response }) {
-        if (response.body.kind === 'single') {
+        if (response.body.kind === "single") {
           response.body.singleResult.extensions = {
             ...response.body.singleResult.extensions,
             timing: Object.fromEntries(fieldTimes),
@@ -305,7 +307,7 @@ const errorTrackingPlugin: ApolloServerPlugin<MyContext> = {
       async didEncounterErrors({ errors, request }) {
         for (const error of errors) {
           // Skip client errors
-          if (error.extensions?.code === 'BAD_USER_INPUT') continue;
+          if (error.extensions?.code === "BAD_USER_INPUT") continue;
 
           // Report to error tracking service
           await errorTracker.captureException(error.originalError ?? error, {
@@ -328,10 +330,10 @@ const errorTrackingPlugin: ApolloServerPlugin<MyContext> = {
 ```typescript
 const cachingPlugin: ApolloServerPlugin = {
   async requestDidStart({ request }) {
-    const cacheKey = createHash('sha256')
-      .update(request.query ?? '')
+    const cacheKey = createHash("sha256")
+      .update(request.query ?? "")
       .update(JSON.stringify(request.variables ?? {}))
-      .digest('hex');
+      .digest("hex");
 
     return {
       async responseForOperation() {
@@ -343,7 +345,7 @@ const cachingPlugin: ApolloServerPlugin = {
       },
 
       async willSendResponse({ response }) {
-        if (response.body.kind === 'single' && !response.body.singleResult.errors) {
+        if (response.body.kind === "single" && !response.body.singleResult.errors) {
           await cache.set(cacheKey, JSON.stringify(response.body.singleResult), {
             ttl: 300,
           });
@@ -361,14 +363,12 @@ const cachingPlugin: ApolloServerPlugin = {
 Gracefully shuts down HTTP server during `server.stop()`:
 
 ```typescript
-import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
+import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
 
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-  plugins: [
-    ApolloServerPluginDrainHttpServer({ httpServer }),
-  ],
+  plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
 });
 ```
 
@@ -377,14 +377,12 @@ const server = new ApolloServer({
 Shows Apollo Sandbox for local development:
 
 ```typescript
-import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
+import { ApolloServerPluginLandingPageLocalDefault } from "@apollo/server/plugin/landingPage/default";
 
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-  plugins: [
-    ApolloServerPluginLandingPageLocalDefault({ embed: true }),
-  ],
+  plugins: [ApolloServerPluginLandingPageLocalDefault({ embed: true })],
 });
 ```
 
@@ -393,13 +391,13 @@ const server = new ApolloServer({
 Shows production landing page:
 
 ```typescript
-import { ApolloServerPluginLandingPageProductionDefault } from '@apollo/server/plugin/landingPage/default';
+import { ApolloServerPluginLandingPageProductionDefault } from "@apollo/server/plugin/landingPage/default";
 
 const server = new ApolloServer({
   typeDefs,
   resolvers,
   plugins: [
-    process.env.NODE_ENV === 'production'
+    process.env.NODE_ENV === "production"
       ? ApolloServerPluginLandingPageProductionDefault()
       : ApolloServerPluginLandingPageLocalDefault({ embed: true }),
   ],
@@ -411,7 +409,7 @@ const server = new ApolloServer({
 Reports metrics to Apollo Studio:
 
 ```typescript
-import { ApolloServerPluginUsageReporting } from '@apollo/server/plugin/usageReporting';
+import { ApolloServerPluginUsageReporting } from "@apollo/server/plugin/usageReporting";
 
 const server = new ApolloServer({
   typeDefs,
@@ -430,13 +428,11 @@ const server = new ApolloServer({
 Includes trace data in responses (for federated graphs):
 
 ```typescript
-import { ApolloServerPluginInlineTrace } from '@apollo/server/plugin/inlineTrace';
+import { ApolloServerPluginInlineTrace } from "@apollo/server/plugin/inlineTrace";
 
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-  plugins: [
-    ApolloServerPluginInlineTrace(),
-  ],
+  plugins: [ApolloServerPluginInlineTrace()],
 });
 ```

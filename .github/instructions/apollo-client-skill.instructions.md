@@ -21,6 +21,7 @@ Follow these rules when working on the Apollo Client AI skill instructions.
 - **DO** explain that sharing fragments creates artificial dependencies and leads to over-fetching when one component's needs change
 
 Example of correct messaging:
+
 - ✅ "Each component should declare its data needs in a dedicated fragment"
 - ✅ "Fragments enable components to independently evolve their data requirements"
 - ❌ "Fragments allow for the reuse of common repeated selections"

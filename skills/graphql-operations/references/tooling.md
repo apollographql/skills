@@ -107,7 +107,7 @@ interface GetUserData {
 const { data } = useQuery<GetUserData>(GET_USER, { variables: { id } });
 
 // After: Generated types
-import { useGetUserQuery } from './generated/graphql';
+import { useGetUserQuery } from "./generated/graphql";
 
 const { data } = useGetUserQuery({ variables: { id } });
 // data.user is fully typed!
@@ -119,25 +119,26 @@ Generate types next to operations:
 
 ```typescript
 const config: CodegenConfig = {
-  schema: 'http://localhost:4000/graphql',
-  documents: ['src/**/*.graphql'],
+  schema: "http://localhost:4000/graphql",
+  documents: ["src/**/*.graphql"],
   generates: {
-    'src/': {
-      preset: 'near-operation-file',
+    "src/": {
+      preset: "near-operation-file",
       presetConfig: {
-        extension: '.generated.ts',
-        baseTypesPath: 'generated/graphql.ts',
+        extension: ".generated.ts",
+        baseTypesPath: "generated/graphql.ts",
       },
-      plugins: ['typescript-operations', 'typescript-react-apollo'],
+      plugins: ["typescript-operations", "typescript-react-apollo"],
     },
-    'src/generated/graphql.ts': {
-      plugins: ['typescript'],
+    "src/generated/graphql.ts": {
+      plugins: ["typescript"],
     },
   },
 };
 ```
 
 Results in:
+
 ```
 src/
   components/
@@ -156,7 +157,7 @@ src/
 //   avatarUrl
 // }
 
-import { UserAvatarFragment } from './UserAvatar.generated';
+import { UserAvatarFragment } from "./UserAvatar.generated";
 
 interface UserAvatarProps {
   user: UserAvatarFragment;
@@ -179,30 +180,30 @@ npm install -D @graphql-eslint/eslint-plugin
 
 ```javascript
 // eslint.config.js (flat config)
-import graphqlPlugin from '@graphql-eslint/eslint-plugin';
+import graphqlPlugin from "@graphql-eslint/eslint-plugin";
 
 export default [
   {
-    files: ['**/*.graphql'],
+    files: ["**/*.graphql"],
     languageOptions: {
       parser: graphqlPlugin.parser,
     },
     plugins: {
-      '@graphql-eslint': graphqlPlugin,
+      "@graphql-eslint": graphqlPlugin,
     },
     rules: {
-      '@graphql-eslint/known-type-names': 'error',
-      '@graphql-eslint/no-anonymous-operations': 'error',
-      '@graphql-eslint/no-duplicate-fields': 'error',
-      '@graphql-eslint/naming-convention': [
-        'error',
+      "@graphql-eslint/known-type-names": "error",
+      "@graphql-eslint/no-anonymous-operations": "error",
+      "@graphql-eslint/no-duplicate-fields": "error",
+      "@graphql-eslint/naming-convention": [
+        "error",
         {
           OperationDefinition: {
-            style: 'PascalCase',
-            forbiddenPrefixes: ['Query', 'Mutation', 'Subscription'],
+            style: "PascalCase",
+            forbiddenPrefixes: ["Query", "Mutation", "Subscription"],
           },
           FragmentDefinition: {
-            style: 'PascalCase',
+            style: "PascalCase",
           },
         },
       ],
@@ -257,6 +258,7 @@ Provide schema for advanced validation:
 ### VS Code
 
 **GraphQL: Language Feature Support** (GraphQL Foundation)
+
 - Syntax highlighting
 - Autocomplete for schema types
 - Go to definition
@@ -264,12 +266,14 @@ Provide schema for advanced validation:
 - Validation against schema
 
 Configuration (`.graphqlrc.yml`):
+
 ```yaml
-schema: 'http://localhost:4000/graphql'
-documents: 'src/**/*.{graphql,ts,tsx}'
+schema: "http://localhost:4000/graphql"
+documents: "src/**/*.{graphql,ts,tsx}"
 ```
 
 **Apollo GraphQL** (Apollo)
+
 - Apollo-specific features
 - Schema registry integration
 - Performance insights
@@ -277,12 +281,14 @@ documents: 'src/**/*.{graphql,ts,tsx}'
 ### JetBrains IDEs
 
 **GraphQL** plugin:
+
 - Syntax highlighting
 - Schema-aware completion
 - Validation
 - Navigate to definition
 
 Configuration (`.graphqlconfig`):
+
 ```json
 {
   "schemaPath": "./schema.graphql",
@@ -293,6 +299,7 @@ Configuration (`.graphqlconfig`):
 ### Configuration Files
 
 Common configuration file names:
+
 - `.graphqlrc` (JSON)
 - `.graphqlrc.yml` (YAML)
 - `.graphqlrc.json` (JSON)
@@ -300,8 +307,8 @@ Common configuration file names:
 
 ```yaml
 # .graphqlrc.yml
-schema: 'http://localhost:4000/graphql'
-documents: 'src/**/*.graphql'
+schema: "http://localhost:4000/graphql"
+documents: "src/**/*.graphql"
 extensions:
   codegen:
     generates:
@@ -353,10 +360,7 @@ jobs:
 // package.json
 {
   "lint-staged": {
-    "*.graphql": [
-      "eslint --fix",
-      "graphql-inspector validate ./schema.graphql"
-    ]
+    "*.graphql": ["eslint --fix", "graphql-inspector validate ./schema.graphql"]
   }
 }
 ```
@@ -379,11 +383,11 @@ Generate persisted queries for production:
 // codegen.ts
 const config: CodegenConfig = {
   generates: {
-    './persisted-queries.json': {
-      plugins: ['graphql-codegen-persisted-query-ids'],
+    "./persisted-queries.json": {
+      plugins: ["graphql-codegen-persisted-query-ids"],
       config: {
-        output: 'client',
-        algorithm: 'sha256',
+        output: "client",
+        algorithm: "sha256",
       },
     },
   },
@@ -391,6 +395,7 @@ const config: CodegenConfig = {
 ```
 
 Output:
+
 ```json
 {
   "abc123...": "query GetUser($id: ID!) { user(id: $id) { id name } }",

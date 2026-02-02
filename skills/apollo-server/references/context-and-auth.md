@@ -16,8 +16,8 @@ The context function runs for every request and returns an object shared across 
 ### Standalone Server
 
 ```typescript
-import { ApolloServer } from '@apollo/server';
-import { startStandaloneServer } from '@apollo/server/standalone';
+import { ApolloServer } from "@apollo/server";
+import { startStandaloneServer } from "@apollo/server/standalone";
 
 const server = new ApolloServer({ typeDefs, resolvers });
 
@@ -35,10 +35,10 @@ const { url } = await startStandaloneServer(server, {
 ### Express Middleware
 
 ```typescript
-import { expressMiddleware } from '@apollo/server/express4';
+import { expressMiddleware } from "@apollo/server/express4";
 
 app.use(
-  '/graphql',
+  "/graphql",
   expressMiddleware(server, {
     context: async ({ req, res }) => {
       // req: express.Request
@@ -48,7 +48,7 @@ app.use(
         ip: req.ip,
       };
     },
-  })
+  }),
 );
 ```
 
@@ -57,7 +57,7 @@ app.use(
 ```typescript
 const context = async ({ req }) => {
   // 1. Extract credentials
-  const token = req.headers.authorization?.replace('Bearer ', '');
+  const token = req.headers.authorization?.replace("Bearer ", "");
 
   // 2. Validate and decode (fail fast)
   let user = null;
@@ -66,7 +66,7 @@ const context = async ({ req }) => {
       user = await verifyToken(token);
     } catch (e) {
       // Don't throw - let resolvers handle auth
-      console.warn('Invalid token:', e.message);
+      console.warn("Invalid token:", e.message);
     }
   }
 
@@ -86,7 +86,7 @@ const context = async ({ req }) => {
 Define and use a typed context for type safety:
 
 ```typescript
-import { ApolloServer } from '@apollo/server';
+import { ApolloServer } from "@apollo/server";
 
 // Define context type
 interface MyContext {
@@ -113,7 +113,7 @@ const resolvers = {
   Query: {
     me: async (_, __, context: MyContext) => {
       if (!context.user) {
-        throw new GraphQLError('Not authenticated');
+        throw new GraphQLError("Not authenticated");
       }
       return context.dataSources.usersAPI.getById(context.user.id);
     },
@@ -126,7 +126,7 @@ const resolvers = {
 ### JWT Authentication
 
 ```typescript
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 
 interface JwtPayload {
   userId: string;
@@ -135,7 +135,7 @@ interface JwtPayload {
 }
 
 const context = async ({ req }) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
+  const token = req.headers.authorization?.replace("Bearer ", "");
 
   let user = null;
   if (token) {
@@ -158,23 +158,25 @@ const context = async ({ req }) => {
 ### Session Authentication
 
 ```typescript
-import session from 'express-session';
+import session from "express-session";
 
 // Express setup
-app.use(session({
-  secret: process.env.SESSION_SECRET!,
-  resave: false,
-  saveUninitialized: false,
-}));
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET!,
+    resave: false,
+    saveUninitialized: false,
+  }),
+);
 
 app.use(
-  '/graphql',
+  "/graphql",
   expressMiddleware(server, {
     context: async ({ req }) => ({
       user: req.session.user,
       session: req.session,
     }),
-  })
+  }),
 );
 
 // Login mutation
@@ -183,7 +185,7 @@ const resolvers = {
     login: async (_, { email, password }, { session, dataSources }) => {
       const user = await dataSources.usersAPI.authenticate(email, password);
       if (!user) {
-        throw new GraphQLError('Invalid credentials');
+        throw new GraphQLError("Invalid credentials");
       }
       session.user = user;
       return user;
@@ -205,7 +207,7 @@ const resolvers = {
 
 ```typescript
 const context = async ({ req }) => {
-  const apiKey = req.headers['x-api-key'];
+  const apiKey = req.headers["x-api-key"];
 
   let client = null;
   if (apiKey) {
@@ -224,13 +226,13 @@ const context = async ({ req }) => {
 ### Field-Level Authorization
 
 ```typescript
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from "graphql";
 
 const resolvers = {
   User: {
     email: (parent, _, { user }) => {
       // Only return email to the user themselves or admins
-      if (user?.id === parent.id || user?.roles.includes('admin')) {
+      if (user?.id === parent.id || user?.roles.includes("admin")) {
         return parent.email;
       }
       return null;
@@ -238,13 +240,13 @@ const resolvers = {
 
     privateData: (parent, _, { user }) => {
       if (!user) {
-        throw new GraphQLError('Not authenticated', {
-          extensions: { code: 'UNAUTHENTICATED' },
+        throw new GraphQLError("Not authenticated", {
+          extensions: { code: "UNAUTHENTICATED" },
         });
       }
       if (user.id !== parent.id) {
-        throw new GraphQLError('Not authorized', {
-          extensions: { code: 'FORBIDDEN' },
+        throw new GraphQLError("Not authorized", {
+          extensions: { code: "FORBIDDEN" },
         });
       }
       return parent.privateData;
@@ -259,15 +261,15 @@ const resolvers = {
 // Helper function
 function requireRole(user: User | null, roles: string[]): void {
   if (!user) {
-    throw new GraphQLError('Not authenticated', {
-      extensions: { code: 'UNAUTHENTICATED' },
+    throw new GraphQLError("Not authenticated", {
+      extensions: { code: "UNAUTHENTICATED" },
     });
   }
 
-  const hasRole = roles.some(role => user.roles.includes(role));
+  const hasRole = roles.some((role) => user.roles.includes(role));
   if (!hasRole) {
-    throw new GraphQLError(`Requires one of: ${roles.join(', ')}`, {
-      extensions: { code: 'FORBIDDEN' },
+    throw new GraphQLError(`Requires one of: ${roles.join(", ")}`, {
+      extensions: { code: "FORBIDDEN" },
     });
   }
 }
@@ -275,12 +277,12 @@ function requireRole(user: User | null, roles: string[]): void {
 const resolvers = {
   Mutation: {
     deleteUser: async (_, { id }, { user, dataSources }) => {
-      requireRole(user, ['admin']);
+      requireRole(user, ["admin"]);
       return dataSources.usersAPI.delete(id);
     },
 
     updatePost: async (_, { id, input }, { user, dataSources }) => {
-      requireRole(user, ['admin', 'editor']);
+      requireRole(user, ["admin", "editor"]);
       return dataSources.postsAPI.update(id, input);
     },
   },
@@ -290,8 +292,8 @@ const resolvers = {
 ### Directive-Based Authorization
 
 ```typescript
-import { mapSchema, getDirective, MapperKind } from '@graphql-tools/utils';
-import { defaultFieldResolver } from 'graphql';
+import { mapSchema, getDirective, MapperKind } from "@graphql-tools/utils";
+import { defaultFieldResolver } from "graphql";
 
 // Schema directive
 const typeDefs = `#graphql
@@ -313,7 +315,7 @@ const typeDefs = `#graphql
 function authDirectiveTransformer(schema) {
   return mapSchema(schema, {
     [MapperKind.OBJECT_FIELD]: (fieldConfig) => {
-      const authDirective = getDirective(schema, fieldConfig, 'auth')?.[0];
+      const authDirective = getDirective(schema, fieldConfig, "auth")?.[0];
 
       if (authDirective) {
         const { requires } = authDirective;
@@ -321,7 +323,7 @@ function authDirectiveTransformer(schema) {
 
         fieldConfig.resolve = async (source, args, context, info) => {
           if (!context.user) {
-            throw new GraphQLError('Not authenticated');
+            throw new GraphQLError("Not authenticated");
           }
 
           if (requires && !context.user.roles.includes(requires)) {
@@ -372,7 +374,7 @@ class AuthenticatedDataSource extends RESTDataSource {
 
   override willSendRequest(path: string, request: AugmentedRequest) {
     if (this.user) {
-      request.headers['x-user-id'] = this.user.id;
+      request.headers["x-user-id"] = this.user.id;
     }
   }
 }
@@ -396,10 +398,10 @@ const context = async ({ req }) => {
 ```typescript
 const context = async ({ req }) => {
   // Bad - trusting client header
-  const userId = req.headers['x-user-id'];
+  const userId = req.headers["x-user-id"];
 
   // Good - verify token server-side
-  const token = req.headers.authorization?.replace('Bearer ', '');
+  const token = req.headers.authorization?.replace("Bearer ", "");
   const user = token ? await verifyToken(token) : null;
 
   return { user };
@@ -417,10 +419,10 @@ const server = new ApolloServer({
     console.error(error);
 
     // Don't expose internal errors to clients
-    if (formattedError.extensions?.code === 'INTERNAL_SERVER_ERROR') {
+    if (formattedError.extensions?.code === "INTERNAL_SERVER_ERROR") {
       return {
-        message: 'Internal server error',
-        extensions: { code: 'INTERNAL_SERVER_ERROR' },
+        message: "Internal server error",
+        extensions: { code: "INTERNAL_SERVER_ERROR" },
       };
     }
 
@@ -432,20 +434,20 @@ const server = new ApolloServer({
 ### Rate Limiting
 
 ```typescript
-import rateLimit from 'express-rate-limit';
+import rateLimit from "express-rate-limit";
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per window
 });
 
-app.use('/graphql', limiter);
+app.use("/graphql", limiter);
 ```
 
 ### Depth Limiting
 
 ```typescript
-import depthLimit from 'graphql-depth-limit';
+import depthLimit from "graphql-depth-limit";
 
 const server = new ApolloServer({
   typeDefs,
@@ -457,14 +459,14 @@ const server = new ApolloServer({
 ### Query Complexity
 
 ```typescript
-import { createComplexityLimitRule } from 'graphql-validation-complexity';
+import { createComplexityLimitRule } from "graphql-validation-complexity";
 
 const server = new ApolloServer({
   typeDefs,
   resolvers,
   validationRules: [
     createComplexityLimitRule(1000, {
-      onCost: (cost) => console.log('Query cost:', cost),
+      onCost: (cost) => console.log("Query cost:", cost),
     }),
   ],
 });

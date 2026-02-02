@@ -52,11 +52,7 @@ function RootComponent() {
 In your `router.tsx`, set up your Apollo Client instance and run `routerWithApolloClient`:
 
 ```typescript
-import {
-  routerWithApolloClient,
-  ApolloClient,
-  InMemoryCache,
-} from "@apollo/client-integration-tanstack-start";
+import { routerWithApolloClient, ApolloClient, InMemoryCache } from "@apollo/client-integration-tanstack-start";
 import { HttpLink } from "@apollo/client";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
@@ -269,10 +265,7 @@ function UserComponent({ queryRef }: { queryRef: QueryRef<GetUserQuery> }) {
 For authentication in TanStack Start with SSR support, you need to handle both server and client environments differently. Use `createIsomorphicFn` to provide environment-specific implementations:
 
 ```typescript
-import {
-  ApolloClient,
-  InMemoryCache,
-} from "@apollo/client-integration-tanstack-start";
+import { ApolloClient, InMemoryCache } from "@apollo/client-integration-tanstack-start";
 import { ApolloLink, HttpLink } from "@apollo/client";
 import { SetContextLink } from "@apollo/client/link/context";
 import { createIsomorphicFn } from "@tanstack/react-start";
@@ -336,10 +329,7 @@ export function getRouter() {
 ### Custom Cache Configuration
 
 ```typescript
-import {
-  ApolloClient,
-  InMemoryCache,
-} from "@apollo/client-integration-tanstack-start";
+import { ApolloClient, InMemoryCache } from "@apollo/client-integration-tanstack-start";
 import { HttpLink } from "@apollo/client";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";

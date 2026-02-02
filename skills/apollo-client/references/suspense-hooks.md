@@ -24,9 +24,9 @@ The `useSuspenseQuery` hook is the Suspense-ready replacement for `useQuery`. It
 ### Basic Usage
 
 ```tsx
-import { Suspense } from 'react';
-import { useSuspenseQuery } from '@apollo/client/react';
-import { GET_DOG } from './queries.generated';
+import { Suspense } from "react";
+import { useSuspenseQuery } from "@apollo/client/react";
+import { GET_DOG } from "./queries.generated";
 
 function App() {
   return (
@@ -50,15 +50,15 @@ function Dog({ id }: { id: string }) {
 
 ```typescript
 const {
-  data,           // Query result data
-  dataState,      // With default options: "complete" | "streaming"
-                  // With returnPartialData: also "partial"
-                  // With errorPolicy "all" or "ignore": also "empty"
-  error,          // ApolloError (only when errorPolicy is "all" or "ignore")
-  networkStatus,  // NetworkStatus.ready, NetworkStatus.loading, etc.
-  client,         // Apollo Client instance
-  refetch,        // Function to re-execute query
-  fetchMore,      // Function for pagination
+  data, // Query result data
+  dataState, // With default options: "complete" | "streaming"
+  // With returnPartialData: also "partial"
+  // With errorPolicy "all" or "ignore": also "empty"
+  error, // ApolloError (only when errorPolicy is "all" or "ignore")
+  networkStatus, // NetworkStatus.ready, NetworkStatus.loading, etc.
+  client, // Apollo Client instance
+  refetch, // Function to re-execute query
+  fetchMore, // Function for pagination
 } = useSuspenseQuery(QUERY, options);
 ```
 
@@ -74,8 +74,8 @@ const {
 When variables change, `useSuspenseQuery` automatically re-runs the query. If the data is not in the cache, the component suspends again.
 
 ```tsx
-import { useState } from 'react';
-import { GET_DOGS } from './queries.generated';
+import { useState } from "react";
+import { GET_DOGS } from "./queries.generated";
 
 function DogSelector() {
   const { data } = useSuspenseQuery(GET_DOGS);
@@ -124,7 +124,7 @@ function Dog({ id }: { id: string }) {
 
   return (
     <>
-      <div>Name: {data.dog?.name ?? 'Unknown'}</div>
+      <div>Name: {data.dog?.name ?? "Unknown"}</div>
       {data.dog?.breed && <div>Breed: {data.dog.breed}</div>}
     </>
   );
@@ -138,13 +138,13 @@ Use `useBackgroundQuery` with `useReadQuery` to avoid request waterfalls by star
 ### Basic Usage
 
 ```tsx
-import { Suspense } from 'react';
-import { useBackgroundQuery, useReadQuery } from '@apollo/client/react';
+import { Suspense } from "react";
+import { useBackgroundQuery, useReadQuery } from "@apollo/client/react";
 
 function Parent() {
   // Start fetching immediately
   const [queryRef] = useBackgroundQuery(GET_DOG, {
-    variables: { id: '3' },
+    variables: { id: "3" },
   });
 
   return (
@@ -174,8 +174,8 @@ function Child({ queryRef }: { queryRef: QueryRef<DogData> }) {
 
 ```typescript
 const [
-  queryRef,     // QueryRef to pass to useReadQuery
-  { refetch, fetchMore, subscribeToMore }  // Helper functions
+  queryRef, // QueryRef to pass to useReadQuery
+  { refetch, fetchMore, subscribeToMore }, // Helper functions
 ] = useBackgroundQuery(QUERY, options);
 ```
 
@@ -183,10 +183,10 @@ const [
 
 ```typescript
 const {
-  data,           // Query result data (always defined)
-  dataState,      // "complete" | "streaming" | "partial" | "empty"
-  error,          // ApolloError (if errorPolicy allows)
-  networkStatus,  // Detailed network state (1-8)
+  data, // Query result data (always defined)
+  dataState, // "complete" | "streaming" | "partial" | "empty"
+  error, // ApolloError (if errorPolicy allows)
+  networkStatus, // Detailed network state (1-8)
 } = useReadQuery(queryRef);
 ```
 
@@ -197,21 +197,17 @@ Use `useLoadableQuery` to imperatively load a query in response to a user intera
 ### Basic Usage
 
 ```tsx
-import { Suspense } from 'react';
-import { useLoadableQuery, useReadQuery } from '@apollo/client/react';
-import { GET_GREETING } from './queries.generated';
+import { Suspense } from "react";
+import { useLoadableQuery, useReadQuery } from "@apollo/client/react";
+import { GET_GREETING } from "./queries.generated";
 
 function App() {
   const [loadGreeting, queryRef] = useLoadableQuery(GET_GREETING);
 
   return (
     <>
-      <button onClick={() => loadGreeting({ variables: { language: 'english' } })}>
-        Load Greeting
-      </button>
-      <Suspense fallback={<div>Loading...</div>}>
-        {queryRef && <Greeting queryRef={queryRef} />}
-      </Suspense>
+      <button onClick={() => loadGreeting({ variables: { language: "english" } })}>Load Greeting</button>
+      <Suspense fallback={<div>Loading...</div>}>{queryRef && <Greeting queryRef={queryRef} />}</Suspense>
     </>
   );
 }
@@ -227,9 +223,9 @@ function Greeting({ queryRef }: { queryRef: QueryRef<GreetingData> }) {
 
 ```typescript
 const [
-  loadQuery,      // Function to load the query
-  queryRef,       // QueryRef (null until loadQuery is called)
-  { refetch, fetchMore, subscribeToMore, reset }  // Helper functions
+  loadQuery, // Function to load the query
+  queryRef, // QueryRef (null until loadQuery is called)
+  { refetch, fetchMore, subscribeToMore, reset }, // Helper functions
 ] = useLoadableQuery(QUERY, options);
 ```
 
@@ -246,11 +242,11 @@ The `createQueryPreloader` function creates a `preloadQuery` function that can b
 ### Basic Usage
 
 ```tsx
-import { ApolloClient, InMemoryCache } from '@apollo/client';
-import { createQueryPreloader } from '@apollo/client/react';
+import { ApolloClient, InMemoryCache } from "@apollo/client";
+import { createQueryPreloader } from "@apollo/client/react";
 
 const client = new ApolloClient({
-  uri: 'https://your-graphql-endpoint.com/graphql',
+  uri: "https://your-graphql-endpoint.com/graphql",
   cache: new InMemoryCache(),
 });
 
@@ -265,8 +261,8 @@ export const preloadQuery = createQueryPreloader(client);
 Use the preload function with React Router's `loader` function to begin loading data during route transitions:
 
 ```tsx
-import { preloadQuery } from '@/lib/apollo-client';
-import { GET_DOG } from './queries.generated';
+import { preloadQuery } from "@/lib/apollo-client";
+import { GET_DOG } from "./queries.generated";
 
 // React Router loader function
 export async function loader({ params }: { params: { id: string } }) {
@@ -309,7 +305,7 @@ export async function loader({ params }: { params: { id: string } }) {
     query: GET_DOG,
     variables: { id: params.id },
   });
-  
+
   // Wait for the query to complete before transitioning
   return queryRef.toPromise();
 }
@@ -332,7 +328,7 @@ The `useQueryRefHandlers` hook provides access to `refetch` and `fetchMore` func
 ### Basic Usage
 
 ```tsx
-import { useQueryRefHandlers } from '@apollo/client/react';
+import { useQueryRefHandlers } from "@apollo/client/react";
 
 function Breeds({ queryRef }: { queryRef: QueryRef<BreedsData> }) {
   const { refetch } = useQueryRefHandlers(queryRef);
@@ -349,7 +345,7 @@ function Breeds({ queryRef }: { queryRef: QueryRef<BreedsData> }) {
           });
         }}
       >
-        {isPending ? 'Refetching...' : 'Refetch breeds'}
+        {isPending ? "Refetching..." : "Refetch breeds"}
       </button>
       <ul>
         {data.breeds.map((breed) => (
@@ -390,7 +386,7 @@ function Posts({ queryRef }: { queryRef: QueryRef<PostsData> }) {
           });
         }}
       >
-        {isPending ? 'Loading...' : 'Load more'}
+        {isPending ? "Loading..." : "Load more"}
       </button>
     </div>
   );
@@ -414,14 +410,14 @@ Use the `queryKey` option to ensure each hook has a unique identity:
 function UserProfile() {
   // First query with unique key
   const { data: userData } = useSuspenseQuery(GET_USER, {
-    variables: { id: '1' },
-    queryKey: ['user-profile'],
+    variables: { id: "1" },
+    queryKey: ["user-profile"],
   });
 
   // Second query with same query and variables but different key
   const { data: userPreview } = useSuspenseQuery(GET_USER, {
-    variables: { id: '1' },
-    queryKey: ['user-preview'],
+    variables: { id: "1" },
+    queryKey: ["user-preview"],
   });
 
   return (
@@ -478,7 +474,7 @@ function Content() {
 Suspense hooks throw errors to React error boundaries instead of returning them. Use error boundaries to handle GraphQL errors.
 
 ```tsx
-import { ErrorBoundary } from 'react-error-boundary';
+import { ErrorBoundary } from "react-error-boundary";
 
 function App() {
   return (
@@ -506,12 +502,12 @@ Use `errorPolicy` to control how errors are handled:
 function Dog({ id }: { id: string }) {
   const { data, error } = useSuspenseQuery(GET_DOG, {
     variables: { id },
-    errorPolicy: 'all', // Return both data and errors
+    errorPolicy: "all", // Return both data and errors
   });
 
   return (
     <>
-      <div>Name: {data?.dog?.name ?? 'Unknown'}</div>
+      <div>Name: {data?.dog?.name ?? "Unknown"}</div>
       {error && <div>Warning: {error.message}</div>}
     </>
   );
@@ -525,7 +521,7 @@ Use React transitions to avoid showing loading UI when updating state. Transitio
 ### Using startTransition
 
 ```tsx
-import { useState, Suspense, startTransition } from 'react';
+import { useState, Suspense, startTransition } from "react";
 
 function DogSelector() {
   const { data } = useSuspenseQuery(GET_DOGS);
@@ -561,7 +557,7 @@ function DogSelector() {
 Use `useTransition` to get an `isPending` flag for visual feedback during transitions.
 
 ```tsx
-import { useState, Suspense, useTransition } from 'react';
+import { useState, Suspense, useTransition } from "react";
 
 function DogSelector() {
   const [isPending, startTransition] = useTransition();
@@ -625,9 +621,9 @@ const GET_POSTS = gql`
 function Parent() {
   // Both queries start immediately - no waterfall
   const [userRef] = useBackgroundQuery(GET_USER, {
-    variables: { id: '1' },
+    variables: { id: "1" },
   });
-  
+
   const [postsRef] = useBackgroundQuery(GET_POSTS);
 
   return (
@@ -640,7 +636,7 @@ function Parent() {
 
 function UserProfile({ queryRef }: { queryRef: QueryRef<UserData> }) {
   const { data } = useReadQuery(queryRef);
-  
+
   return <div>User: {data.user.name}</div>;
 }
 
@@ -661,29 +657,29 @@ function PostsList({ queryRef }: { queryRef: QueryRef<PostsData> }) {
 
 Suspense hooks support most of the same fetch policies as `useQuery`, controlling how the query interacts with the cache. Note that `cache-only` and `standby` are not supported by Suspense hooks.
 
-| Policy | Description |
-|--------|-------------|
-| `cache-first` | Return cached data if available, otherwise fetch (default) |
-| `cache-and-network` | Return cached data immediately, then fetch and update |
-| `network-only` | Always fetch, update cache, ignore cached data |
-| `no-cache` | Always fetch, never read or write cache |
+| Policy              | Description                                                |
+| ------------------- | ---------------------------------------------------------- |
+| `cache-first`       | Return cached data if available, otherwise fetch (default) |
+| `cache-and-network` | Return cached data immediately, then fetch and update      |
+| `network-only`      | Always fetch, update cache, ignore cached data             |
+| `no-cache`          | Always fetch, never read or write cache                    |
 
 ### Usage Examples
 
 ```tsx
 // Always fetch fresh data
 const { data } = useSuspenseQuery(GET_NOTIFICATIONS, {
-  fetchPolicy: 'network-only',
+  fetchPolicy: "network-only",
 });
 
 // Prefer cached data
 const { data } = useSuspenseQuery(GET_CATEGORIES, {
-  fetchPolicy: 'cache-first',
+  fetchPolicy: "cache-first",
 });
 
 // Show cached data while fetching fresh data
 const { data } = useSuspenseQuery(GET_POSTS, {
-  fetchPolicy: 'cache-and-network',
+  fetchPolicy: "cache-and-network",
 });
 ```
 
@@ -696,6 +692,7 @@ Apollo Client integrates with modern React frameworks that support Streaming SSR
 - **TanStack Start**: [setup-tanstack-start.md](./setup-tanstack-start.md) - Full-stack React framework with SSR
 
 These guides cover:
+
 - Framework-specific client setup and configuration
 - Preloading queries for optimal performance
 - Streaming SSR with `useBackgroundQuery` and Suspense
@@ -708,7 +705,7 @@ These guides cover:
 Use `skipToken` to conditionally skip queries without TypeScript issues. When `skipToken` is used, the component won't suspend and `data` will be `undefined`.
 
 ```tsx
-import { skipToken } from '@apollo/client';
+import { skipToken } from "@apollo/client";
 
 const GET_USER = gql`
   query GetUser($id: ID!) {
@@ -723,12 +720,14 @@ const GET_USER = gql`
 function UserProfile({ userId }: { userId: string | null }) {
   const { data, dataState } = useSuspenseQuery(
     GET_USER,
-    !userId ? skipToken : {
-      variables: { id: userId },
-    }
+    !userId
+      ? skipToken
+      : {
+          variables: { id: userId },
+        },
   );
 
-  if (dataState !== 'complete') {
+  if (dataState !== "complete") {
     return <p>Select a user</p>;
   }
 

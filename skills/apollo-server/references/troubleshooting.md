@@ -30,6 +30,7 @@ npm install
 **Error:** `Cannot find module '@apollo/server/standalone'`
 
 This is a subpath export. Ensure:
+
 - Node.js v18+ (for native ESM subpath exports)
 - TypeScript `moduleResolution` is `bundler`, `node16`, or `nodenext`
 
@@ -189,7 +190,7 @@ mutation CreateUser($input: CreateUserInput!) {
 const context = async ({ req }) => {
   // Always return all expected properties
   return {
-    user: await getUser(req.headers.authorization) ?? null,
+    user: (await getUser(req.headers.authorization)) ?? null,
     dataSources: {
       usersAPI: new UsersAPI(),
     },
@@ -206,7 +207,7 @@ const context = async ({ req }) => {
 const resolvers = {
   Query: {
     user: (_, { id }, { dataSources }) => {
-      dataSources.usersAPI.getById(id);  // Missing return/await
+      dataSources.usersAPI.getById(id); // Missing return/await
     },
   },
 };
@@ -215,11 +216,11 @@ const resolvers = {
 const resolvers = {
   Query: {
     user: (_, { id }, { dataSources }) => {
-      return dataSources.usersAPI.getById(id);  // Return promise
+      return dataSources.usersAPI.getById(id); // Return promise
     },
     // OR
     user: async (_, { id }, { dataSources }) => {
-      return await dataSources.usersAPI.getById(id);  // Async/await
+      return await dataSources.usersAPI.getById(id); // Async/await
     },
   },
 };
@@ -236,14 +237,14 @@ const resolvers = {
     user: async (_, { id }) => {
       const user = await prisma.user.findUnique({
         where: { id },
-        include: { posts: { include: { author: true } } },  // Circular!
+        include: { posts: { include: { author: true } } }, // Circular!
       });
 
       // Transform to plain object
       return {
         id: user.id,
         name: user.name,
-        posts: user.posts.map(p => ({ id: p.id, title: p.title })),
+        posts: user.posts.map((p) => ({ id: p.id, title: p.title })),
       };
     },
   },
@@ -260,18 +261,18 @@ const resolvers = {
 // Problem: Each user triggers separate posts query
 const resolvers = {
   User: {
-    posts: (parent) => db.posts.findByAuthor(parent.id),  // N queries
+    posts: (parent) => db.posts.findByAuthor(parent.id), // N queries
   },
 };
 
 // Solution: Use DataLoader
-import DataLoader from 'dataloader';
+import DataLoader from "dataloader";
 
 const context = async () => ({
   loaders: {
     postsByAuthor: new DataLoader(async (authorIds) => {
-      const posts = await db.posts.findByAuthorIds(authorIds);  // 1 query
-      return authorIds.map(id => posts.filter(p => p.authorId === id));
+      const posts = await db.posts.findByAuthorIds(authorIds); // 1 query
+      return authorIds.map((id) => posts.filter((p) => p.authorId === id));
     }),
   },
 });
@@ -289,23 +290,23 @@ const resolvers = {
 
 ```typescript
 // Problem: Shared data source instances
-const sharedAPI = new UsersAPI();  // Wrong!
+const sharedAPI = new UsersAPI(); // Wrong!
 const context = async () => ({ dataSources: { usersAPI: sharedAPI } });
 
 // Solution: Create per-request instances
 const context = async () => ({
   dataSources: {
-    usersAPI: new UsersAPI(),  // New instance per request
+    usersAPI: new UsersAPI(), // New instance per request
   },
 });
 
 // Problem: DataLoader created once
-const loader = new DataLoader(batchFn);  // Wrong - caches forever!
+const loader = new DataLoader(batchFn); // Wrong - caches forever!
 
 // Solution: Create per-request DataLoaders
 const context = async () => ({
   loaders: {
-    userLoader: new DataLoader(batchFn),  // New instance per request
+    userLoader: new DataLoader(batchFn), // New instance per request
   },
 });
 ```
@@ -346,13 +347,13 @@ const server = new ApolloServer({
 **Error:** `Access-Control-Allow-Origin` header missing
 
 ```typescript
-import cors from 'cors';
+import cors from "cors";
 
 // Express integration - add cors before middleware
 app.use(
-  '/graphql',
+  "/graphql",
   cors({
-    origin: ['http://localhost:3000', 'https://myapp.com'],
+    origin: ["http://localhost:3000", "https://myapp.com"],
     credentials: true,
   }),
   express.json(),
@@ -362,7 +363,9 @@ app.use(
 // Standalone - configure cors option
 const { url } = await startStandaloneServer(server, {
   listen: { port: 4000 },
-  context: async ({ req }) => ({ /* ... */ }),
+  context: async ({ req }) => ({
+    /* ... */
+  }),
   // Standalone has basic CORS enabled by default
 });
 ```
@@ -373,12 +376,12 @@ const { url } = await startStandaloneServer(server, {
 
 ```typescript
 // Express - ensure json middleware is before Apollo
-app.use(express.json());  // Must come before expressMiddleware
+app.use(express.json()); // Must come before expressMiddleware
 
 app.use(
-  '/graphql',
+  "/graphql",
   cors(),
-  express.json(),  // JSON parser is required
+  express.json(), // JSON parser is required
   expressMiddleware(server),
 );
 ```
@@ -390,15 +393,15 @@ app.use(
 ```typescript
 // Apollo Server 4 doesn't include subscription support by default
 // Use graphql-ws package
-import { WebSocketServer } from 'ws';
-import { useServer } from 'graphql-ws/lib/use/ws';
-import { makeExecutableSchema } from '@graphql-tools/schema';
+import { WebSocketServer } from "ws";
+import { useServer } from "graphql-ws/lib/use/ws";
+import { makeExecutableSchema } from "@graphql-tools/schema";
 
 const schema = makeExecutableSchema({ typeDefs, resolvers });
 
 const wsServer = new WebSocketServer({
   server: httpServer,
-  path: '/graphql',
+  path: "/graphql",
 });
 
 useServer({ schema }, wsServer);
@@ -415,12 +418,12 @@ const server = new ApolloServer({
   plugins: [
     {
       async requestDidStart({ request }) {
-        console.log('Query:', request.query);
-        console.log('Variables:', JSON.stringify(request.variables, null, 2));
+        console.log("Query:", request.query);
+        console.log("Variables:", JSON.stringify(request.variables, null, 2));
 
         return {
           async willSendResponse({ response }) {
-            console.log('Response:', JSON.stringify(response.body, null, 2));
+            console.log("Response:", JSON.stringify(response.body, null, 2));
           },
         };
       },
@@ -435,9 +438,9 @@ const server = new ApolloServer({
 const resolvers = {
   Query: {
     debug: (_, __, context) => {
-      console.log('Context keys:', Object.keys(context));
-      console.log('User:', context.user);
-      return 'Check server logs';
+      console.log("Context keys:", Object.keys(context));
+      console.log("User:", context.user);
+      return "Check server logs";
     },
   },
 };
@@ -447,23 +450,19 @@ const resolvers = {
 
 ```typescript
 // Unit test resolvers without server
-import { resolvers } from './resolvers';
+import { resolvers } from "./resolvers";
 
-describe('Query.user', () => {
-  it('returns user by id', async () => {
+describe("Query.user", () => {
+  it("returns user by id", async () => {
     const mockDataSources = {
       usersAPI: {
-        getById: jest.fn().mockResolvedValue({ id: '1', name: 'Test' }),
+        getById: jest.fn().mockResolvedValue({ id: "1", name: "Test" }),
       },
     };
 
-    const result = await resolvers.Query.user(
-      undefined,
-      { id: '1' },
-      { dataSources: mockDataSources }
-    );
+    const result = await resolvers.Query.user(undefined, { id: "1" }, { dataSources: mockDataSources });
 
-    expect(result).toEqual({ id: '1', name: 'Test' });
+    expect(result).toEqual({ id: "1", name: "Test" });
   });
 });
 ```
@@ -471,8 +470,8 @@ describe('Query.user', () => {
 ### Check Schema
 
 ```typescript
-import { printSchema } from 'graphql';
-import { makeExecutableSchema } from '@graphql-tools/schema';
+import { printSchema } from "graphql";
+import { makeExecutableSchema } from "@graphql-tools/schema";
 
 const schema = makeExecutableSchema({ typeDefs, resolvers });
 console.log(printSchema(schema));
@@ -483,14 +482,12 @@ console.log(printSchema(schema));
 Enable Apollo Sandbox for interactive debugging:
 
 ```typescript
-import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
+import { ApolloServerPluginLandingPageLocalDefault } from "@apollo/server/plugin/landingPage/default";
 
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-  plugins: [
-    ApolloServerPluginLandingPageLocalDefault({ embed: true }),
-  ],
+  plugins: [ApolloServerPluginLandingPageLocalDefault({ embed: true })],
 });
 ```
 

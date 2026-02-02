@@ -14,7 +14,7 @@ Apollo Server 4 uses `GraphQLError` from the `graphql` package. Always import fr
 ### Basic Usage
 
 ```typescript
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from "graphql";
 
 const resolvers = {
   Query: {
@@ -22,10 +22,10 @@ const resolvers = {
       const user = await dataSources.usersAPI.getById(id);
 
       if (!user) {
-        throw new GraphQLError('User not found', {
+        throw new GraphQLError("User not found", {
           extensions: {
-            code: 'NOT_FOUND',
-            argumentName: 'id',
+            code: "NOT_FOUND",
+            argumentName: "id",
           },
         });
       }
@@ -63,7 +63,7 @@ const resolvers = {
 new GraphQLError(message, {
   // Custom error code
   extensions: {
-    code: 'CUSTOM_CODE',
+    code: "CUSTOM_CODE",
     // Any additional metadata
     http: { status: 400 },
   },
@@ -78,7 +78,7 @@ new GraphQLError(message, {
   positions: [15],
 
   // Path to the field that caused the error
-  path: ['user', 'email'],
+  path: ["user", "email"],
 });
 ```
 
@@ -86,29 +86,29 @@ new GraphQLError(message, {
 
 ### Built-in Codes
 
-| Code | Description | HTTP Status |
-|------|-------------|-------------|
-| `GRAPHQL_PARSE_FAILED` | Syntax error in query | 400 |
-| `GRAPHQL_VALIDATION_FAILED` | Query doesn't match schema | 400 |
-| `BAD_USER_INPUT` | Invalid argument value | 400 |
-| `UNAUTHENTICATED` | Missing or invalid authentication | 401 |
-| `FORBIDDEN` | Not authorized for this operation | 403 |
-| `PERSISTED_QUERY_NOT_FOUND` | APQ hash not found | 404 |
-| `PERSISTED_QUERY_NOT_SUPPORTED` | Server doesn't support APQ | 400 |
-| `OPERATION_RESOLUTION_FAILURE` | Operation couldn't be determined | 400 |
-| `BAD_REQUEST` | Invalid request format | 400 |
-| `INTERNAL_SERVER_ERROR` | Unexpected server error | 500 |
+| Code                            | Description                       | HTTP Status |
+| ------------------------------- | --------------------------------- | ----------- |
+| `GRAPHQL_PARSE_FAILED`          | Syntax error in query             | 400         |
+| `GRAPHQL_VALIDATION_FAILED`     | Query doesn't match schema        | 400         |
+| `BAD_USER_INPUT`                | Invalid argument value            | 400         |
+| `UNAUTHENTICATED`               | Missing or invalid authentication | 401         |
+| `FORBIDDEN`                     | Not authorized for this operation | 403         |
+| `PERSISTED_QUERY_NOT_FOUND`     | APQ hash not found                | 404         |
+| `PERSISTED_QUERY_NOT_SUPPORTED` | Server doesn't support APQ        | 400         |
+| `OPERATION_RESOLUTION_FAILURE`  | Operation couldn't be determined  | 400         |
+| `BAD_REQUEST`                   | Invalid request format            | 400         |
+| `INTERNAL_SERVER_ERROR`         | Unexpected server error           | 500         |
 
 ### Custom Error Classes
 
 ```typescript
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from "graphql";
 
 export class NotFoundError extends GraphQLError {
   constructor(resource: string, id: string) {
     super(`${resource} with id '${id}' not found`, {
       extensions: {
-        code: 'NOT_FOUND',
+        code: "NOT_FOUND",
         resource,
         id,
       },
@@ -117,10 +117,10 @@ export class NotFoundError extends GraphQLError {
 }
 
 export class AuthenticationError extends GraphQLError {
-  constructor(message = 'Not authenticated') {
+  constructor(message = "Not authenticated") {
     super(message, {
       extensions: {
-        code: 'UNAUTHENTICATED',
+        code: "UNAUTHENTICATED",
         http: { status: 401 },
       },
     });
@@ -128,10 +128,10 @@ export class AuthenticationError extends GraphQLError {
 }
 
 export class ForbiddenError extends GraphQLError {
-  constructor(message = 'Not authorized') {
+  constructor(message = "Not authorized") {
     super(message, {
       extensions: {
-        code: 'FORBIDDEN',
+        code: "FORBIDDEN",
         http: { status: 403 },
       },
     });
@@ -142,7 +142,7 @@ export class ValidationError extends GraphQLError {
   constructor(message: string, field: string) {
     super(message, {
       extensions: {
-        code: 'BAD_USER_INPUT',
+        code: "BAD_USER_INPUT",
         field,
       },
     });
@@ -150,21 +150,21 @@ export class ValidationError extends GraphQLError {
 }
 
 // Usage
-throw new NotFoundError('User', id);
+throw new NotFoundError("User", id);
 throw new AuthenticationError();
-throw new ForbiddenError('Admin access required');
-throw new ValidationError('Email is invalid', 'email');
+throw new ForbiddenError("Admin access required");
+throw new ValidationError("Email is invalid", "email");
 ```
 
 ### Setting HTTP Status
 
 ```typescript
-throw new GraphQLError('Not authenticated', {
+throw new GraphQLError("Not authenticated", {
   extensions: {
-    code: 'UNAUTHENTICATED',
+    code: "UNAUTHENTICATED",
     http: {
       status: 401,
-      headers: new Map([['WWW-Authenticate', 'Bearer']]),
+      headers: new Map([["WWW-Authenticate", "Bearer"]]),
     },
   },
 });
@@ -184,7 +184,7 @@ const server = new ApolloServer({
     // formattedError: already formatted GraphQL error
     // error: original error (may be wrapped)
 
-    console.error('GraphQL Error:', error);
+    console.error("GraphQL Error:", error);
 
     return formattedError;
   },
@@ -202,17 +202,17 @@ const server = new ApolloServer({
     console.error(error);
 
     // Don't expose internal server errors
-    if (formattedError.extensions?.code === 'INTERNAL_SERVER_ERROR') {
+    if (formattedError.extensions?.code === "INTERNAL_SERVER_ERROR") {
       return {
-        message: 'An internal error occurred',
+        message: "An internal error occurred",
         extensions: {
-          code: 'INTERNAL_SERVER_ERROR',
+          code: "INTERNAL_SERVER_ERROR",
         },
       };
     }
 
     // Remove stacktrace in production
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === "production") {
       delete formattedError.extensions?.stacktrace;
     }
 
@@ -251,12 +251,7 @@ const server = new ApolloServer({
     const code = formattedError.extensions?.code;
 
     // Client errors - return as-is
-    const clientCodes = [
-      'BAD_USER_INPUT',
-      'UNAUTHENTICATED',
-      'FORBIDDEN',
-      'NOT_FOUND',
-    ];
+    const clientCodes = ["BAD_USER_INPUT", "UNAUTHENTICATED", "FORBIDDEN", "NOT_FOUND"];
 
     if (clientCodes.includes(code as string)) {
       return formattedError;
@@ -264,9 +259,9 @@ const server = new ApolloServer({
 
     // Server errors - mask details
     return {
-      message: 'Something went wrong',
+      message: "Something went wrong",
       extensions: {
-        code: 'INTERNAL_SERVER_ERROR',
+        code: "INTERNAL_SERVER_ERROR",
       },
     };
   },
@@ -278,7 +273,7 @@ const server = new ApolloServer({
 ### Logging Strategy
 
 ```typescript
-import { ApolloServerPlugin } from '@apollo/server';
+import { ApolloServerPlugin } from "@apollo/server";
 
 const errorLoggingPlugin: ApolloServerPlugin = {
   async requestDidStart() {
@@ -298,12 +293,12 @@ const errorLoggingPlugin: ApolloServerPlugin = {
           };
 
           // Different log levels based on error type
-          if (code === 'INTERNAL_SERVER_ERROR') {
-            console.error('Server Error:', logEntry, error.originalError);
-          } else if (code === 'UNAUTHENTICATED' || code === 'FORBIDDEN') {
-            console.warn('Auth Error:', logEntry);
+          if (code === "INTERNAL_SERVER_ERROR") {
+            console.error("Server Error:", logEntry, error.originalError);
+          } else if (code === "UNAUTHENTICATED" || code === "FORBIDDEN") {
+            console.warn("Auth Error:", logEntry);
           } else {
-            console.info('Client Error:', logEntry);
+            console.info("Client Error:", logEntry);
           }
         }
       },
@@ -315,7 +310,7 @@ const errorLoggingPlugin: ApolloServerPlugin = {
 ### Error Reporting Service
 
 ```typescript
-import * as Sentry from '@sentry/node';
+import * as Sentry from "@sentry/node";
 
 const sentryPlugin: ApolloServerPlugin<MyContext> = {
   async requestDidStart({ request, contextValue }) {
@@ -323,11 +318,11 @@ const sentryPlugin: ApolloServerPlugin<MyContext> = {
       async didEncounterErrors({ errors }) {
         for (const error of errors) {
           // Only report server errors
-          if (error.extensions?.code === 'INTERNAL_SERVER_ERROR') {
+          if (error.extensions?.code === "INTERNAL_SERVER_ERROR") {
             Sentry.withScope((scope) => {
-              scope.setTag('kind', 'graphql');
-              scope.setExtra('query', request.query);
-              scope.setExtra('variables', request.variables);
+              scope.setTag("kind", "graphql");
+              scope.setExtra("query", request.query);
+              scope.setExtra("variables", request.variables);
               scope.setUser({ id: contextValue.user?.id });
 
               Sentry.captureException(error.originalError ?? error);
@@ -385,7 +380,7 @@ const resolvers = {
       try {
         return await dataSources.usersAPI.getById(id);
       } catch (e) {
-        console.error('Failed to fetch user:', e);
+        console.error("Failed to fetch user:", e);
         return null;
       }
     },
@@ -395,7 +390,7 @@ const resolvers = {
       try {
         return await dataSources.usersAPI.getAll();
       } catch (e) {
-        console.error('Failed to fetch users:', e);
+        console.error("Failed to fetch users:", e);
         return [];
       }
     },
@@ -407,7 +402,7 @@ const resolvers = {
       try {
         return await dataSources.postsAPI.getByAuthor(parent.id);
       } catch (e) {
-        console.error('Failed to fetch posts:', e);
+        console.error("Failed to fetch posts:", e);
         return [];
       }
     },
@@ -418,7 +413,7 @@ const resolvers = {
 ### Validation Errors
 
 ```typescript
-import { z } from 'zod';
+import { z } from "zod";
 
 const CreateUserSchema = z.object({
   email: z.string().email(),
@@ -432,14 +427,14 @@ const resolvers = {
       const result = CreateUserSchema.safeParse(input);
 
       if (!result.success) {
-        const errors = result.error.issues.map(issue => ({
-          field: issue.path.join('.'),
+        const errors = result.error.issues.map((issue) => ({
+          field: issue.path.join("."),
           message: issue.message,
         }));
 
-        throw new GraphQLError('Validation failed', {
+        throw new GraphQLError("Validation failed", {
           extensions: {
-            code: 'BAD_USER_INPUT',
+            code: "BAD_USER_INPUT",
             validationErrors: errors,
           },
         });

@@ -51,7 +51,7 @@ query GetPost($id: ID!) {
     id
     title
     author {
-      ...UserBasicInfo  # Spreads id, name, avatarUrl
+      ...UserBasicInfo # Spreads id, name, avatarUrl
     }
   }
 }
@@ -81,7 +81,7 @@ src/
 
 ```tsx
 // UserAvatar.tsx
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const USER_AVATAR_FRAGMENT = gql`
   fragment UserAvatar on User {
@@ -96,13 +96,7 @@ interface UserAvatarProps {
 }
 
 export function UserAvatar({ user }: UserAvatarProps) {
-  return (
-    <img
-      src={user.avatarUrl}
-      alt={user.name}
-      className="avatar"
-    />
-  );
+  return <img src={user.avatarUrl} alt={user.name} className="avatar" />;
 }
 ```
 
@@ -110,8 +104,8 @@ export function UserAvatar({ user }: UserAvatarProps) {
 
 ```tsx
 // UserCard.tsx
-import { gql } from '@apollo/client';
-import { USER_AVATAR_FRAGMENT, UserAvatar } from './UserAvatar';
+import { gql } from "@apollo/client";
+import { USER_AVATAR_FRAGMENT, UserAvatar } from "./UserAvatar";
 
 export const USER_CARD_FRAGMENT = gql`
   fragment UserCard on User {
@@ -138,8 +132,8 @@ export function UserCard({ user }: { user: UserCardFragment }) {
 
 ```tsx
 // UserProfile.tsx
-import { gql, useQuery } from '@apollo/client';
-import { USER_CARD_FRAGMENT, UserCard } from './UserCard';
+import { gql, useQuery } from "@apollo/client";
+import { USER_CARD_FRAGMENT, UserCard } from "./UserCard";
 
 const GET_USER = gql`
   query GetUserProfile($id: ID!) {
@@ -336,7 +330,7 @@ fragment SearchResultComment on Comment {
 }
 ```
 
-### Handling __typename
+### Handling \_\_typename
 
 ```typescript
 function SearchResult({ result }) {
@@ -472,10 +466,10 @@ fragment UserProfile on User {
 fragment UserInfo on User {
   id
   name
-  email        # unused
+  email # unused
   avatarUrl
-  bio          # unused
-  website      # unused
+  bio # unused
+  website # unused
 }
 
 # Good: Only request what's needed
@@ -523,7 +517,7 @@ fragment UserWithPosts on User {
 
 fragment PostWithAuthor on Post {
   author {
-    ...UserWithPosts  # Circular!
+    ...UserWithPosts # Circular!
   }
 }
 
@@ -536,7 +530,7 @@ fragment UserWithPosts on User {
 
 fragment PostWithAuthor on Post {
   author {
-    ...UserSummary  # Different fragment, no cycle
+    ...UserSummary # Different fragment, no cycle
   }
 }
 ```

@@ -3,6 +3,7 @@
 This guide covers setting up Apollo Client in client-side React applications without server-side rendering (SSR). This includes applications using Vite, Parcel, Create React App, or other bundlers that don't implement SSR.
 
 For applications with SSR, use one of the framework-specific integration guides instead:
+
 - [Next.js App Router](integration-nextjs.md)
 - [React Router Framework Mode](integration-react-router.md)
 - [TanStack Start](integration-tanstack-start.md)
@@ -240,10 +241,7 @@ interface CreateUserMutationVariables {
   };
 }
 
-const CREATE_USER: TypedDocumentNode<
-  CreateUserMutation,
-  CreateUserMutationVariables
-> = gql`
+const CREATE_USER: TypedDocumentNode<CreateUserMutation, CreateUserMutationVariables> = gql`
   mutation CreateUser($input: CreateUserInput!) {
     createUser(input: $input) {
       id
