@@ -10,13 +10,6 @@ Follow these rules when working on skills that contain JavaScript or TypeScript 
 
 - **ALWAYS** format JavaScript and TypeScript code examples with Prettier before every commit
 - Run `npm run format` from the repository root to format all code
-- Prettier configuration is defined in `.prettierrc` at the repository root
-- Code formatting rules:
-  - Use 2 spaces for indentation
-  - Use double quotes for strings
-  - Use semicolons
-  - Trailing commas in ES5-compatible locations
-  - Line length limit of 80 characters
 
 ## Formatting Before Commits
 
