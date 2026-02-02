@@ -1,5 +1,5 @@
 ---
-applyTo: "skills/{apollo-client,apollo-server,apollo-mcp-server,graphql-operations,skill-creator}/**/*.md"
+applyTo: "skills/{apollo-client,apollo-server,graphql-operations}/**/*.md"
 ---
 
 # JavaScript/TypeScript Code Formatting Instructions
