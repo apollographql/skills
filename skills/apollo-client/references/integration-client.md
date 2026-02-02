@@ -23,13 +23,29 @@ For type-safe GraphQL operations with TypeScript, see the [TypeScript Code Gener
 
 ```typescript
 import { ApolloClient, InMemoryCache, HttpLink } from "@apollo/client";
+
+// Recommended: Use HttpOnly cookies for authentication
+const httpLink = new HttpLink({
+  uri: "https://your-graphql-endpoint.com/graphql",
+  credentials: "include", // Sends cookies with requests (most secure)
+});
+
+const client = new ApolloClient({
+  link: httpLink,
+  cache: new InMemoryCache(),
+});
+```
+
+If you need manual token management (less secure, only when HttpOnly cookies aren't available):
+
+```typescript
+import { ApolloClient, InMemoryCache, HttpLink } from "@apollo/client";
 import { SetContextLink } from "@apollo/client/link/context";
 
 const httpLink = new HttpLink({
   uri: "https://your-graphql-endpoint.com/graphql",
 });
 
-// Use SetContextLink for auth headers to update dynamically per request
 const authLink = new SetContextLink(({ headers }) => {
   const token = localStorage.getItem("token");
   return {
@@ -316,7 +332,7 @@ const client = new ApolloClient({
 
 2. **Client-Side Only:** This setup is for client-side apps without SSR. The Apollo Client instance is created once and reused throughout the application lifecycle.
 
-3. **Authentication:** Use `SetContextLink` to dynamically add authentication headers from `localStorage` or other client-side storage.
+3. **Authentication:** Prefer HttpOnly secure cookies with `credentials: "include"` in `HttpLink` options to avoid exposing tokens to JavaScript. If manual token management is necessary, use `SetContextLink` to dynamically add authentication headers from `localStorage` or other client-side storage.
 
 4. **Environment Variables:** Store your GraphQL endpoint URL in environment variables for different environments (development, staging, production).
 
