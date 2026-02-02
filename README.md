@@ -39,7 +39,7 @@ Write Apollo Connectors schemas to integrate REST APIs into GraphQL.
 **Install:**
 
 ```bash
-npx skills add apollographql/skills --skill apollo-connectors
+npx skills add apollographql/skills@apollo-connectors
 ```
 
 **Use when:**
@@ -81,7 +81,7 @@ Configure and use Apollo MCP Server to connect AI agents with GraphQL APIs.
 **Install:**
 
 ```bash
-npx skills add apollographql/skills --skill apollo-mcp-server
+npx skills add apollographql/skills@apollo-mcp-server
 ```
 
 **Use when:**
@@ -120,7 +120,7 @@ Build GraphQL servers with Apollo Server 4.x, including schemas, resolvers, auth
 **Install:**
 
 ```bash
-npx skills add apollographql/skills --skill apollo-server
+npx skills add apollographql/skills@apollo-server
 ```
 
 **Use when:**
@@ -165,7 +165,7 @@ Build React applications with Apollo Client 4.x for GraphQL data management, cac
 **Install:**
 
 ```bash
-npx skills add apollographql/skills --skill apollo-client
+npx skills add apollographql/skills@apollo-client
 ```
 
 **Use when:**
@@ -210,7 +210,7 @@ Manage GraphQL schemas and run local supergraph development with Apollo Rover CL
 **Install:**
 
 ```bash
-npx skills add apollographql/skills --skill rover
+npx skills add apollographql/skills@rover
 ```
 
 **Use when:**
@@ -251,7 +251,7 @@ Design GraphQL schemas following industry best practices for type design, naming
 **Install:**
 
 ```bash
-npx skills add apollographql/skills --skill graphql-schema
+npx skills add apollographql/skills@graphql-schema
 ```
 
 **Use when:**
@@ -293,7 +293,7 @@ Write GraphQL operations (queries, mutations, fragments) following best practice
 **Install:**
 
 ```bash
-npx skills add apollographql/skills --skill graphql-operations
+npx skills add apollographql/skills@graphql-operations
 ```
 
 **Use when:**
@@ -335,7 +335,7 @@ Write idiomatic Rust code following Apollo GraphQL's best practices handbook.
 **Install:**
 
 ```bash
-npx skills add apollographql/skills --skill rust-best-practices
+npx skills add apollographql/skills@rust-best-practices
 ```
 
 **Use when:**
@@ -382,7 +382,7 @@ Guide for creating effective skills for Apollo GraphQL and GraphQL development.
 **Install:**
 
 ```bash
-npx skills add apollographql/skills --skill skill-creator
+npx skills add apollographql/skills@skill-creator
 ```
 
 **Use when:**
