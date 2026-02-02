@@ -1,6 +1,6 @@
-# Apollo Client Setup with Next.js App Router
+# Apollo Client Integration with Next.js App Router
 
-This guide covers setting up Apollo Client in a Next.js application using the App Router architecture with support for both React Server Components (RSC) and Client Components.
+This guide covers integrating Apollo Client in a Next.js application using the App Router architecture with support for both React Server Components (RSC) and Client Components.
 
 ## What is supported?
 

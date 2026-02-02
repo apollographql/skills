@@ -1,6 +1,6 @@
-# Apollo Client Setup with React Router Framework Mode
+# Apollo Client Integration with React Router Framework Mode
 
-This guide covers setting up Apollo Client in a React Router 7 application with support for modern streaming SSR.
+This guide covers integrating Apollo Client in a React Router 7 application with support for modern streaming SSR.
 
 ## Installation
 

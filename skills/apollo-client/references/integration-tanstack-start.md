@@ -1,6 +1,6 @@
-# Apollo Client Setup with TanStack Start
+# Apollo Client Integration with TanStack Start
 
-This guide covers setting up Apollo Client in a TanStack Start application with support for modern streaming SSR.
+This guide covers integrating Apollo Client in a TanStack Start application with support for modern streaming SSR.
 
 > **Note:** When using `npx create-tsrouter-app` to create a new TanStack Start application, you can choose Apollo Client in the setup wizard to have all of this configuration automatically set up for you.
 
