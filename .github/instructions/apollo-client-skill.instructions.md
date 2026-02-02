@@ -10,17 +10,36 @@ Follow these rules when working on the Apollo Client AI skill instructions.
 
 - Do not make time-relative statements about the library, like "now provides feature X". If the content is version-specific, refer to the minimal version instead. Generally assume the user uses Apollo Client v4.x unless otherwise specified.
 
+## Rules for discussing fragments
+
+**Fragments are for colocation, not reuse.** When discussing fragments, follow these guidelines based on GraphQL spec PR #1193:
+
+- **DO NOT** describe fragments as being "for reuse" or "reusable units"
+- **DO NOT** suggest sharing fragments between components just because they currently need the same fields
+- **DO** emphasize that fragments are for component colocation - each component should have its own fragment
+- **DO** explain that fragments enable independent evolution of component data requirements
+- **DO** explain that sharing fragments creates artificial dependencies and leads to over-fetching when one component's needs change
+
+Example of correct messaging:
+- ✅ "Each component should declare its data needs in a dedicated fragment"
+- ✅ "Fragments enable components to independently evolve their data requirements"
+- ❌ "Fragments allow for the reuse of common repeated selections"
+- ❌ "Create a shared fragment for fields used by multiple components"
+
 ## Rules for code examples
 
 - always ensure correct imports
   - imports should be complete for the example
   - React hooks need to be imported from `@apollo/client/react`, NOT from `@apollo/client`
-- when an example needs a query or mutation, use either of the following approaches:
+- when an example needs a query, mutation, or fragment, use either of the following approaches:
   - in-example declaration
-    - use the `gql` tag from `@apollo/client` to define queries/mutations
+    - use the `gql` tag from `@apollo/client` to define queries/mutations/fragments
     - create a constant with an uppercase name (e.g., `GET_USER`, `CREATE_POST`)
     - declare types via `TypedDocumentNode`
-  - import it from a `queries.generated.ts` or `mutations.generated.ts` file in the same directory as the example, treat it as a `TypedDocumentNode` with types defined
+  - import it from a generated file in the same directory as the example, treat it as a `TypedDocumentNode` with types defined:
+    - `queries.generated.ts` for queries
+    - `mutations.generated.ts` for mutations
+    - `fragments.generated.ts` for fragments
 - always use TypeScript for code examples unless the context specifically calls for something else
 - React hooks should never be shown using explicit generics. Types should always be inferred from the typed query/mutation document.
   - do this: `useQuery(GET_USER, { variables: { id: "1" } })`
