@@ -180,6 +180,8 @@ const user2 = await userLoader.load("2");
 Create new DataLoader instances per request to prevent caching across requests:
 
 ```typescript
+import DataLoader from "dataloader";
+
 interface MyContext {
   loaders: {
     userLoader: DataLoader<string, User>;
@@ -333,6 +335,8 @@ context: async () => ({
 ### Combine DataLoader with RESTDataSource
 
 ```typescript
+import DataLoader from "dataloader";
+
 class UsersAPI extends RESTDataSource {
   override baseURL = "https://api.example.com/";
 
