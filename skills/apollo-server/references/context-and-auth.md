@@ -35,11 +35,11 @@ const { url } = await startStandaloneServer(server, {
 ### Express Middleware
 
 ```typescript
-import { expressMiddleware } from "@as-integrations/express5"; // or express4
+import { expressMiddleware } from "@as-integrations/express5";
 
 app.use(
   "/graphql",
-  cors<cors.CorsRequest>(),
+  cors(),
   express.json(),
   expressMiddleware(server, {
     context: async ({ req, res }) => {
@@ -173,7 +173,7 @@ app.use(
 
 app.use(
   "/graphql",
-  cors<cors.CorsRequest>(),
+  cors(),
   express.json(),
   expressMiddleware(server, {
     context: async ({ req }) => ({

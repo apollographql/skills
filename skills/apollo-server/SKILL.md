@@ -8,7 +8,7 @@ description: >
   (4) creating plugins or custom data sources,
   (5) troubleshooting Apollo Server errors or performance issues.
 license: MIT
-compatibility: Node.js v20+, TypeScript 4.7+. Works with Express v5, standalone, Fastify, and serverless.
+compatibility: Node.js v20+, TypeScript 4.7+. Works with Express v4/v5, standalone, Fastify, and serverless.
 metadata:
   author: apollographql
   version: "1.0"
@@ -80,7 +80,7 @@ const { url } = await startStandaloneServer(server, {
 console.log(`Server ready at ${url}`);
 ```
 
-**Express (Recommended for production):**
+**Express:**
 
 ```typescript
 import { ApolloServer } from "@apollo/server";
@@ -103,7 +103,7 @@ await server.start();
 
 app.use(
   "/graphql",
-  cors<cors.CorsRequest>(),
+  cors(),
   express.json(),
   expressMiddleware(server, {
     context: async ({ req }) => ({ token: req.headers.authorization }),

@@ -380,7 +380,7 @@ app.use(express.json()); // Must come before expressMiddleware
 
 app.use(
   "/graphql",
-  cors<cors.CorsRequest>(),
+  cors(),
   express.json(), // JSON parser is required
   expressMiddleware(server),
 );
