@@ -245,7 +245,7 @@ function DelayedQuery() {
 If you only need the promise result and don't consume the loading/error/data states from the hook, use `client.query` instead:
 
 ```tsx
-import { useApolloClient } from "@apollo/client";
+import { useApolloClient } from "@apollo/client/react";
 
 function SearchDogs() {
   const client = useApolloClient();

@@ -41,12 +41,12 @@ export const appStateVar = makeVar<AppState>({
 
 ### Reading Reactive Variables
 
-```typescript
+```tsx
 // Direct read (non-reactive)
 const isLoggedIn = isLoggedInVar();
 
 // Reactive read in component
-import { useReactiveVar } from '@apollo/client';
+import { useReactiveVar } from "@apollo/client/react";
 
 function AuthButton() {
   const isLoggedIn = useReactiveVar(isLoggedInVar);
@@ -364,7 +364,7 @@ The `useReactiveVar` hook subscribes a component to reactive variable updates.
 ### Basic Usage
 
 ```tsx
-import { useReactiveVar } from "@apollo/client";
+import { useReactiveVar } from "@apollo/client/react";
 
 function ThemeToggle() {
   const theme = useReactiveVar(themeVar);
