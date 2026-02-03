@@ -265,7 +265,7 @@ function UserComponent({ queryRef }: { queryRef: QueryRef<GetUserQuery> }) {
 For authentication in TanStack Start with SSR support, you need to handle both server and client environments differently. Use `createIsomorphicFn` to provide environment-specific implementations:
 
 ```typescript
-import { ApolloClient, InMemoryCache } from "@apollo/client-integration-tanstack-start";
+import { ApolloClient, InMemoryCache, routerWithApolloClient } from "@apollo/client-integration-tanstack-start";
 import { ApolloLink, HttpLink } from "@apollo/client";
 import { SetContextLink } from "@apollo/client/link/context";
 import { createIsomorphicFn } from "@tanstack/react-start";

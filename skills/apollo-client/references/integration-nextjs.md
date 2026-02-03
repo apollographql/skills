@@ -83,7 +83,7 @@ const { data } = await getClient().query({
 
 ### Step 1: Create Apollo Wrapper Component
 
-Create `app/ApolloWrapper.jsx`:
+Create `app/ApolloWrapper.tsx`:
 
 ```typescript
 "use client";
@@ -298,7 +298,7 @@ afterEach(resetApolloClientSingletons);
 
 ## Debugging
 
-Enable verbose logging in your `app/ApolloWrapper.ts`:
+Enable verbose logging in your `app/ApolloWrapper.tsx`:
 
 ```typescript
 import { setLogVerbosity } from "@apollo/client";

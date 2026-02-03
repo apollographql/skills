@@ -152,6 +152,7 @@ import { useReadQuery } from "@apollo/client/react";
 import { useLoaderData } from "react-router";
 import type { Route } from "./+types/my-route";
 import type { TypedDocumentNode } from "@apollo/client";
+import { apolloLoader } from "./apollo";
 
 // TypedDocumentNode definition with types
 const GET_USER: TypedDocumentNode<
@@ -201,6 +202,7 @@ import { gql } from "@apollo/client";
 import { useReadQuery } from "@apollo/client/react";
 import { useLoaderData } from "react-router";
 import type { Route } from "./+types/my-route";
+import { apolloLoader } from "./apollo";
 
 // TypedDocumentNode definitions omitted for brevity
 
