@@ -156,13 +156,13 @@ Run ad-hoc GraphQL operations against the endpoint.
 
 **Mutation Mode:**
 
-Behavior depends on `introspection.mutationMode` configuration:
+Behavior depends on `overrides.mutation_mode` configuration:
 
 | Mode | Query | Mutation |
 |------|-------|----------|
-| `allowed` | Execute | Execute |
-| `prompt` | Execute | Require confirmation |
-| `disabled` | Execute | Block |
+| `all` | Execute | Execute |
+| `explicit` | Execute | Require confirmation |
+| `none` | Execute | Block |
 
 **Examples:**
 
@@ -182,7 +182,7 @@ execute(
   variables: { id: "123" }
 )
 
-# Mutation (requires appropriate mutationMode)
+# Mutation (requires appropriate mutation_mode)
 execute(
   operation: """
     mutation CreateUser($input: CreateUserInput!) {
