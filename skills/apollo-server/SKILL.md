@@ -226,18 +226,14 @@ const server = new ApolloServer<MyContext>({
 
 // Standalone
 const { url } = await startStandaloneServer(server, {
-  context: async ({ req }) => {
-    const token = req.headers.authorization || "";
-    const user = await getUser(token);
-    return {
-      token,
-      user,
-      dataSources: {
-        usersAPI: new UsersDataSource(),
-        postsAPI: new PostsDataSource(),
-      },
-    };
-  },
+  context: async ({ req }) => ({
+    token: req.headers.authorization || "",
+    user: await getUser(req.headers.authorization || ""),
+    dataSources: {
+      usersAPI: new UsersDataSource(),
+      postsAPI: new PostsDataSource(),
+    },
+  }),
 });
 
 // Express middleware
