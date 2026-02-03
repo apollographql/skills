@@ -290,5 +290,5 @@ Detailed documentation for specific topics:
 - ALWAYS use `GraphQLError` from `graphql` package for errors
 - NEVER expose stack traces in production errors
 - PREFER `startStandaloneServer` for prototyping only
-- USE `expressMiddleware` with drain plugin for production Express apps
+- USE an integration with a server framework like Express, Koa, Fastify, Next, etc. for production apps
 - IMPLEMENT authentication in context, authorization in resolvers
