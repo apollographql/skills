@@ -352,7 +352,7 @@ import cors from "cors";
 // Express integration - add cors before middleware
 app.use(
   "/graphql",
-  cors({
+  cors<cors.CorsRequest>({
     origin: ["http://localhost:3000", "https://myapp.com"],
     credentials: true,
   }),

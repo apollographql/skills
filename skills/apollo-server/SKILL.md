@@ -27,10 +27,16 @@ Apollo Server is an open-source GraphQL server that works with any GraphQL schem
 npm install @apollo/server graphql
 ```
 
-For Express integration:
+For Express v5 integration:
 
 ```bash
-npm install @apollo/server express graphql cors
+npm install @apollo/server @as-integrations/express5 express graphql cors
+```
+
+For Express v4 integration:
+
+```bash
+npm install @apollo/server @as-integrations/express4 express graphql cors
 ```
 
 ### Step 2: Define Schema
@@ -78,11 +84,11 @@ const { url } = await startStandaloneServer(server, {
 console.log(`Server ready at ${url}`);
 ```
 
-**Express v4:**
+**Express v5:**
 
 ```typescript
 import { ApolloServer } from "@apollo/server";
-import { expressMiddleware } from "@apollo/server/express4";
+import { expressMiddleware } from "@as-integrations/express5";
 import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
 import express from "express";
 import http from "http";
@@ -101,7 +107,41 @@ await server.start();
 
 app.use(
   "/graphql",
-  cors(),
+  cors<cors.CorsRequest>(),
+  express.json(),
+  expressMiddleware(server, {
+    context: async ({ req }) => ({ token: req.headers.authorization }),
+  }),
+);
+
+await new Promise<void>((resolve) => httpServer.listen({ port: 4000 }, resolve));
+console.log("Server ready at http://localhost:4000/graphql");
+```
+
+**Express v4:**
+
+```typescript
+import { ApolloServer } from "@apollo/server";
+import { expressMiddleware } from "@as-integrations/express4";
+import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
+import express from "express";
+import http from "http";
+import cors from "cors";
+
+const app = express();
+const httpServer = http.createServer(app);
+
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
+});
+
+await server.start();
+
+app.use(
+  "/graphql",
+  cors<cors.CorsRequest>(),
   express.json(),
   expressMiddleware(server, {
     context: async ({ req }) => ({ token: req.headers.authorization }),

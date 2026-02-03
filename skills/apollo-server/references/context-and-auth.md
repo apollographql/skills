@@ -35,10 +35,12 @@ const { url } = await startStandaloneServer(server, {
 ### Express Middleware
 
 ```typescript
-import { expressMiddleware } from "@apollo/server/express4";
+import { expressMiddleware } from "@as-integrations/express5"; // or express4
 
 app.use(
   "/graphql",
+  cors<cors.CorsRequest>(),
+  express.json(),
   expressMiddleware(server, {
     context: async ({ req, res }) => {
       // req: express.Request
@@ -171,6 +173,8 @@ app.use(
 
 app.use(
   "/graphql",
+  cors<cors.CorsRequest>(),
+  express.json(),
   expressMiddleware(server, {
     context: async ({ req }) => ({
       user: req.session.user,
@@ -345,6 +349,8 @@ function authDirectiveTransformer(schema) {
 ### Creating Data Sources
 
 ```typescript
+import type { KeyValueCache } from "@apollo/utils.keyvaluecache";
+
 interface MyContext {
   dataSources: {
     usersAPI: UsersDataSource;
@@ -353,10 +359,11 @@ interface MyContext {
 }
 
 const context = async ({ req }): Promise<MyContext> => {
+  const { cache } = server;
   return {
     dataSources: {
-      usersAPI: new UsersDataSource(),
-      postsAPI: new PostsDataSource(),
+      usersAPI: new UsersDataSource({ cache }),
+      postsAPI: new PostsDataSource({ cache }),
     },
   };
 };
@@ -365,8 +372,14 @@ const context = async ({ req }): Promise<MyContext> => {
 ### Passing User to Data Sources
 
 ```typescript
+import type { KeyValueCache } from "@apollo/utils.keyvaluecache";
+
 class AuthenticatedDataSource extends RESTDataSource {
   private user?: User;
+
+  constructor(options: { cache: KeyValueCache }) {
+    super(options);
+  }
 
   setUser(user: User) {
     this.user = user;
@@ -380,9 +393,10 @@ class AuthenticatedDataSource extends RESTDataSource {
 }
 
 const context = async ({ req }) => {
+  const { cache } = server;
   const user = await getUser(req.headers.authorization);
 
-  const usersAPI = new UsersDataSource();
+  const usersAPI = new UsersDataSource({ cache });
   if (user) {
     usersAPI.setUser(user);
   }

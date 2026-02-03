@@ -21,9 +21,14 @@ npm install @apollo/datasource-rest
 
 ```typescript
 import { RESTDataSource } from "@apollo/datasource-rest";
+import type { KeyValueCache } from "@apollo/utils.keyvaluecache";
 
 class UsersAPI extends RESTDataSource {
   override baseURL = "https://api.example.com/";
+
+  constructor(options: { cache: KeyValueCache }) {
+    super(options);
+  }
 
   async getUser(id: string): Promise<User> {
     return this.get<User>(`users/${id}`);
@@ -50,6 +55,8 @@ class UsersAPI extends RESTDataSource {
 ### Context Integration
 
 ```typescript
+import type { KeyValueCache } from "@apollo/utils.keyvaluecache";
+
 interface MyContext {
   dataSources: {
     usersAPI: UsersAPI;
@@ -60,26 +67,31 @@ interface MyContext {
 const server = new ApolloServer<MyContext>({ typeDefs, resolvers });
 
 const { url } = await startStandaloneServer(server, {
-  context: async () => ({
-    dataSources: {
-      usersAPI: new UsersAPI(),
-      postsAPI: new PostsAPI(),
-    },
-  }),
+  context: async () => {
+    const { cache } = server;
+    return {
+      dataSources: {
+        usersAPI: new UsersAPI({ cache }),
+        postsAPI: new PostsAPI({ cache }),
+      },
+    };
+  },
 });
 ```
 
 ### Request Customization
 
 ```typescript
+import type { KeyValueCache } from "@apollo/utils.keyvaluecache";
+
 class AuthenticatedAPI extends RESTDataSource {
   override baseURL = "https://api.example.com/";
 
   private token: string;
 
-  constructor(token: string) {
-    super();
-    this.token = token;
+  constructor(options: { token: string; cache: KeyValueCache }) {
+    super(options);
+    this.token = options.token;
   }
 
   // Add headers to every request
@@ -102,8 +114,14 @@ class AuthenticatedAPI extends RESTDataSource {
 RESTDataSource supports caching based on HTTP cache headers:
 
 ```typescript
+import type { KeyValueCache } from "@apollo/utils.keyvaluecache";
+
 class CachedAPI extends RESTDataSource {
   override baseURL = "https://api.example.com/";
+
+  constructor(options: { cache: KeyValueCache }) {
+    super(options);
+  }
 
   // Override cache options per request
   async getUser(id: string): Promise<User> {
@@ -125,9 +143,14 @@ class CachedAPI extends RESTDataSource {
 
 ```typescript
 import { GraphQLError } from "graphql";
+import type { KeyValueCache } from "@apollo/utils.keyvaluecache";
 
 class UsersAPI extends RESTDataSource {
   override baseURL = "https://api.example.com/";
+
+  constructor(options: { cache: KeyValueCache }) {
+    super(options);
+  }
 
   async getUser(id: string): Promise<User> {
     try {
@@ -180,6 +203,8 @@ const user2 = await userLoader.load("2");
 Create new DataLoader instances per request to prevent caching across requests:
 
 ```typescript
+import DataLoader from "dataloader";
+
 interface MyContext {
   loaders: {
     userLoader: DataLoader<string, User>;
@@ -317,14 +342,17 @@ class PooledDataSource {
 
 ```typescript
 // Good - new instance per request
-context: async () => ({
-  dataSources: {
-    usersAPI: new UsersAPI(),
-  },
-});
+context: async () => {
+  const { cache } = server;
+  return {
+    dataSources: {
+      usersAPI: new UsersAPI({ cache }),
+    },
+  };
+};
 
 // Bad - shared instance across requests
-const usersAPI = new UsersAPI();
+const usersAPI = new UsersAPI({ cache: server.cache });
 context: async () => ({
   dataSources: { usersAPI },
 });
@@ -333,6 +361,9 @@ context: async () => ({
 ### Combine DataLoader with RESTDataSource
 
 ```typescript
+import DataLoader from "dataloader";
+import type { KeyValueCache } from "@apollo/utils.keyvaluecache";
+
 class UsersAPI extends RESTDataSource {
   override baseURL = "https://api.example.com/";
 
@@ -343,6 +374,10 @@ class UsersAPI extends RESTDataSource {
     const userMap = new Map(users.map((u) => [u.id, u]));
     return ids.map((id) => userMap.get(id) ?? new Error(`Not found: ${id}`));
   });
+
+  constructor(options: { cache: KeyValueCache }) {
+    super(options);
+  }
 
   async getUser(id: string): Promise<User> {
     return this.batchLoader.load(id);
