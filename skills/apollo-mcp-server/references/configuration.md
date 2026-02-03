@@ -10,6 +10,7 @@
 - [Transport](#transport)
 - [Headers](#headers)
 - [Introspection](#introspection)
+- [Overrides](#overrides)
 - [GraphOS Integration](#graphos-integration)
 - [Advanced Settings](#advanced-settings)
 - [Environment Variables](#environment-variables)
@@ -19,11 +20,10 @@
 
 ## Configuration File
 
-Apollo MCP Server uses YAML configuration. Default location: `mcp.yaml`
+Apollo MCP Server uses YAML configuration. Pass the config file path as an argument:
 
 ```bash
-# Specify custom config path
-npx @apollo/mcp-server --config ./path/to/config.yaml
+apollo-mcp-server ./path/to/config.yaml
 ```
 
 ---
@@ -51,7 +51,7 @@ Schema source configuration. Four options available:
 
 ```yaml
 schema:
-  type: local
+  source: local
   path: ./schema.graphql
 ```
 
@@ -59,7 +59,7 @@ schema:
 
 ```yaml
 schema:
-  type: local
+  source: local
   paths:
     - ./schemas/*.graphql
     - ./types/**/*.graphql
@@ -69,7 +69,7 @@ schema:
 
 ```yaml
 schema:
-  type: uplink
+  source: uplink
 graphos:
   key: ${APOLLO_KEY}
   graph_ref: my-graph@production
@@ -79,7 +79,7 @@ graphos:
 
 ```yaml
 schema:
-  type: introspect
+  source: introspect
   # Uses the endpoint to fetch schema
 ```
 
@@ -91,7 +91,7 @@ Define which GraphQL operations become MCP tools.
 
 ```yaml
 operations:
-  type: local
+  source: local
   paths:
     - ./operations/**/*.graphql
 ```
@@ -100,7 +100,7 @@ operations:
 
 ```yaml
 operations:
-  type: collection
+  source: collection
   id: abc123-collection-id
 ```
 
@@ -108,7 +108,7 @@ operations:
 
 ```yaml
 operations:
-  type: manifest
+  source: manifest
   path: ./persisted-query-manifest.json
 ```
 
@@ -116,7 +116,7 @@ operations:
 
 ```yaml
 operations:
-  type: uplink
+  source: uplink
   # Fetches from GraphOS automatically
 ```
 
@@ -124,7 +124,7 @@ operations:
 
 ```yaml
 operations:
-  type: introspect
+  source: introspect
   # No custom operations, only introspection tools
 ```
 
@@ -196,38 +196,54 @@ headers:
 
 ## Introspection
 
-Control built-in introspection tools.
+Control built-in introspection tools. Each tool is configured separately:
 
 ```yaml
 introspection:
-  enabled: true              # Enable introspection tools
-  minify: false              # Use compact notation
-  mutationMode: prompt       # allowed | prompt | disabled
+  introspect:
+    enabled: true
+    minify: false
+  search:
+    enabled: true
+    minify: false
+  validate:
+    enabled: true
+  execute:
+    enabled: true
+```
 
-  # Individual tool control
-  tools:
-    introspect: true
-    search: true
-    validate: true
-    execute: true
+### Disable Specific Tools
+
+```yaml
+introspection:
+  introspect:
+    enabled: true
+  search:
+    enabled: true
+  validate:
+    enabled: true
+  execute:
+    enabled: false  # Disable ad-hoc execution
+```
+
+---
+
+## Overrides
+
+Control mutation behavior and other global settings.
+
+```yaml
+overrides:
+  mutation_mode: explicit  # all | explicit | none
 ```
 
 ### Mutation Modes
 
 | Mode | Description |
 |------|-------------|
-| `allowed` | Execute mutations directly |
-| `prompt` | Require user confirmation (default) |
-| `disabled` | Block all mutations |
-
-### Disable Specific Tools
-
-```yaml
-introspection:
-  enabled: true
-  tools:
-    execute: false  # Disable ad-hoc execution
-```
+| `all` | Execute mutations directly |
+| `explicit` | Require user confirmation |
+| `none` | Block all mutations (default) |
 
 ---
 
@@ -252,7 +268,7 @@ export APOLLO_GRAPH_REF=my-graph@production
 
 ```yaml
 schema:
-  type: uplink
+  source: uplink
 graphos:
   key: ${APOLLO_KEY}
   graph_ref: ${APOLLO_GRAPH_REF}
@@ -346,10 +362,18 @@ All settings support environment variable substitution with `${VAR_NAME}`.
 ```yaml
 endpoint: http://localhost:4000/graphql
 schema:
-  type: introspect
+  source: introspect
 introspection:
-  enabled: true
-  mutationMode: allowed
+  introspect:
+    enabled: true
+  search:
+    enabled: true
+  validate:
+    enabled: true
+  execute:
+    enabled: true
+overrides:
+  mutation_mode: all
 ```
 
 ### Production with GraphOS
@@ -357,9 +381,9 @@ introspection:
 ```yaml
 endpoint: ${GRAPHQL_ENDPOINT}
 schema:
-  type: uplink
+  source: uplink
 operations:
-  type: manifest
+  source: manifest
   path: ./persisted-query-manifest.json
 graphos:
   key: ${APOLLO_KEY}
@@ -367,7 +391,14 @@ graphos:
 headers:
   Authorization: "Bearer ${API_TOKEN}"
 introspection:
-  enabled: false
+  introspect:
+    enabled: false
+  search:
+    enabled: false
+  validate:
+    enabled: false
+  execute:
+    enabled: false
 transport:
   type: streamable_http
   port: ${PORT:-3000}
@@ -380,18 +411,27 @@ health_check:
 ```yaml
 endpoint: https://dev-api.example.com/graphql
 schema:
-  type: local
+  source: local
   path: ./schema.graphql
 operations:
-  type: local
+  source: local
   paths:
     - ./operations/**/*.graphql
 headers:
   Authorization: "Bearer ${DEV_API_TOKEN}"
 introspection:
-  enabled: true
-  mutationMode: prompt
-  minify: true
+  introspect:
+    enabled: true
+    minify: true
+  search:
+    enabled: true
+    minify: true
+  validate:
+    enabled: true
+  execute:
+    enabled: true
+overrides:
+  mutation_mode: explicit
 ```
 
 ### Read-Only Analytics
@@ -399,17 +439,23 @@ introspection:
 ```yaml
 endpoint: https://analytics.example.com/graphql
 schema:
-  type: local
+  source: local
   path: ./analytics-schema.graphql
 operations:
-  type: local
+  source: local
   paths:
     - ./queries/**/*.graphql  # Only queries, no mutations
 introspection:
-  enabled: true
-  mutationMode: disabled
-  tools:
-    execute: false
+  introspect:
+    enabled: true
+  search:
+    enabled: true
+  validate:
+    enabled: true
+  execute:
+    enabled: false
+overrides:
+  mutation_mode: none
 ```
 
 ### Multi-Environment
@@ -417,15 +463,23 @@ introspection:
 ```yaml
 endpoint: ${GRAPHQL_ENDPOINT}
 schema:
-  type: ${SCHEMA_SOURCE:-local}
+  source: ${SCHEMA_SOURCE:-local}
   path: ${SCHEMA_PATH:-./schema.graphql}
 operations:
-  type: local
+  source: local
   paths:
     - ./operations/**/*.graphql
 headers:
   Authorization: "Bearer ${API_TOKEN}"
 introspection:
-  enabled: ${INTROSPECTION_ENABLED:-false}
-  mutationMode: ${MUTATION_MODE:-prompt}
+  introspect:
+    enabled: ${INTROSPECTION_ENABLED:-false}
+  search:
+    enabled: ${INTROSPECTION_ENABLED:-false}
+  validate:
+    enabled: ${INTROSPECTION_ENABLED:-false}
+  execute:
+    enabled: ${INTROSPECTION_ENABLED:-false}
+overrides:
+  mutation_mode: ${MUTATION_MODE:-explicit}
 ```
