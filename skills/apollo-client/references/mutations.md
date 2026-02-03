@@ -17,7 +17,8 @@ The `useMutation` hook is used to execute GraphQL mutations.
 ### Basic Usage
 
 ```tsx
-import { useMutation, gql } from "@apollo/client";
+import { gql } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
 
 const ADD_TODO = gql`
   mutation AddTodo($text: String!) {
@@ -179,7 +180,7 @@ function CreatePost() {
 If you only need the promise without using the hook's loading/data state, use `client.mutate` instead:
 
 ```tsx
-import { useApolloClient } from "@apollo/client";
+import { useApolloClient } from "@apollo/client/react";
 
 function CreatePost() {
   const client = useApolloClient();
