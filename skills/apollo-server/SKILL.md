@@ -1,23 +1,23 @@
 ---
 name: apollo-server
 description: >
-  Guide for building GraphQL servers with Apollo Server 4.x and 5.x. Use this skill when:
+  Guide for building GraphQL servers with Apollo Server 5.x. Use this skill when:
   (1) setting up a new Apollo Server project,
   (2) writing resolvers or defining GraphQL schemas,
   (3) implementing authentication or authorization,
   (4) creating plugins or custom data sources,
   (5) troubleshooting Apollo Server errors or performance issues.
 license: MIT
-compatibility: Apollo Server 4.x requires Node.js v14.16+ (v18+ recommended). Apollo Server 5.x requires Node.js v20+. TypeScript 4.7+. Works with Express v4/v5, standalone, Fastify, and serverless.
+compatibility: Node.js v20+, TypeScript 4.7+. Works with Express v5, standalone, Fastify, and serverless.
 metadata:
   author: apollographql
   version: "1.0"
 allowed-tools: Bash(npm:*) Bash(npx:*) Bash(node:*) Read Write Edit Glob Grep
 ---
 
-# Apollo Server 4.x/5.x Guide
+# Apollo Server 5.x Guide
 
-Apollo Server is an open-source GraphQL server that works with any GraphQL schema. Version 4.x and 5.x are framework-agnostic and run standalone or integrate with Express, Fastify, and serverless environments.
+Apollo Server is an open-source GraphQL server that works with any GraphQL schema. Apollo Server 5 is framework-agnostic and runs standalone or integrates with Express, Fastify, and serverless environments.
 
 ## Quick Start
 
@@ -27,16 +27,10 @@ Apollo Server is an open-source GraphQL server that works with any GraphQL schem
 npm install @apollo/server graphql
 ```
 
-For Express v5 integration:
+For Express integration:
 
 ```bash
 npm install @apollo/server @as-integrations/express5 express graphql cors
-```
-
-For Express v4 integration:
-
-```bash
-npm install @apollo/server @as-integrations/express4 express graphql cors
 ```
 
 ### Step 2: Define Schema
@@ -69,7 +63,9 @@ const resolvers = {
 
 ### Step 4: Start Server
 
-**Standalone (Recommended for getting started):**
+**Standalone (Recommended for prototyping):**
+
+The standalone server is great for prototyping, but for production services, we recommend integrating Apollo Server with a more fully-featured web framework such as Express, Koa, or Fastify. Swapping from the standalone server to a web framework later is straightforward.
 
 ```typescript
 import { ApolloServer } from "@apollo/server";
@@ -84,45 +80,11 @@ const { url } = await startStandaloneServer(server, {
 console.log(`Server ready at ${url}`);
 ```
 
-**Express v5:**
+**Express (Recommended for production):**
 
 ```typescript
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@as-integrations/express5";
-import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
-import express from "express";
-import http from "http";
-import cors from "cors";
-
-const app = express();
-const httpServer = http.createServer(app);
-
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-  plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
-});
-
-await server.start();
-
-app.use(
-  "/graphql",
-  cors<cors.CorsRequest>(),
-  express.json(),
-  expressMiddleware(server, {
-    context: async ({ req }) => ({ token: req.headers.authorization }),
-  }),
-);
-
-await new Promise<void>((resolve) => httpServer.listen({ port: 4000 }, resolve));
-console.log("Server ready at http://localhost:4000/graphql");
-```
-
-**Express v4:**
-
-```typescript
-import { ApolloServer } from "@apollo/server";
-import { expressMiddleware } from "@as-integrations/express4";
 import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
 import express from "express";
 import http from "http";
@@ -327,10 +289,10 @@ Detailed documentation for specific topics:
 
 ## Ground Rules
 
-- ALWAYS use Apollo Server 4.x patterns (not v3 or earlier)
+- ALWAYS use Apollo Server 5.x patterns (not v4 or earlier)
 - ALWAYS type your context with TypeScript generics
 - ALWAYS use `GraphQLError` from `graphql` package for errors
 - NEVER expose stack traces in production errors
-- PREFER `startStandaloneServer` for simple setups
-- USE `expressMiddleware` with drain plugin for Express apps
+- PREFER `startStandaloneServer` for prototyping only
+- USE `expressMiddleware` with drain plugin for production Express apps
 - IMPLEMENT authentication in context, authorization in resolvers
