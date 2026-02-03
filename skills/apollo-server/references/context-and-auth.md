@@ -349,8 +349,6 @@ function authDirectiveTransformer(schema) {
 ### Creating Data Sources
 
 ```typescript
-import type { KeyValueCache } from "@apollo/utils.keyvaluecache";
-
 interface MyContext {
   dataSources: {
     usersAPI: UsersDataSource;
@@ -359,11 +357,10 @@ interface MyContext {
 }
 
 const context = async ({ req }): Promise<MyContext> => {
-  const { cache } = server;
   return {
     dataSources: {
-      usersAPI: new UsersDataSource({ cache }),
-      postsAPI: new PostsDataSource({ cache }),
+      usersAPI: new UsersDataSource(),
+      postsAPI: new PostsDataSource(),
     },
   };
 };
@@ -372,14 +369,8 @@ const context = async ({ req }): Promise<MyContext> => {
 ### Passing User to Data Sources
 
 ```typescript
-import type { KeyValueCache } from "@apollo/utils.keyvaluecache";
-
 class AuthenticatedDataSource extends RESTDataSource {
   private user?: User;
-
-  constructor(options: { cache: KeyValueCache }) {
-    super(options);
-  }
 
   setUser(user: User) {
     this.user = user;
@@ -393,10 +384,9 @@ class AuthenticatedDataSource extends RESTDataSource {
 }
 
 const context = async ({ req }) => {
-  const { cache } = server;
   const user = await getUser(req.headers.authorization);
 
-  const usersAPI = new UsersDataSource({ cache });
+  const usersAPI = new UsersDataSource();
   if (user) {
     usersAPI.setUser(user);
   }
