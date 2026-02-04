@@ -18,14 +18,14 @@ MCP Inspector provides visual debugging for MCP servers.
 ### Installation
 
 ```bash
-npx @anthropic/mcp-inspector
+npx @modelcontextprotocol/inspector
 ```
 
 ### Usage
 
 ```bash
 # Start inspector with your MCP server
-npx @anthropic/mcp-inspector npx @apollo/mcp-server --config ./mcp.yaml
+npx @modelcontextprotocol/inspector .apollo-mcp-server ./config.yaml
 ```
 
 ### Inspector Features
@@ -48,7 +48,7 @@ npx @anthropic/mcp-inspector npx @apollo/mcp-server --config ./mcp.yaml
 1. Check config file syntax:
 ```bash
 # Validate YAML
-npx yaml-lint mcp.yaml
+npx yaml-lint config.yaml
 ```
 
 2. Verify endpoint is reachable:
@@ -58,7 +58,7 @@ curl -I https://api.example.com/graphql
 
 3. Enable debug logging:
 ```bash
-APOLLO_MCP_LOG_LEVEL=debug npx @apollo/mcp-server --config ./mcp.yaml
+APOLLO_MCP_LOG_LEVEL=debug apollo-mcp-server ./config.yaml
 ```
 
 ### Client Can't Connect
@@ -72,8 +72,8 @@ APOLLO_MCP_LOG_LEVEL=debug npx @apollo/mcp-server --config ./mcp.yaml
 {
   "mcpServers": {
     "graphql": {
-      "command": "npx",
-      "args": ["@apollo/mcp-server", "--config", "/absolute/path/to/mcp.yaml"]
+      "command": "./apollo-mcp-server",
+      "args": ["/absolute/path/to/config.yaml"]
     }
   }
 }
@@ -81,13 +81,15 @@ APOLLO_MCP_LOG_LEVEL=debug npx @apollo/mcp-server --config ./mcp.yaml
 
 2. Test server manually:
 ```bash
-npx @apollo/mcp-server --config ./mcp.yaml
+apollo-mcp-server ./config.yaml
 # Should output JSON-RPC initialization
 ```
 
-3. Check Node.js version:
+3. Check binary is installed:
 ```bash
-node --version  # Requires v18+
+which apollo-mcp-server
+# Or if installed via cargo
+cargo install --list | grep apollo-mcp-server
 ```
 
 ---
@@ -151,7 +153,7 @@ headers:
 1. Check file path (use absolute paths):
 ```yaml
 schema:
-  type: local
+  source: local
   path: /absolute/path/to/schema.graphql
 ```
 
@@ -176,7 +178,7 @@ curl -X POST https://api.example.com/graphql \
 2. Use local schema file instead:
 ```yaml
 schema:
-  type: local
+  source: local
   path: ./schema.graphql
 ```
 
@@ -222,8 +224,8 @@ validate(operation: "query { user { id name } }")
 
 Check mutation mode in config:
 ```yaml
-introspection:
-  mutationMode: allowed  # Or 'prompt' for confirmation
+overrides:
+  mutation_mode: all  # Or 'explicit' for confirmation
 ```
 
 ### Variable Type Mismatch
@@ -291,7 +293,7 @@ If issues persist:
 
 1. Enable debug logging:
 ```bash
-APOLLO_MCP_LOG_LEVEL=debug npx @apollo/mcp-server --config ./mcp.yaml
+APOLLO_MCP_LOG_LEVEL=debug apollo-mcp-server ./config.yaml
 ```
 
 2. Check Apollo documentation: https://apollographql.com/docs
