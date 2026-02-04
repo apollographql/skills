@@ -13,19 +13,49 @@
 
 ## Debugging with MCP Inspector
 
-MCP Inspector provides visual debugging for MCP servers.
+[MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) is a debugging tool for MCP servers.
 
-### Installation
+### Debug locally with rover dev
+
+When running your MCP server locally with `rover dev`:
+
+1. Start your MCP server:
 
 ```bash
-npx @modelcontextprotocol/inspector
+rover dev --supergraph-config supergraph.yaml --mcp .apollo/mcp.local.yaml
 ```
 
-### Usage
+2. In a new terminal, run MCP Inspector:
 
 ```bash
-# Start inspector with your MCP server
-npx @modelcontextprotocol/inspector apollo-mcp-server ./config.yaml
+npx @modelcontextprotocol/inspector http://127.0.0.1:8000/mcp --transport http
+```
+
+3. Open the URL returned by Inspector in your browser, click **Connect**, then **List Tools** to see available tools.
+
+### Debug with standalone binary
+
+If running the MCP server as a standalone binary:
+
+1. Create a config file with stdio transport:
+
+```yaml
+operations:
+  source: local
+  paths:
+    - /path/to/operations/
+schema:
+  source: local
+  path: /path/to/schema.graphql
+transport:
+  type: stdio
+```
+
+2. Run the MCP server with Inspector:
+
+```bash
+npx @modelcontextprotocol/inspector \
+  apollo-mcp-server /path/to/config.yaml
 ```
 
 ### Inspector Features
@@ -57,9 +87,16 @@ curl -I https://api.example.com/graphql
 ```
 
 3. Enable debug logging:
-```bash
-APOLLO_MCP_LOG_LEVEL=debug apollo-mcp-server ./config.yaml
-```
+
+   With rover dev:
+   ```bash
+   APOLLO_ROUTER_LOG=debug rover dev --supergraph-config supergraph.yaml --mcp config.yaml
+   ```
+
+   With standalone binary:
+   ```bash
+   APOLLO_MCP_LOG_LEVEL=debug apollo-mcp-server config.yaml
+   ```
 
 ### Client Can't Connect
 
@@ -67,29 +104,34 @@ APOLLO_MCP_LOG_LEVEL=debug apollo-mcp-server ./config.yaml
 
 **Solutions:**
 
-1. Verify command path in client config:
-```json
-{
-  "mcpServers": {
-    "graphql": {
-      "command": "apollo-mcp-server",
-      "args": ["/absolute/path/to/config.yaml"]
-    }
-  }
-}
-```
+1. Verify the MCP server is running:
 
-2. Test server manually:
+   With rover dev:
+   ```bash
+   # Check that rover dev is running and shows MCP server on port 8000
+   rover dev --supergraph-config supergraph.yaml --mcp config.yaml
+   ```
+
+   With standalone binary via MCP client config:
+   ```json
+   {
+     "mcpServers": {
+       "graphql": {
+         "command": "apollo-mcp-server",
+         "args": ["/absolute/path/to/config.yaml"]
+       }
+     }
+   }
+   ```
+
+2. For HTTP transport, verify the server is accessible:
 ```bash
-apollo-mcp-server ./config.yaml
-# Should output JSON-RPC initialization
+curl http://127.0.0.1:8000/health
 ```
 
-3. Check binary is installed:
+3. Check if the standalone binary is installed (if using standalone mode):
 ```bash
 which apollo-mcp-server
-# Or if installed via cargo
-cargo install --list | grep apollo-mcp-server
 ```
 
 ---
@@ -292,10 +334,17 @@ curl http://localhost:3000/health?ready
 If issues persist:
 
 1. Enable debug logging:
-```bash
-APOLLO_MCP_LOG_LEVEL=debug apollo-mcp-server ./config.yaml
-```
 
-2. Check Apollo documentation: https://apollographql.com/docs
+   With rover dev:
+   ```bash
+   APOLLO_ROUTER_LOG=debug rover dev --supergraph-config supergraph.yaml --mcp config.yaml
+   ```
+
+   With standalone binary:
+   ```bash
+   APOLLO_MCP_LOG_LEVEL=debug apollo-mcp-server config.yaml
+   ```
+
+2. Check Apollo documentation: https://apollographql.com/docs/apollo-mcp-server
 
 3. Report issues: https://github.com/apollographql/apollo-mcp-server/issues
