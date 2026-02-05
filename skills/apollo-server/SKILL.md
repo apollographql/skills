@@ -11,7 +11,7 @@ license: MIT
 compatibility: Node.js v20+, TypeScript 4.7+. Works with Express v4/v5, standalone, Fastify, and serverless.
 metadata:
   author: apollographql
-  version: "1.0"
+  version: "1.0.0"
 allowed-tools: Bash(npm:*) Bash(npx:*) Bash(node:*) Read Write Edit Glob Grep
 ---
 

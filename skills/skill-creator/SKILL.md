@@ -10,7 +10,7 @@ license: MIT
 compatibility: Works with Claude Code and similar AI coding assistants that support Agent Skills.
 metadata:
   author: apollographql
-  version: "1.0"
+  version: "1.0.0"
 allowed-tools: Read Write Edit Glob Grep
 ---
 
@@ -48,7 +48,7 @@ license: MIT
 compatibility: Works with Claude Code and similar AI coding assistants.
 metadata:
   author: your-org
-  version: "1.0"
+  version: "1.0.0"
 allowed-tools: Read Write Edit Glob Grep
 ---
 ```
