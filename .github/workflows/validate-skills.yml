@@ -24,7 +24,7 @@ jobs:
         with:
           repository: agentskills/agentskills
           path: agentskills
-          # Note: Using main branch. Consider pinning to a specific commit/tag once stable releases are available.
+          # Using default branch (main). Consider pinning with 'ref' parameter once stable releases are available.
 
       - name: Set up Python
         uses: actions/setup-python@v5
