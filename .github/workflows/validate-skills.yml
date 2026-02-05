@@ -19,18 +19,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Clone agentskills repository
+        run: |
+          # Clone the agentskills repository
+          # Note: Using main branch. Consider pinning to a specific commit/tag once stable releases are available.
+          git clone --depth 1 https://github.com/agentskills/agentskills.git
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.x"
           cache: "pip"
-          cache-dependency-path: "**/pyproject.toml"
+          cache-dependency-path: "agentskills/skills-ref/pyproject.toml"
 
       - name: Install skills-ref
         run: |
-          # Clone the agentskills repository
-          # Note: Using main branch. Consider pinning to a specific commit/tag once stable releases are available.
-          git clone --depth 1 https://github.com/agentskills/agentskills.git
           cd agentskills/skills-ref
           pip install -e .
 
