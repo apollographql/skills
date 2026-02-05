@@ -280,16 +280,16 @@ Use environment variables in configuration:
 
 ```yaml
 supergraph:
-  listen: ${ROUTER_LISTEN_ADDRESS:-127.0.0.1:4000}
+  listen: ${env.ROUTER_LISTEN_ADDRESS:-127.0.0.1:4000}
 
 override_subgraph_url:
-  products: ${PRODUCTS_URL}
+  products: ${env.PRODUCTS_URL}
 
 authentication:
   router:
     jwt:
       jwks:
-        - url: ${JWKS_URL}
+        - url: ${env.JWKS_URL}
 ```
 
 ## Configuration Validation
