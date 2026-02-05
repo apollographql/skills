@@ -238,7 +238,7 @@ telemetry:
 
 ## GraphOS Studio
 
-Send telemetry to Apollo Studio:
+Send telemetry to GraphOS Studio:
 
 ```yaml
 telemetry:
