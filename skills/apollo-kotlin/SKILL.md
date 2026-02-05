@@ -10,7 +10,7 @@ license: MIT
 compatibility: JVM 8+, Kotlin 1.9+, Gradle 8+, Android/JVM/Kotlin Multiplatform projects.
 metadata:
   author: apollographql
-  version: "1.0.0"
+  version: "1.0.1"
 allowed-tools: Bash(./gradlew:*) Bash(gradle:*) Bash(curl:*) Read Write Edit Glob Grep WebFetch
 ---
 
@@ -34,6 +34,11 @@ Follow this process when adding or working with Apollo Kotlin:
 - [Setup](references/setup.md) - Gradle plugin, schema download, codegen config (including scalars), client configuration (auth, logging, interceptors)
 - [Operations](references/operations.md) - Queries, mutations, subscriptions, and how to execute them
 - [Caching](references/caching.md) - Setup and use the normalized cache
+
+## Scripts
+
+- [list-apollo-kotlin-versions.sh](scripts/list-apollo-kotlin-versions.sh) - List versions of Apollo Kotlin
+- [list-apollo-kotlin-normalized-cache-versions.sh](scripts/list-apollo-kotlin-normalized-cache-versions.sh) - List versions of the Apollo Kotlin Normalized Cache library
 
 ## Key Rules
 

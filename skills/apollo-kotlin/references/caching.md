@@ -14,7 +14,7 @@ Use a normalized cache when:
 
 - Always use the new Normalized Cache (`com.apollographql.cache:*`) rather than the classic one (`com.apollographql.apollo:*`)
 - Always use the latest version
-- To determine the latest version, execute `git ls-remote --tags git@github.com:apollographql/apollo-kotlin-normalized-cache.git|cut -d / -f 3` and pick the latest release
+- To determine the latest version, execute `scripts/list-apollo-kotlin-normalized-cache-versions.sh` and pick the latest release
 
 1. Add normalized cache dependencies:
 
