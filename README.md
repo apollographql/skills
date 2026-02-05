@@ -1,7 +1,7 @@
 # Apollo GraphQL Agent Skills
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-9-green.svg)](#skills)
+[![Skills](https://img.shields.io/badge/skills-10-green.svg)](#skills)
 
 A collection of skills for AI coding agents working with Apollo GraphQL tools and technologies.
 
@@ -23,7 +23,7 @@ The CLI guides you through an interactive installation:
 4. **Installation method** - Symlink (recommended) or Copy
 
 ```
-◇  Found 9 skills
+◇  Found 10 skills
 │
 ◆  Select skills to install
 │  ◼ apollo-client
@@ -203,6 +203,45 @@ npx skills add apollographql/skills@apollo-client
 [State Management](skills/apollo-client/references/state-management.md) ·
 [Error Handling](skills/apollo-client/references/error-handling.md) ·
 [Troubleshooting](skills/apollo-client/references/troubleshooting.md)
+
+---
+
+### apollo-kotlin
+
+Build applications with Apollo Kotlin, the GraphQL client library for Android and Kotlin.
+
+**Install:**
+
+```bash
+npx skills add apollographql/skills@apollo-kotlin
+```
+
+**Use when:**
+
+- Setting up Apollo Kotlin in a Gradle project for Android, Kotlin/JVM, or KMP
+- Configuring schema download and codegen for GraphQL services
+- Configuring an `ApolloClient` with auth, interceptors, and caching
+- Writing queries, mutations, or subscriptions
+
+**Categories covered:**
+
+- Gradle plugin setup and service configuration
+- Schema management and code generation
+- ApolloClient configuration
+- Coroutines and Flow usage patterns
+- Normalized cache and cache policies
+
+**Examples:**
+
+- "Set up Apollo Kotlin in my Android app"
+- "Configure code generation for multiple GraphQL services"
+- "Add normalized caching for offline support"
+
+**References:**
+[SKILL.md](skills/apollo-kotlin/SKILL.md) ·
+[Setup](skills/apollo-kotlin/references/setup.md) ·
+[Operations](skills/apollo-kotlin/references/operations.md) ·
+[Caching](skills/apollo-kotlin/references/caching.md) ·
 
 ---
 
