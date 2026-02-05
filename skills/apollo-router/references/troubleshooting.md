@@ -61,7 +61,7 @@ Error: error sending request for url (http://localhost:4001/graphql): error tryi
 ```
 
 Checklist:
-1. Verify subgraph is running: `curl http://localhost:4001/graphql`
+1. Verify subgraph is running: `curl -X POST http://localhost:4001/graphql -H "Content-Type: application/json" -d '{"query":"{ __typename }"}'`
 2. Check URL in supergraph schema is correct
 3. For Docker, use host.docker.internal or service names
 
