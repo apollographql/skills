@@ -24,7 +24,9 @@ jobs:
 
       - name: Install skills-ref
         run: |
-          git clone https://github.com/agentskills/agentskills.git
+          # Clone the agentskills repository
+          # Note: Using main branch. Consider pinning to a specific commit/tag once stable releases are available.
+          git clone --depth 1 https://github.com/agentskills/agentskills.git
           cd agentskills/skills-ref
           pip install -e .
 
