@@ -10,7 +10,7 @@ license: MIT
 compatibility: JVM 8+, Kotlin 1.9+, Gradle 8+, Android/JVM/Kotlin Multiplatform projects.
 metadata:
   author: apollographql
-  version: "1.0"
+  version: "1.0.0"
 allowed-tools: Bash(./gradlew:*) Bash(gradle:*) Bash(curl:*) Read Write Edit Glob Grep WebFetch
 ---
 
