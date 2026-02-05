@@ -11,7 +11,7 @@ license: MIT
 compatibility: Requires rover CLI installed. Works with Claude Code and similar AI coding assistants.
 metadata:
   author: apollographql
-  version: "1.0"
+  version: "1.0.0"
 allowed-tools: Bash(rover:*) Bash(curl:*) Read Write Edit Glob Grep
 ---
 

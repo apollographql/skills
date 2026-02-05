@@ -10,7 +10,7 @@ license: MIT
 compatibility: Works with Claude Code and similar AI coding assistants that support Agent Skills.
 metadata:
   author: apollographql
-  version: "1.0"
+  version: "1.0.0"
 allowed-tools: Read Write Edit Glob Grep
 ---
 
@@ -48,7 +48,7 @@ license: MIT
 compatibility: Works with Claude Code and similar AI coding assistants.
 metadata:
   author: your-org
-  version: "1.0"
+  version: "1.0.0"
 allowed-tools: Read Write Edit Glob Grep
 ---
 ```
@@ -226,6 +226,22 @@ Follow the Apollo Voice for all skill content:
 For Apollo GraphQL-specific guidance:
 
 - [Apollo Skills](references/apollo-skills.md) - Patterns and examples for Apollo GraphQL skills
+
+## Versioning
+
+Use semantic versioning (`"X.Y.Z"`) for the `version` field in metadata:
+
+```yaml
+metadata:
+  author: apollographql
+  version: "1.0.0"
+```
+
+- **Major (X)**: Breaking changes that alter how the skill behaves or activates (e.g., renamed triggers, removed sections, changed ground rules)
+- **Minor (Y)**: New content or capabilities that are backward-compatible (e.g., added reference files, new sections, expanded examples)
+- **Patch (Z)**: Small fixes that don't change behavior (e.g., typo corrections, wording tweaks, formatting fixes)
+
+Start new skills at `"1.0.0"`.
 
 ## Checklist for New Skills
 
