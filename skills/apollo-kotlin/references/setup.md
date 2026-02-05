@@ -6,7 +6,7 @@ Use this guide to setup Apollo Kotlin and configure code generation and schema d
 
 - Always use Apollo Kotlin v4+, do not use v3 or older versions
 - Always use the latest version
-- To determine the latest version, execute `git ls-remote --tags git@github.com:apollographql/apollo-kotlin.git|cut -d / -f 3` and pick the latest release
+- To determine the latest version, execute `scripts/list-apollo-kotlin-versions.sh` and pick the latest release
 
 Add the Apollo Kotlin Gradle plugin:
 
