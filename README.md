@@ -116,6 +116,49 @@ npx skills add apollographql/skills@apollo-mcp-server
 
 ---
 
+### apollo-router
+
+Configure and run Apollo Router for federated GraphQL supergraphs.
+
+**Install:**
+
+```bash
+npx skills add apollographql/skills@apollo-router
+```
+
+**Use when:**
+
+- Setting up Apollo Router to run a supergraph
+- Configuring routing, headers, or CORS
+- Implementing custom plugins (Rhai scripts or coprocessors)
+- Configuring telemetry and observability
+- Troubleshooting Router performance or connectivity issues
+
+**Categories covered:**
+
+- Installation and quick start
+- Router configuration (YAML)
+- Header propagation and manipulation
+- CORS and authentication
+- Rhai scripts and coprocessors
+- Telemetry (tracing, metrics, logging)
+
+**Examples:**
+
+- "Set up Apollo Router for my supergraph"
+- "Configure CORS for my Router"
+- "Add header propagation for authentication"
+
+**References:**
+[SKILL.md](skills/apollo-router/SKILL.md) ·
+[Configuration](skills/apollo-router/references/configuration.md) ·
+[Headers](skills/apollo-router/references/headers.md) ·
+[Plugins](skills/apollo-router/references/plugins.md) ·
+[Telemetry](skills/apollo-router/references/telemetry.md) ·
+[Troubleshooting](skills/apollo-router/references/troubleshooting.md)
+
+---
+
 ### apollo-server
 
 Build GraphQL servers with Apollo Server 4.x, including schemas, resolvers, authentication, and plugins.
