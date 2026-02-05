@@ -22,7 +22,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: "3.x"
 
       - name: Install skills-ref
         run: |
@@ -35,7 +35,7 @@ jobs:
       - name: Validate all skills
         run: |
           echo "🔍 Validating all skills..."
-          
+
           # Find all SKILL.md files and validate their parent directories
           find skills -name "SKILL.md" | while read -r skill_file; do
             skill_dir=$(dirname "$skill_file")
@@ -51,6 +51,6 @@ jobs:
               exit 1
             fi
           done
-          
+
           echo ""
           echo "✅ All skills validated successfully"
