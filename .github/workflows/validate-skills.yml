@@ -19,11 +19,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Clone agentskills repository
-        run: |
-          # Clone the agentskills repository
+      - name: Checkout agentskills repository
+        uses: actions/checkout@v6
+        with:
+          repository: agentskills/agentskills
+          path: agentskills
           # Note: Using main branch. Consider pinning to a specific commit/tag once stable releases are available.
-          git clone --depth 1 https://github.com/agentskills/agentskills.git
 
       - name: Set up Python
         uses: actions/setup-python@v5
