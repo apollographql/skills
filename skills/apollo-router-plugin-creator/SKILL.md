@@ -1,6 +1,10 @@
 ---
 name: apollo-router-plugin-creator
 description: Create and modify Apollo Router native Rust plugins. Use when users want to create a new router plugin, add service hooks (router_service, supergraph_service, subgraph_service), modify existing plugins, or understand plugin patterns. Triggers on requests like "create a new plugin", "add a router plugin", "modify the X plugin", or "add subgraph_service hook".
+license: MIT
+metadata:
+  author: apollographql
+  version: "1.0.0"
 ---
 
 # Apollo Router Plugin Creator
@@ -208,6 +212,10 @@ Located in the [Apollo Router plugins directory](https://github.com/apollographq
 | `headers/`             | `subgraph_service`     | Layer composition | Complex header manipulation |
 
 For full code examples and testing patterns, see [references/examples.md](references/examples.md).
+
+## Prerequisites
+
+It is advised to have the [rust-best-practices](https://skills.sh/apollographql/skills/rust-best-practices) skill installed for writing idiomatic Rust code when developing router plugins. If installed, follow those best practices when generating or modifying plugin code.
 
 ## Resources
 
