@@ -49,10 +49,9 @@ Import only the directives your subgraph uses.
 
 Detailed documentation for specific topics:
 
-- [Entities](references/entities.md) - Defining keys, compound keys, contributing fields
-- [Sharing](references/sharing.md) - Value types, @shareable, @provides patterns
-- [Migration](references/migration.md) - @override, progressive rollout
-- [Errors](references/errors.md) - Common composition errors and fixes
+- [Directives](references/directives.md) - All federation directives with syntax, examples, and rules
+- [Schema Patterns](references/schema-patterns.md) - Multi-subgraph patterns and recipes
+- [Composition](references/composition.md) - Composition rules, error codes, and debugging
 
 ## Key Patterns
 

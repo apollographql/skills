@@ -112,10 +112,9 @@ npx skills add apollographql/skills --skill apollo-federation
 
 **References:**
 [SKILL.md](skills/apollo-federation/SKILL.md) ·
-[Entities](skills/apollo-federation/references/entities.md) ·
-[Sharing](skills/apollo-federation/references/sharing.md) ·
-[Migration](skills/apollo-federation/references/migration.md) ·
-[Errors](skills/apollo-federation/references/errors.md)
+[Directives](skills/apollo-federation/references/directives.md) ·
+[Schema Patterns](skills/apollo-federation/references/schema-patterns.md) ·
+[Composition](skills/apollo-federation/references/composition.md)
 
 ---
 
