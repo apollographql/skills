@@ -74,46 +74,6 @@ type Product @key(fields: "upc") {
 }
 ```
 
-## Reference Resolvers
-
-Every subgraph contributing unique fields must implement `__resolveReference`:
-
-```javascript
-const resolvers = {
-  Product: {
-    __resolveReference(representation) {
-      // representation contains @key fields + __typename
-      return fetchProductById(representation.id);
-    }
-  }
-};
-```
-
-### Multiple Keys Resolution
-
-```javascript
-__resolveReference(representation) {
-  if (representation.sku) {
-    return fetchProductBySku(representation.sku);
-  }
-  return fetchProductById(representation.id);
-}
-```
-
-### Avoiding N+1 Problems
-
-Use data loaders:
-
-```javascript
-const productLoader = new DataLoader(ids =>
-  fetchProductsByIds(ids)
-);
-
-__resolveReference(representation) {
-  return productLoader.load(representation.id);
-}
-```
-
 ## Contributing Entity Fields
 
 Multiple subgraphs can contribute different fields:
@@ -133,8 +93,6 @@ type Product @key(fields: "id") {
 }
 ```
 
-Each subgraph must define a reference resolver.
-
 ## Computed Fields with @requires
 
 Define fields that depend on values from other subgraphs:
@@ -148,13 +106,7 @@ type Product @key(fields: "id") {
 }
 ```
 
-The router fetches `size` and `weight` first, then passes them to the resolver:
-
-```javascript
-shippingEstimate(product) {
-  return computeEstimate(product.size, product.weight);
-}
-```
+The router fetches `size` and `weight` from the owning subgraph first, then calls this subgraph with those values available.
 
 ### Nested @requires
 

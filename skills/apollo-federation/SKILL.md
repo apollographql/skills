@@ -12,7 +12,7 @@ license: MIT
 compatibility: Works with any Federation 2.x compatible subgraph library (Apollo Server, GraphQL Yoga, etc.)
 metadata:
   author: apollographql
-  version: "1.0"
+  version: "1.0.0"
 allowed-tools: Bash(rover:*) Read Write Edit Glob Grep
 ---
 
@@ -26,7 +26,7 @@ Every Federation 2 subgraph must opt-in via `@link`:
 
 ```graphql
 extend schema
-  @link(url: "https://specs.apollo.dev/federation/v2.3",
+  @link(url: "https://specs.apollo.dev/federation/v2.12",
         import: ["@key", "@shareable", "@external", "@requires", "@provides"])
 ```
 
@@ -49,7 +49,7 @@ Import only the directives your subgraph uses.
 
 Detailed documentation for specific topics:
 
-- [Entities](references/entities.md) - Defining keys, reference resolvers, contributing fields
+- [Entities](references/entities.md) - Defining keys, compound keys, contributing fields
 - [Sharing](references/sharing.md) - Value types, @shareable, @provides patterns
 - [Migration](references/migration.md) - @override, progressive rollout
 - [Errors](references/errors.md) - Common composition errors and fixes
@@ -84,18 +84,6 @@ type Product @key(fields: "id") {
 }
 ```
 
-### Reference Resolver
-
-```javascript
-const resolvers = {
-  Product: {
-    __resolveReference(representation) {
-      return fetchProductById(representation.id);
-    }
-  }
-};
-```
-
 ### Computed Fields with @requires
 
 ```graphql
@@ -128,9 +116,7 @@ type Product @key(fields: "id", resolvable: false) {
 
 - ALWAYS use Federation 2.x syntax with `@link` directive
 - ALWAYS import only the directives your subgraph uses
-- ALWAYS implement `__resolveReference` for entities with unique fields
-- ALWAYS use data loaders in reference resolvers to avoid N+1 problems
-- NEVER use `@shareable` without ensuring resolvers return identical results
+- NEVER use `@shareable` without ensuring all subgraphs return identical values for that field
 - PREFER `@key` with single ID field for simple entity identification
 - USE `rover supergraph compose` to validate composition locally
 - USE `rover subgraph check` to validate against production supergraph

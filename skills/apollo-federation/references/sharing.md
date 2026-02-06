@@ -23,7 +23,7 @@ type Position @shareable {
 ### @shareable Rules
 
 - If marked `@shareable` in any subgraph, must be `@shareable` or `@external` in all
-- Resolvers must return identical results across subgraphs
+- For entities, all subgraphs must return identical values for shared fields
 - Key fields are automatically shareable
 
 ### Field-Level @shareable
