@@ -1,10 +1,18 @@
 ---
 name: apollo-router-plugin-creator
-description: Create and modify Apollo Router native Rust plugins. Use when users want to create a new router plugin, add service hooks (router_service, supergraph_service, subgraph_service), modify existing plugins, or understand plugin patterns. Triggers on requests like "create a new plugin", "add a router plugin", "modify the X plugin", or "add subgraph_service hook".
+description: >
+  Guide for writing Apollo Router native Rust plugins. Use this skill when:
+  (1) users want to create a new router plugin,
+  (2) users want to add service hooks (router_service, supergraph_service, execution_service, subgraph_service),
+  (3) users want to modify an existing router plugin,
+  (4) users need to understand router plugin patterns or the request lifecycle.
+  (5) triggers on requests like "create a new plugin", "add a router plugin", "modify the X plugin", or "add subgraph_service hook".
 license: MIT
+allowed-tools: Read Write Edit Glob Grep
 metadata:
   author: apollographql
   version: "1.0.0"
+  compatibility: "Requires Apollo Router with native plugin support"
 ---
 
 # Apollo Router Plugin Creator
@@ -13,26 +21,49 @@ Create native Rust plugins for Apollo Router.
 
 ## Request Lifecycle
 
-> **Official diagram:** [Apollo Router Request Lifecycle](https://www.apollographql.com/docs/graphos/routing/customization/rhai#router-request-lifecycle)
-
 ```
-                                    REQUEST FLOW (left to right)
-    ─────────────────────────────────────────────────────────────────────────────────────────►
-
-    ┌──────────────┐    ┌──────────────────┐    ┌───────────────────┐    ┌─────────────────┐
-    │              │    │                  │    │                   │    │  Subgraph A     │
-    │   Router     │    │   Supergraph     │    │    Execution      │    ├─────────────────┤
-────►   Service    ├────►    Service       ├────►     Service       ├────►  Subgraph B     │
-    │              │    │                  │    │                   │    ├─────────────────┤
-    │              │    │                  │    │                   │    │  Subgraph C     │
-    └──────┬───────┘    └────────┬─────────┘    └─────────┬─────────┘    └────────┬────────┘
-           │                     │                        │                       │
-           │ HTTP                │ GraphQL                │ Query Plan            │ Per-subgraph
-           │ headers, path       │ query, variables       │ execution             │ HTTP calls
-           │                     │                        │                       │
-    ◄──────┴───────────────────────────────────────────────────────────────────────┘
-                                    RESPONSE FLOW (right to left)
-    ◄─────────────────────────────────────────────────────────────────────────────────────────
+┌────────┐             ┌────────────────┐                                   ┌────────────────────┐               ┌───────────────────┐       ┌─────────────────────┐
+│ Client │             │ Router Service │                                   │ Supergraph Service │               │ Execution Service │       │ Subgraph Service(s) │
+└────┬───┘             └────────┬───────┘                                   └──────────┬─────────┘               └─────────┬─────────┘       └──────────┬──────────┘
+     │                          │                                                      │                                   │                            │
+     │      Sends request       │                                                      │                                   │                            │
+     │──────────────────────────▶                                                      │                                   │                            │
+     │                          │                                                      │                                   │                            │
+     │                          │  Converts raw HTTP request to GraphQL/JSON request   │                                   │                            │
+     │                          │──────────────────────────────────────────────────────▶                                   │                            │
+     │                          │                                                      │                                   │                            │
+     │                          │                                                      │  Initiates query plan execution   │                            │
+     │                          │                                                      │───────────────────────────────────▶                            │
+     │                          │                                                      │                                   │                            │
+     │                          │                                                      │                               ┌par [Initiates sub-operation]───────┐
+     │                          │                                                      │                               │   │                            │   │
+     │                          │                                                      │                               │   │  Initiates sub-operation   │   │
+     │                          │                                                      │                               │   │────────────────────────────▶   │
+     │                          │                                                      │                               │   │                            │   │
+     │                          │                                                      │                               ├[Initiates sub-operation]╌╌╌╌╌╌╌╌╌╌╌┤
+     │                          │                                                      │                               │   │                            │   │
+     │                          │                                                      │                               │   │  Initiates sub-operation   │   │
+     │                          │                                                      │                               │   │────────────────────────────▶   │
+     │                          │                                                      │                               │   │                            │   │
+     │                          │                                                      │                               ├[Initiates sub-operation]╌╌╌╌╌╌╌╌╌╌╌┤
+     │                          │                                                      │                               │   │                            │   │
+     │                          │                                                      │                               │   │  Initiates sub-operation   │   │
+     │                          │                                                      │                               │   │────────────────────────────▶   │
+     │                          │                                                      │                               │   │                            │   │
+     │                          │                                                      │                               └────────────────────────────────────┘
+     │                          │                                                      │                                   │                            │
+     │                          │                                                      │  Assembles and returns response   │                            │
+     │                          │                                                      ◀╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌│                            │
+     │                          │                                                      │                                   │                            │
+     │                          │            Returns GraphQL/JSON response             │                                   │                            │
+     │                          ◀╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌│                                   │                            │
+     │                          │                                                      │                                   │                            │
+     │  Returns HTTP response   │                                                      │                                   │                            │
+     ◀╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌│                                                      │                                   │                            │
+     │                          │                                                      │                                   │                            │
+┌────┴───┐             ┌────────┴───────┐                                   ┌──────────┴─────────┐               ┌─────────┴─────────┐       ┌──────────┴──────────┐
+│ Client │             │ Router Service │                                   │ Supergraph Service │               │ Execution Service │       │ Subgraph Service(s) │
+└────────┘             └────────────────┘                                   └────────────────────┘               └───────────────────┘       └─────────────────────┘
 ```
 
 ## Service Hooks
