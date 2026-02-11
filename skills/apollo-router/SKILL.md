@@ -11,7 +11,7 @@ license: MIT
 compatibility: Linux/macOS/Windows. Requires a composed supergraph schema from Rover or GraphOS.
 metadata:
   author: apollographql
-  version: "1.0"
+  version: "1.0.0"
 allowed-tools: Bash(router:*) Bash(./router:*) Bash(rover:*) Bash(curl:*) Bash(docker:*) Read Write Edit Glob Grep
 ---
 
