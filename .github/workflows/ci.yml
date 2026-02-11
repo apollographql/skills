@@ -38,6 +38,45 @@ jobs:
           done
           echo "✅ All skills successfully installed"
 
+  validate-plugin:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Validate marketplace.json
+        run: jq empty .claude-plugin/marketplace.json
+
+      - name: Validate plugin.json
+        run: jq empty .claude-plugin/plugin.json
+
+      - name: Cross-check plugin names
+        run: |
+          marketplace_name=$(jq -r '.plugins[0].name' .claude-plugin/marketplace.json)
+          plugin_name=$(jq -r '.name' .claude-plugin/plugin.json)
+          if [ "$marketplace_name" != "$plugin_name" ]; then
+            echo "❌ Name mismatch: marketplace.json has '$marketplace_name', plugin.json has '$plugin_name'"
+            exit 1
+          fi
+          echo "✅ Plugin name '$plugin_name' matches across manifests"
+
+      - name: Verify all skills are discoverable
+        run: |
+          echo "Checking that all skills have SKILL.md files..."
+          count=0
+          for skill in skills/*/; do
+            skill_name=$(basename "$skill")
+            if [ -f "$skill/SKILL.md" ]; then
+              echo "✅ Found $skill_name/SKILL.md"
+              count=$((count + 1))
+            else
+              echo "❌ $skill_name/SKILL.md not found"
+              exit 1
+            fi
+          done
+          echo "✅ All $count skills discoverable by Claude Code plugin"
+
   test-remote:
     runs-on: ubuntu-latest
     # Run only on push to main

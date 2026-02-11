@@ -1,0 +1,13 @@
+{
+  "name": "apollo-graphql",
+  "description": "Apollo GraphQL development skills for Claude Code",
+  "version": "1.0.0",
+  "author": {
+    "name": "Apollo GraphQL",
+    "email": "opensource@apollographql.com"
+  },
+  "homepage": "https://github.com/apollographql/skills",
+  "repository": "https://github.com/apollographql/skills",
+  "license": "MIT",
+  "keywords": ["graphql", "apollo"]
+}
