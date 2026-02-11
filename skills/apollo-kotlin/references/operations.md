@@ -23,7 +23,7 @@ suspend fun loadUser(id: String): User {
 
 ## Subscriptions
 
-- For subscriptions, never use `.execute()` which can only accept one emission, instead use `toFLow()`.
+- For subscriptions, never use `.execute()` which can only accept one emission, instead use `toFlow()`.
 
 ```kotlin
 fun observeMessages() {

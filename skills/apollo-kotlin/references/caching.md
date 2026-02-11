@@ -67,7 +67,7 @@ For the normalized cache to work efficiently, always specify the cache keys of y
 Use it in an `extra.graphqls` file next to the `schema.graphqls` file:
 
 ```graphql
-# The directives must be importeded
+# The directives must be imported
 extend schema
 @link(
   url: "https://specs.apollo.dev/kotlin_labs/v0.5",
