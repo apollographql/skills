@@ -10,7 +10,7 @@ license: MIT
 compatibility: Works with Claude Code, Claude Desktop, Cursor.
 metadata:
   author: apollographql
-  version: "1.0.1"
+  version: "1.0.2"
 allowed-tools: Bash(rover:*) Bash(curl:*) Bash(npx:*) Read Write Edit Glob Grep
 ---
 
@@ -44,7 +44,7 @@ schema:
 operations:
   source: local
   paths:
-    - ./operations/**/*.graphql
+    - ./operations/
 introspection:
   introspect:
     enabled: true
@@ -105,7 +105,7 @@ MCP tools are created from GraphQL operations. Three methods:
 operations:
   source: local
   paths:
-    - ./operations/**/*.graphql
+    - ./operations/
 ```
 
 ```graphql
@@ -214,8 +214,8 @@ overrides:
 schema:
   source: uplink
 graphos:
-  key: ${APOLLO_KEY}
-  graph_ref: my-graph@production
+  apollo_key: ${APOLLO_KEY}
+  apollo_graph_ref: my-graph@production
 ```
 
 ### Local Development
