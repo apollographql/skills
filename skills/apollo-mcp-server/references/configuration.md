@@ -71,8 +71,8 @@ schema:
 schema:
   source: uplink
 graphos:
-  key: ${APOLLO_KEY}
-  graph_ref: my-graph@production
+  apollo_key: ${APOLLO_KEY}
+  apollo_graph_ref: my-graph@production
 ```
 
 #### Introspection
@@ -253,8 +253,8 @@ Connect to Apollo GraphOS for managed schemas and operations.
 
 ```yaml
 graphos:
-  key: ${APOLLO_KEY}
-  graph_ref: my-graph@production
+  apollo_key: ${APOLLO_KEY}
+  apollo_graph_ref: my-graph@production
 ```
 
 ### Environment Variables
@@ -270,8 +270,8 @@ export APOLLO_GRAPH_REF=my-graph@production
 schema:
   source: uplink
 graphos:
-  key: ${APOLLO_KEY}
-  graph_ref: ${APOLLO_GRAPH_REF}
+  apollo_key: ${APOLLO_KEY}
+  apollo_graph_ref: ${APOLLO_GRAPH_REF}
 ```
 
 ---
@@ -351,7 +351,7 @@ All settings support environment variable substitution with `${VAR_NAME}`.
 | Variable | Description |
 |----------|-------------|
 | `APOLLO_KEY` | GraphOS API key |
-| `APOLLO_GRAPH_REF` | Graph reference (graph-id@variant) |
+| `APOLLO_GRAPH_REF` | Graph reference (graph@variant) |
 
 ---
 
@@ -386,8 +386,8 @@ operations:
   source: manifest
   path: ./persisted-query-manifest.json
 graphos:
-  key: ${APOLLO_KEY}
-  graph_ref: ${APOLLO_GRAPH_REF}
+  apollo_key: ${APOLLO_KEY}
+  apollo_graph_ref: ${APOLLO_GRAPH_REF}
 headers:
   Authorization: "Bearer ${API_TOKEN}"
 introspection:

@@ -11,7 +11,7 @@ license: MIT
 compatibility: Node.js v18+, Linux/macOS/Windows
 metadata:
   author: apollographql
-  version: "1.0.0"
+  version: "1.0.1"
 allowed-tools: Bash(rover:*) Bash(curl:*) Bash(npm:*) Bash(npx:*) Read Write Edit Glob Grep
 ---
 
@@ -216,7 +216,7 @@ rover subgraph fetch my-graph@production --name products --format plain
 ## Ground Rules
 
 - ALWAYS authenticate before using GraphOS commands (`rover config auth` or `APOLLO_KEY`)
-- ALWAYS use the correct graph reference format: `graph-id@variant`
+- ALWAYS use the correct graph reference format: `graph@variant`
 - PREFER `rover subgraph check` before `rover subgraph publish` in CI/CD
 - USE `rover dev` for local supergraph development instead of running Router manually
 - NEVER commit `APOLLO_KEY` to version control; use environment variables

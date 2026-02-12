@@ -24,8 +24,13 @@ npx @modelcontextprotocol/inspector
 ### Usage
 
 ```bash
-# Start inspector with your MCP server
+# Start inspector with your MCP server using the STDIO transport
 npx @modelcontextprotocol/inspector .apollo-mcp-server ./config.yaml
+```
+
+```bash
+# Start inspector with your MCP server using the StreamableHttp transport
+npx @modelcontextprotocol/inspector --transport http --server-url http://localhost:8000/mcp
 ```
 
 ### Inspector Features
@@ -197,7 +202,7 @@ echo $APOLLO_GRAPH_REF
 2. Check graph reference format:
 ```yaml
 graphos:
-  graph_ref: my-graph@production  # Format: graph-id@variant
+  apollo_graph_ref: my-graph@production  # Format: graph@variant
 ```
 
 ---
