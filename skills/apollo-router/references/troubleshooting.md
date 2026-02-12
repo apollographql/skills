@@ -32,7 +32,7 @@ Error: configuration error: unknown field `cors`
 Fix: Check YAML syntax and field names:
 ```bash
 # Validate config
-router config validate --config router.yaml
+router config validate router.yaml
 ```
 
 ### Port Already in Use
@@ -149,7 +149,9 @@ Or use `--dev` mode which enables both.
 Access to fetch has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header
 ```
 
-Fix: Configure CORS:
+Fix: Configure CORS using the correct schema for your Router version:
+
+**v1 (flat schema):**
 ```yaml
 cors:
   origins:
@@ -160,11 +162,62 @@ cors:
     - Authorization
 ```
 
+**v2 (policies schema):**
+```yaml
+cors:
+  max_age: 24h
+  policies:
+    - origins:
+        - http://localhost:3000
+        - https://studio.apollographql.com
+      allow_headers:
+        - Content-Type
+        - Authorization
+```
+
 For development (not production):
 ```yaml
+# v1
 cors:
   origins:
     - "*"
+
+# v2
+cors:
+  allow_any_origin: true
+```
+
+**CORS config ignored after upgrading to v2:**
+If you upgraded from v1 to v2 and your CORS settings stopped working, you're
+likely using the v1 flat schema (`cors.origins`). v2 requires the policies
+array format (`cors.policies`). See the [divergence map](../divergence-map.md)
+for the full diff. You can auto-migrate with: `router config upgrade router.yaml`
+
+### JWT Issuer Field Mismatch (v2)
+
+If you migrated from v1 to v2 and kept the singular `issuer` field instead
+of the plural `issuers` array, the config uses a v1-only field. Use `issuers`
+for Router v2.
+
+**Broken (v1 field in v2 config):**
+```yaml
+authentication:
+  router:
+    jwt:
+      jwks:
+        - url: https://auth.example.com/.well-known/jwks.json
+          issuer: https://auth.example.com/   # WRONG for v2!
+```
+
+**Fixed (v2 field):**
+```yaml
+authentication:
+  router:
+    jwt:
+      jwks:
+        - url: https://auth.example.com/.well-known/jwks.json
+          issuers:                              # Correct for v2
+            - https://auth.example.com/
 ```
 
 ## Performance Issues
@@ -241,9 +294,9 @@ Checklist:
 
 ## Health Check
 
-Check Router health:
+Check Router health on the configured health listener (the provided templates use `127.0.0.1:8088/health`):
 ```bash
-curl http://localhost:4000/.well-known/apollo/server-health
+curl http://localhost:8088/health
 ```
 
 Expected response:
@@ -251,12 +304,17 @@ Expected response:
 {"status":"healthy"}
 ```
 
-For Kubernetes readiness probe:
+If you are not using an explicit `health_check` config, Router also exposes:
+```bash
+curl http://localhost:4000/.well-known/apollo/server-health
+```
+
+For Kubernetes readiness probe (matching this skill's templates):
 ```yaml
 readinessProbe:
   httpGet:
-    path: /.well-known/apollo/server-health
-    port: 4000
+    path: /health
+    port: 8088
   initialDelaySeconds: 5
   periodSeconds: 10
 ```

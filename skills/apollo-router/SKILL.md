@@ -1,7 +1,8 @@
 ---
 name: apollo-router
 description: >
-  Guide for configuring and running Apollo Router for federated GraphQL supergraphs. Use this skill when:
+  Version-aware guide for configuring and running Apollo Router for federated GraphQL supergraphs.
+  Generates correct YAML for both Router v1.x and v2.x. Use this skill when:
   (1) setting up Apollo Router to run a supergraph,
   (2) configuring routing, headers, or CORS,
   (3) implementing custom plugins (Rhai scripts or coprocessors),
@@ -11,37 +12,185 @@ license: MIT
 compatibility: Linux/macOS/Windows. Requires a composed supergraph schema from Rover or GraphOS.
 metadata:
   author: apollographql
-  version: "1.0.0"
+  version: "2.0.0"
 allowed-tools: Bash(router:*) Bash(./router:*) Bash(rover:*) Bash(curl:*) Bash(docker:*) Read Write Edit Glob Grep
 ---
 
-# Apollo Router Guide
+# Apollo Router Config Generator
 
 Apollo Router is a high-performance graph router written in Rust for running Apollo Federation 2 supergraphs. It sits in front of your subgraphs and handles query planning, execution, and response composition.
 
-## Quick Start
+**This skill generates version-correct configuration.** Router v1 and v2 have incompatible config schemas in several critical sections (CORS, JWT auth, connectors). Always determine the target version before generating any config.
 
-### Step 1: Install
+## Step 1: Version Selection
+
+Ask the user **before generating any config**:
+
+```
+Which Apollo Router version are you targeting?
+
+  [1] Router v2.x (recommended — current LTS, required for Connectors)
+  [2] Router v1.x (legacy — end-of-support announced, security patches only)
+  [3] Not sure — help me decide
+```
+
+If the user picks **[3]**, display:
+
+```
+Quick guide:
+
+  • Pick v2 if: you're starting fresh, using Apollo Connectors for REST APIs,
+    or want backpressure-based overload protection.
+  • Pick v1 if: you have an existing deployment and haven't migrated yet.
+    Note: Apollo ended active support for v1.x. The v2.10 LTS (Dec 2025)
+    is the current baseline. Migration is strongly recommended.
+
+  Tip: If you have an existing router.yaml, you can auto-migrate it:
+    router config upgrade router.yaml
+```
+
+Store the selection as `ROUTER_VERSION=v1|v2` to gate all subsequent template generation.
+
+## Step 2: Environment Selection
+
+Ask: **Production** or **Development**?
+
+- **Production**: security-hardened defaults (introspection off, sandbox off, homepage off, subgraph errors hidden, auth required, health check on)
+- **Development**: open defaults (introspection on, sandbox on, errors exposed, text logging)
+
+Load the appropriate base template from:
+- `templates/{version}/production.yaml`
+- `templates/{version}/development.yaml`
+
+## Step 3: Feature Selection
+
+Ask which features to include:
+
+- [ ] JWT Authentication
+- [ ] CORS (almost always yes for browser clients)
+- [ ] Operation Limits
+- [ ] Traffic Shaping / Rate Limiting
+- [ ] Telemetry (Prometheus, OTLP tracing, JSON logging)
+- [ ] APQ (Automatic Persisted Queries)
+- [ ] Connectors (REST API integration — Router v2 only; GA key is `connectors`, early v2 preview key was `preview_connectors`)
+- [ ] Subscriptions
+- [ ] Header Propagation
+
+## Step 4: Gather Parameters
+
+For each selected feature, collect required values.
+
+- Use section templates from `templates/{version}/sections/` for `auth`, `cors`, `headers`, `limits`, `telemetry`, and `traffic-shaping`.
+- For Connectors in v2, use `templates/v2/sections/connectors.yaml` as the source.
+- For APQ and subscriptions, copy the snippet from the selected base template (`templates/{version}/production.yaml` or `templates/{version}/development.yaml`) or from references.
+- Only offer Connectors when `ROUTER_VERSION=v2`.
+
+### CORS
+- List of allowed origins (never use `"*"` for production)
+
+### JWT Authentication
+- JWKS URL
+- Issuer(s) — note: v1 uses singular `issuer`, v2 uses plural `issuers` array
+
+### Connectors (v2 only)
+- Subgraph name and source name (used as `connectors.sources.<subgraph>.<source>`)
+- Optional `$config` values for connector runtime configuration
+- If migrating old v2 preview config, rename `preview_connectors` to `connectors`
+
+### Operation Limits
+Present the tuning guidance:
+
+```
+Operation depth limit controls how deeply nested a query can be.
+
+  Router default: 100 (permissive — allows very deep queries)
+  Recommended starting point: 50
+
+  Lower values (15–25) are more secure but will reject legitimate queries
+  in schemas with deep entity relationships or nested fragments.
+  Higher values (75–100) are safer for compatibility but offer less
+  protection against depth-based abuse.
+
+  Tip: Run your router in warn_only mode first to see what depths your
+  real traffic actually uses, then tighten:
+    limits:
+      warn_only: true
+
+What max_depth would you like? [default: 50]
+```
+
+The same principle applies to `max_height`, `max_aliases`, and `max_root_fields`.
+
+### Telemetry
+- OTEL collector endpoint (default: `http://otel-collector:4317`)
+- Prometheus listen port (default: `9090`)
+- Trace sampling rate (default: `0.1` = 10%)
+
+### Traffic Shaping
+- Client-facing rate limit capacity (default: 1000 req/s)
+- Router timeout (default: 60s)
+- Subgraph timeout (default: 30s)
+
+## Step 5: Generate Config
+
+1. Load the correct version template from `templates/{version}/`
+2. Assemble section templates for supported sectioned features, then merge base-template snippets for APQ/subscriptions as needed
+3. Inject user-provided parameters
+4. Add a comment block at the top stating the target version
+
+## Step 6: Validate
+
+Run the [post-generation checklist](validation/checklist.md):
+
+- [ ] All env vars referenced in config are documented
+- [ ] CORS origins don't include wildcards (production)
+- [ ] Rate limiting is on `router:` (client-facing), not only `all:` (subgraph)
+- [ ] JWT uses `issuers` (v2) not `issuer` (v1), or vice versa
+- [ ] If production: introspection=false, sandbox=false, subgraph_errors=false
+- [ ] Health check is enabled
+- [ ] Homepage is disabled (production)
+- [ ] Run: `router config validate <file>` if Router binary is available
+
+## Required Validation Gate (always run)
+
+After generating or editing any `router.yaml`, you MUST:
+
+1. Run `validation/checklist.md` and report pass/fail for each checklist item.
+2. Run `router config validate <path-to-router.yaml>` if Router CLI is available.
+3. If Router CLI is unavailable, state that explicitly and still complete the checklist.
+4. Do not present the configuration as final until validation is completed.
+
+## Step 7: Conditional Next Steps Handoff
+
+After answering any Apollo Router request (config generation, edits, validation, or general Router guidance), decide whether the user already has runnable prerequisites:
+
+- GraphOS-managed path: `APOLLO_KEY` + `APOLLO_GRAPH_REF`, or
+- Local path: a composed `supergraph.graphql` plus reachable subgraphs
+
+If prerequisites are already present, do not add extra handoff text.
+
+If prerequisites are missing or unknown, end with a concise **Next steps** handoff (1-3 lines max):
+
+1. Compose or fetch a supergraph (`rover supergraph compose` or `rover supergraph fetch`).
+2. Run Router with both supergraph and config (`router --supergraph ... --config router.yaml`).
+3. If subgraphs are missing, suggest using related skills (`apollo-server`, `graphql-schema`, `rover`, `graphql-operations`) to scaffold and test.
+
+## Quick Start (for reference)
+
+### Install
 
 ```bash
 # macOS/Linux
 curl -sSL https://router.apollo.dev/download/nix/latest | sh
-
-# Move to PATH
 sudo mv router /usr/local/bin/
-
-# Verify installation
 router --version
-```
 
-Docker:
-```bash
+# Docker
 docker pull ghcr.io/apollographql/router:latest
 ```
 
-### Step 2: Get a Supergraph Schema
+### Get a Supergraph Schema
 
-Create with Rover:
 ```bash
 # Compose from local files
 rover supergraph compose --config supergraph.yaml > supergraph.graphql
@@ -50,7 +199,7 @@ rover supergraph compose --config supergraph.yaml > supergraph.graphql
 rover supergraph fetch my-graph@production > supergraph.graphql
 ```
 
-### Step 3: Run the Router
+### Run the Router
 
 ```bash
 # With local schema
@@ -64,36 +213,6 @@ router --dev --supergraph supergraph.graphql
 ```
 
 Default endpoint: `http://localhost:4000`
-
-## Configuration Overview
-
-Create `router.yaml` to configure the Router:
-
-```yaml
-# Listen address
-supergraph:
-  listen: 127.0.0.1:4000
-  introspection: true
-
-# Enable GraphQL Sandbox
-sandbox:
-  enabled: true
-
-# Header propagation
-headers:
-  all:
-    request:
-      - propagate:
-          matching: "^x-.*"
-
-# CORS configuration
-cors:
-  origins:
-    - http://localhost:3000
-  allow_headers:
-    - Content-Type
-    - Authorization
-```
 
 ## Running Modes
 
@@ -117,58 +236,14 @@ cors:
 
 ## Reference Files
 
-Detailed documentation for specific topics:
-
-- [Configuration](references/configuration.md) - YAML configuration reference
-- [Headers](references/headers.md) - Header propagation and manipulation
-- [Plugins](references/plugins.md) - Rhai scripts and coprocessors
-- [Telemetry](references/telemetry.md) - Tracing, metrics, and logging
-- [Troubleshooting](references/troubleshooting.md) - Common issues and solutions
-
-## Common Patterns
-
-### Production Deployment
-
-```yaml
-# router.yaml for production
-supergraph:
-  listen: 0.0.0.0:4000
-  introspection: false
-
-sandbox:
-  enabled: false
-
-telemetry:
-  exporters:
-    tracing:
-      otlp:
-        enabled: true
-        endpoint: http://collector:4317
-
-include_subgraph_errors:
-  all: false
-```
-
-### With Docker
-
-```bash
-docker run -p 4000:4000 \
-  -v ./supergraph.graphql:/etc/router/supergraph.graphql \
-  -v ./router.yaml:/etc/router/router.yaml \
-  ghcr.io/apollographql/router:latest \
-  --supergraph /etc/router/supergraph.graphql \
-  --config /etc/router/router.yaml
-```
-
-### GraphOS Managed
-
-```bash
-export APOLLO_KEY=service:my-graph:key
-export APOLLO_GRAPH_REF=my-graph@production
-router
-```
-
-The Router automatically fetches and updates the supergraph schema from GraphOS.
+- [Configuration](references/configuration.md) — YAML configuration reference
+- [Headers](references/headers.md) — Header propagation and manipulation
+- [Plugins](references/plugins.md) — Rhai scripts and coprocessors
+- [Telemetry](references/telemetry.md) — Tracing, metrics, and logging
+- [Connectors](references/connectors.md) — Router v2 connectors configuration
+- [Troubleshooting](references/troubleshooting.md) — Common issues and solutions
+- [Divergence Map](divergence-map.md) — v1 ↔ v2 config differences
+- [Validation Checklist](validation/checklist.md) — Post-generation checks
 
 ## CLI Reference
 
@@ -188,11 +263,22 @@ Options:
 
 ## Ground Rules
 
+- ALWAYS determine the target Router version (v1 or v2) before generating config
+- DEFAULT to v2 for new projects
+- ALWAYS include a comment block at top of generated config stating the target version
 - ALWAYS use `--dev` mode for local development (enables introspection and sandbox)
-- ALWAYS disable introspection and sandbox in production
+- ALWAYS disable introspection, sandbox, and homepage in production
 - PREFER GraphOS managed mode for production (automatic updates, metrics)
 - USE `--hot-reload` for local development with file-based schemas
 - NEVER expose `APOLLO_KEY` in logs or version control
-- USE environment variables for sensitive configuration
+- USE environment variables (`${env.VAR}`) for all secrets and sensitive config
 - PREFER YAML configuration over command-line arguments for complex setups
 - TEST configuration changes locally before deploying to production
+- WARN if user enables `allow_any_origin` or wildcard CORS in production
+- RECOMMEND `router config upgrade router.yaml` for v1 → v2 migration instead of regenerating from scratch
+- MUST run `validation/checklist.md` after every router config generation or edit
+- MUST run `router config validate <file>` when Router CLI is available
+- MUST report when CLI validation could not run (for example, Router binary missing)
+- MUST append a brief conditional handoff when runtime prerequisites are missing or unknown
+- USE `max_depth: 50` as the default starting point, not 15 (too aggressive) or 100 (too permissive)
+- RECOMMEND `warn_only: true` for initial limits rollout to observe real traffic before enforcing

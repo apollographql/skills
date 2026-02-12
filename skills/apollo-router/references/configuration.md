@@ -2,7 +2,7 @@
 
 The Router is configured via a YAML file (`router.yaml`). This reference covers the most common configuration options.
 
-## Basic Structure
+## Basic Structure (v2 default)
 
 ```yaml
 supergraph:
@@ -13,9 +13,11 @@ supergraph:
 sandbox:
   enabled: true
 
+homepage:
+  enabled: false
+
 cors:
-  origins:
-    - "*"
+  allow_any_origin: true  # development only
 
 headers:
   all:
@@ -25,6 +27,14 @@ headers:
 
 telemetry:
   # ... telemetry config
+```
+
+## Basic Structure (v1 legacy)
+
+```yaml
+cors:
+  origins:
+    - "*"
 ```
 
 ## Supergraph Configuration
@@ -64,34 +74,43 @@ For development mode, both are enabled automatically with `--dev`.
 
 ## CORS Configuration
 
+> **v1 vs v2**: CORS schemas are incompatible. See [divergence-map.md](../divergence-map.md) for details.
+
+### v1 (flat schema)
+
 ```yaml
 cors:
-  # Allowed origins
   origins:
     - http://localhost:3000
     - https://studio.apollographql.com
-
-  # Allow all origins (not recommended for production)
-  # origins:
-  #   - "*"
-
-  # Allowed headers
   allow_headers:
     - Content-Type
     - Authorization
-    - X-Custom-Header
-
-  # Allowed methods (defaults are usually fine)
   methods:
     - GET
     - POST
     - OPTIONS
-
-  # Allow credentials
   allow_credentials: true
+  max_age: 24h  # duration string
+```
 
-  # Max age for preflight cache (seconds)
-  max_age: 86400
+### v2 (policies schema)
+
+```yaml
+cors:
+  allow_credentials: true
+  methods:
+    - GET
+    - POST
+    - OPTIONS
+  max_age: 24h  # duration string, not integer
+  policies:
+    - origins:
+        - http://localhost:3000
+        - https://studio.apollographql.com
+      allow_headers:
+        - Content-Type
+        - Authorization
 ```
 
 ## Subgraph Configuration
@@ -137,16 +156,35 @@ traffic_shaping:
 
 ## Authentication (JWT)
 
+> **v1 vs v2**: The `issuer` field was renamed to `issuers` (plural array) in v2. `issuer` is v1-only.
+
+### v1
+
 ```yaml
 authentication:
   router:
     jwt:
       jwks:
         - url: https://auth.example.com/.well-known/jwks.json
-          issuer: https://auth.example.com/
+          issuer: https://auth.example.com/  # singular string
 
 authorization:
-  require_authentication: false  # true = require JWT for all requests
+  require_authentication: true
+```
+
+### v2
+
+```yaml
+authentication:
+  router:
+    jwt:
+      jwks:
+        - url: https://auth.example.com/.well-known/jwks.json
+          issuers:                              # plural array
+            - https://auth.example.com/
+
+authorization:
+  require_authentication: true
 ```
 
 ## Response Caching
@@ -259,9 +297,18 @@ supergraph:
 sandbox:
   enabled: false
 
+homepage:
+  enabled: false
+
+health_check:
+  enabled: true
+  listen: 0.0.0.0:8088
+  path: /health
+
 include_subgraph_errors:
   all: false
 
+# CORS — use v1 or v2 format as appropriate (see CORS section above)
 cors:
   origins:
     - https://app.example.com
@@ -273,6 +320,10 @@ telemetry:
         enabled: true
         endpoint: http://collector:4317
 ```
+
+For complete production templates with all features, see:
+- [templates/v1/production.yaml](../templates/v1/production.yaml)
+- [templates/v2/production.yaml](../templates/v2/production.yaml)
 
 ## Environment Variable Expansion
 
@@ -297,5 +348,5 @@ authentication:
 Validate configuration without starting the Router:
 
 ```bash
-router config validate --config router.yaml
+router config validate router.yaml
 ```
