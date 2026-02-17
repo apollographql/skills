@@ -46,23 +46,23 @@ First, add the marketplace:
 Then, install the plugin:
 
 ```bash
-/plugin install apollo-graphql@apollo-graphql
+/plugin install apollo-skills@apollo-marketplace
 ```
 
 Once installed, skills are available as namespaced slash commands:
 
 | Slash Command | Description |
 |---|---|
-| `/apollo-graphql:apollo-client` | Apollo Client 4.x for React — queries, mutations, caching, local state |
-| `/apollo-graphql:apollo-connectors` | Apollo Connectors — integrate REST APIs into GraphQL |
-| `/apollo-graphql:apollo-kotlin` | Apollo Kotlin — GraphQL client for Android and Kotlin |
-| `/apollo-graphql:apollo-mcp-server` | Apollo MCP Server — connect AI agents with GraphQL APIs |
-| `/apollo-graphql:apollo-server` | Apollo Server 4.x — schemas, resolvers, auth, plugins |
-| `/apollo-graphql:graphql-operations` | GraphQL operations — queries, mutations, fragments |
-| `/apollo-graphql:graphql-schema` | GraphQL schema design — types, naming, pagination, errors |
-| `/apollo-graphql:rover` | Rover CLI — schema management and local supergraph development |
-| `/apollo-graphql:rust-best-practices` | Rust best practices — idiomatic Rust following Apollo conventions |
-| `/apollo-graphql:skill-creator` | Skill creator — guide for creating new Apollo skills |
+| `/apollo-skills:apollo-client` | Apollo Client 4.x for React — queries, mutations, caching, local state |
+| `/apollo-skills:apollo-connectors` | Apollo Connectors — integrate REST APIs into GraphQL |
+| `/apollo-skills:apollo-kotlin` | Apollo Kotlin — GraphQL client for Android and Kotlin |
+| `/apollo-skills:apollo-mcp-server` | Apollo MCP Server — connect AI agents with GraphQL APIs |
+| `/apollo-skills:apollo-server` | Apollo Server 4.x — schemas, resolvers, auth, plugins |
+| `/apollo-skills:graphql-operations` | GraphQL operations — queries, mutations, fragments |
+| `/apollo-skills:graphql-schema` | GraphQL schema design — types, naming, pagination, errors |
+| `/apollo-skills:rover` | Rover CLI — schema management and local supergraph development |
+| `/apollo-skills:rust-best-practices` | Rust best practices — idiomatic Rust following Apollo conventions |
+| `/apollo-skills:skill-creator` | Skill creator — guide for creating new Apollo skills |
 
 ## Available Skills
 
@@ -578,7 +578,7 @@ You can also explicitly invoke a skill depending on your tool:
 
 | Tool           | Automatic | Explicit Invocation                                     |
 | -------------- | --------- | ------------------------------------------------------- |
-| Claude Code    | Yes       | Slash command (e.g., `/graphql-schema` or `/apollo-graphql:graphql-schema` via plugin) |
+| Claude Code    | Yes       | Slash command (e.g., `/graphql-schema` or `/apollo-skills:graphql-schema` via plugin) |
 | GitHub Copilot | Yes       | `/agent` for custom agents, `@github` for GitHub skills |
 | Cursor         | Yes       | Rules matched by file patterns (no direct invocation)   |
 | Windsurf       | Yes       | Slash command for workflows (e.g., `/workflow-name`)    |
