@@ -1,20 +1,17 @@
 {
-  "name": "apollo-graphql",
+  "name": "apollo-plugins",
   "owner": {
-    "name": "Apollo GraphQL"
+    "name": "Apollo GraphQL",
+    "email": "opensource@apollographql.com"
   },
   "metadata": {
-    "description": "Skills for AI coding agents working with Apollo GraphQL tools and technologies",
+    "description": "Bundled plugins for GraphQL development with Apollo tools and technologies",
     "version": "1.0.0"
   },
   "plugins": [
     {
-      "name": "apollo-graphql",
-      "source": ".",
-      "description": "Apollo GraphQL development skills covering Client, Server, Connectors, Kotlin, Rover, MCP Server, schema design, operations, and Rust best practices",
-      "version": "1.0.0",
-      "license": "MIT",
-      "keywords": ["graphql", "apollo", "apollo-client", "apollo-server", "apollo-connectors", "rover"]
+      "name": "apollo-skills",
+      "source": "./"
     }
   ]
 }

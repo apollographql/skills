@@ -1,13 +1,14 @@
 {
-  "name": "apollo-graphql",
-  "description": "Apollo GraphQL development skills for Claude Code",
+  "name": "apollo-skills",
+  "description": "Agent skills for AI coding agents working with Apollo GraphQL tools and technologies",
   "version": "1.0.0",
   "author": {
     "name": "Apollo GraphQL",
     "email": "opensource@apollographql.com"
   },
-  "homepage": "https://github.com/apollographql/skills",
+  "homepage": "https://www.apollographql.com",
   "repository": "https://github.com/apollographql/skills",
   "license": "MIT",
-  "keywords": ["graphql", "apollo"]
+  "keywords": ["graphql", "apollo", "apollo-client", "apollo-connectors", "apollo-federation", "apollo-kotlin", "apollo-mcp-server", "apollo-router", "apollo-server", "graphql-operations", "graphql-schema", "rover", "rust-best-practices"],
+  "category": "graphql"
 }
