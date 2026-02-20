@@ -11,7 +11,7 @@ compatibility: Works with Claude Code, Claude Desktop, Cursor.
 metadata:
   author: apollographql
   version: "1.0.2"
-allowed-tools: Bash(rover:*) Bash(curl:*) Bash(npx:*) Read Write Edit Glob Grep
+allowed-tools: Bash(rover:*) Bash(npx:*) Read Write Edit Glob Grep
 ---
 
 # Apollo MCP Server Guide

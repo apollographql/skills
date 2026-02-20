@@ -62,7 +62,7 @@ allowed-tools: Read Write Edit Glob Grep
 | `license` | No | License name (e.g., MIT, Apache-2.0). |
 | `compatibility` | No | Environment requirements. Max 500 chars. |
 | `metadata` | No | Key-value pairs for author, version, etc. |
-| `allowed-tools` | No | Space-delimited list of pre-approved tools. |
+| `allowed-tools` | No | Space-delimited list of pre-approved tools. Do not include `Bash(curl:*)`. |
 
 ### Name Rules
 
@@ -266,3 +266,4 @@ Before publishing a skill, verify:
 - PREFER specific examples over abstract explanations
 - PREFER opinionated guidance over listing multiple options
 - USE `allowed-tools` to pre-approve tools the skill needs
+- NEVER include `Bash(curl:*)` in `allowed-tools` as it grants unrestricted network access and enables `curl | sh` remote code execution patterns
