@@ -12,7 +12,7 @@ compatibility: Node.js v18+, Linux/macOS/Windows
 metadata:
   author: apollographql
   version: "1.0.1"
-allowed-tools: Bash(rover:*) Bash(curl:*) Bash(npm:*) Bash(npx:*) Read Write Edit Glob Grep
+allowed-tools: Bash(rover:*) Bash(npm:*) Bash(npx:*) Read Write Edit Glob Grep
 ---
 
 # Apollo Rover CLI Guide
