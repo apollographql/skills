@@ -39,6 +39,14 @@ Run through this checklist after generating a `router.yaml` to catch common mist
 - [ ] **Tracing sampler is set**: `sampler: 0.1` (10%) is a reasonable default; tune for your traffic volume
 - [ ] **Service name is set**: `common.service_name` identifies this router instance
 
+## Response Caching (if enabled)
+
+- [ ] **Redis URL uses env var**: `${env.CACHE_REDIS_URL}`, not hardcoded
+- [ ] **Invalidation shared key uses env var**: `${env.INVALIDATION_SHARED_KEY}`
+- [ ] **Debug mode disabled** (production): `response_cache.debug` is absent or `false`
+- [ ] **TTL is set**: explicit `ttl` on `subgraph.all` or per-subgraph
+- [ ] **Invalidation endpoint not publicly exposed** (production): bind to `127.0.0.1`, not `0.0.0.0`
+
 ## Recommended Final Step
 
 ```bash
