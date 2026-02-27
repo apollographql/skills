@@ -14,7 +14,9 @@
 
 ## Introspection Tools
 
-Apollo MCP Server provides four built-in tools for schema exploration and operation execution.
+Apollo MCP Server provides four built-in tools for schema exploration and operation execution. All tools are disabled by default and must be enabled in configuration.
+
+Each introspection tool supports an optional `hint` config option for providing custom instructions to the AI agent about when and how to use the tool.
 
 ### introspect
 
@@ -54,7 +56,7 @@ type User {
 
 **Output (minified):**
 ```
-T User { id:ID! name:s! email:s posts:[Post!]! createdAt:DateTime! }
+T User { id:d! name:s! email:s posts:[Post!]! createdAt:DateTime! }
 ```
 
 **Depth Behavior:**
@@ -75,6 +77,13 @@ Find types in the schema matching a query.
 | `query` | String | required | Search term |
 | `leafDepth` | Int | 1 | Depth for leaf type expansion |
 | `minify` | Boolean | false | Use compact notation |
+
+**Config Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `index_memory_bytes` | `50000000` | Memory budget for the search index |
+| `leaf_depth` | `1` | Default leaf type expansion depth |
 
 **Behavior:**
 
@@ -207,7 +216,7 @@ Compact notation reduces token usage by 40-60%. Enable globally or per-request.
 | `I` | input |
 | `E` | enum |
 | `U` | union |
-| `IF` | interface |
+| `F` | interface |
 
 ### Scalar Abbreviations
 
@@ -217,7 +226,7 @@ Compact notation reduces token usage by 40-60%. Enable globally or per-request.
 | `i` | Int |
 | `f` | Float |
 | `b` | Boolean |
-| `ID` | ID (unchanged) |
+| `d` | ID |
 
 ### Modifiers
 
@@ -228,6 +237,8 @@ Compact notation reduces token usage by 40-60%. Enable globally or per-request.
 | **[!]** | List of non-null |
 | **[]!** | Non-null list |
 | **[!]!** | Non-null list of non-null |
+| `@D` | Deprecated |
+| `<>` | Implements |
 
 ### Examples
 
@@ -245,7 +256,7 @@ type Product {
 
 **Minified:**
 ```
-T Product { id:ID! name:s! price:f! description:s tags:[s!]! variants:[ProductVariant!] }
+T Product { id:d! name:s! price:f! description:s tags:[s!]! variants:[ProductVariant!] }
 ```
 
 ---

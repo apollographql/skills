@@ -19,7 +19,7 @@ jobs:
 
       - name: Install all skills (local)
         run: |
-          npx skills add . --yes
+          npx skills@1.4.0 add . --yes
           echo "✅ Successfully installed all skills locally"
 
       - name: Verify skills installed
