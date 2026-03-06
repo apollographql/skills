@@ -1,0 +1,271 @@
+name: AI Skill Sync
+
+on:
+  repository_dispatch:
+    types: [product-update]
+  workflow_dispatch:
+    inputs:
+      product:
+        description: "Skill name (directory under skills/)"
+        required: true
+        type: string
+      repository:
+        description: "Product repository (owner/repo). Defaults to apollographql/{product}."
+        required: false
+        type: string
+      version:
+        description: "Version tag to sync to (leave empty for latest stable)"
+        required: false
+        type: string
+
+concurrency:
+  group: ai-skill-sync-${{ inputs.product || github.event.client_payload.product }}
+  cancel-in-progress: true
+
+jobs:
+  resolve-inputs:
+    runs-on: ubuntu-latest
+    outputs:
+      product: ${{ steps.resolve.outputs.product }}
+      repository: ${{ steps.resolve.outputs.repository }}
+      version: ${{ steps.version.outputs.target }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout skills repo
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: skills
+          sparse-checkout-cone-mode: true
+
+      - name: Resolve and validate inputs
+        id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            PRODUCT="${{ inputs.product }}"
+            REPO="${{ inputs.repository }}"
+            REPO="${REPO:-apollographql/$PRODUCT}"
+          else
+            PRODUCT="${{ github.event.client_payload.product }}"
+            REPO="${{ github.event.client_payload.repository }}"
+          fi
+
+          if [ ! -d "skills/$PRODUCT" ]; then
+            echo "::error::Skill directory 'skills/$PRODUCT' does not exist"
+            exit 1
+          fi
+
+          echo "product=$PRODUCT" >> "$GITHUB_OUTPUT"
+          echo "repository=$REPO" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout product repo
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ steps.resolve.outputs.repository }}
+          path: product-repo
+          fetch-depth: 0
+          # No ref here — we need all tags for version resolution.
+          # The resolved version is used as ref in downstream jobs.
+
+      - name: Resolve version
+        id: version
+        env:
+          INPUT_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.event.client_payload.version }}
+        run: |
+          cd product-repo
+          if [ -n "$INPUT_VERSION" ]; then
+            echo "target=$INPUT_VERSION" >> "$GITHUB_OUTPUT"
+          else
+            LATEST=$(git tag --list 'v*' --sort=-version:refname \
+              | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+              | head -1)
+            if [ -z "$LATEST" ]; then
+              echo "::error::No stable version tags found in ${{ steps.resolve.outputs.repository }}"
+              exit 1
+            fi
+            echo "target=$LATEST" >> "$GITHUB_OUTPUT"
+            echo "Auto-detected latest stable version: $LATEST"
+          fi
+
+  triage:
+    needs: resolve-inputs
+    runs-on: ubuntu-latest
+    outputs:
+      needs_update: ${{ steps.parse.outputs.needs_update }}
+      reason: ${{ steps.parse.outputs.reason }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout skills repo
+        uses: actions/checkout@v6
+
+      - name: Checkout product repo
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ needs.resolve-inputs.outputs.repository }}
+          ref: ${{ needs.resolve-inputs.outputs.version }}
+          path: product-repo
+          fetch-depth: 0
+
+      - name: Generate diff between releases
+        id: diff
+        env:
+          VERSION: ${{ needs.resolve-inputs.outputs.version }}
+        run: |
+          cd product-repo
+          # Find the previous stable release tag
+          PREV_TAG=$(git tag --list 'v*' --sort=-version:refname \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | grep -v "^${VERSION}$" \
+            | head -1) || true
+          if [ -n "$PREV_TAG" ]; then
+            git diff "${PREV_TAG}...${VERSION}" > ../changes.diff
+            echo "prev_tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
+          else
+            # First release — diff entire tree
+            git diff --no-index /dev/null . > ../changes.diff || true
+            echo "prev_tag=" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Diff size: $(wc -c < ../changes.diff) bytes"
+
+      - name: Triage changes
+        id: triage
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            The ${{ needs.resolve-inputs.outputs.product }} product has a new release.
+            Repository: ${{ needs.resolve-inputs.outputs.repository }}
+            Version: ${{ needs.resolve-inputs.outputs.version }}
+            Previous version: ${{ steps.diff.outputs.prev_tag }}
+
+            The full diff between releases is in changes.diff.
+            The product source code is in product-repo/.
+
+            Review the diff against the current skill in
+            skills/${{ needs.resolve-inputs.outputs.product }}/.
+
+            Read all skill files (SKILL.md and everything in references/) to
+            understand what the skill currently documents.
+
+            Determine if the skill needs updating. It DOES need updating if:
+            - An API or config option documented in the skill has changed
+            - A code example in the skill is now incorrect
+            - A recommended pattern has been deprecated or replaced
+            - A breaking change affects the skill's guidance
+
+            It does NOT need updating if:
+            - New features were added that the skill doesn't cover yet
+            - Internal refactoring with no user-facing impact
+            - Minor bug fixes unrelated to skill content
+            - Documentation typo fixes in the product repo
+
+            Respond with exactly one line:
+            NEEDS_UPDATE: <brief reason>
+            or
+            NO_UPDATE_NEEDED: <brief reason>
+          claude_args: "--allowedTools Read,Glob,Grep --max-turns 10"
+
+      - name: Parse triage result
+        id: parse
+        env:
+          TRIAGE_RESULT: ${{ steps.triage.outputs.result }}
+        run: |
+          RESULT="$TRIAGE_RESULT"
+          if echo "$RESULT" | grep -q "^NEEDS_UPDATE:"; then
+            echo "needs_update=true" >> "$GITHUB_OUTPUT"
+            REASON=$(echo "$RESULT" | grep "^NEEDS_UPDATE:" | sed 's/^NEEDS_UPDATE: //')
+            echo "reason=$REASON" >> "$GITHUB_OUTPUT"
+          else
+            echo "needs_update=false" >> "$GITHUB_OUTPUT"
+            REASON=$(echo "$RESULT" | grep "^NO_UPDATE_NEEDED:" | sed 's/^NO_UPDATE_NEEDED: //' || true)
+            echo "reason=$REASON" >> "$GITHUB_OUTPUT"
+          fi
+
+  update-skill:
+    needs: [resolve-inputs, triage]
+    if: needs.triage.outputs.needs_update == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout skills repo
+        uses: actions/checkout@v6
+
+      - name: Checkout product repo
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ needs.resolve-inputs.outputs.repository }}
+          ref: ${{ needs.resolve-inputs.outputs.version }}
+          path: product-repo
+          fetch-depth: 0
+
+      - name: Generate diff between releases
+        id: diff
+        env:
+          VERSION: ${{ needs.resolve-inputs.outputs.version }}
+        run: |
+          cd product-repo
+          PREV_TAG=$(git tag --list 'v*' --sort=-version:refname \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | grep -v "^${VERSION}$" \
+            | head -1) || true
+          if [ -n "$PREV_TAG" ]; then
+            git diff "${PREV_TAG}...${VERSION}" > ../changes.diff
+            echo "prev_tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
+          else
+            git diff --no-index /dev/null . > ../changes.diff || true
+            echo "prev_tag=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate skill updates with AI
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            The ${{ needs.resolve-inputs.outputs.product }} product has been updated.
+            Repository: ${{ needs.resolve-inputs.outputs.repository }}
+            Version: ${{ needs.resolve-inputs.outputs.version }}
+            Previous version: ${{ steps.diff.outputs.prev_tag }}
+            Triage reason: ${{ needs.triage.outputs.reason }}
+
+            The full diff between releases is in changes.diff.
+            The product source code is in product-repo/.
+
+            Read all skill files in skills/${{ needs.resolve-inputs.outputs.product }}/
+            (SKILL.md and everything in references/) to understand current content.
+
+            Then review the diff and update the skill accordingly.
+
+            Rules:
+            - Only update content affected by the changes
+            - Do NOT add coverage for new features unless they replace existing ones
+            - Focus on correcting APIs, config options, examples, and
+              troubleshooting scenarios that are now inaccurate
+            - Preserve the existing structure and style of the skill files
+            - If the version changed, update the version in SKILL.md frontmatter
+          claude_args: "--allowedTools Read,Write,Edit,Glob,Grep --max-turns 20"
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          add-paths: skills/
+          title: "[${{ needs.resolve-inputs.outputs.product }}] AI-generated skill update"
+          body: |
+            AI-generated skill update based on product release.
+
+            **Repository:** ${{ needs.resolve-inputs.outputs.repository }}
+            **Version:** ${{ needs.resolve-inputs.outputs.version }}
+            **Previous version:** ${{ steps.diff.outputs.prev_tag }}
+            **Trigger:** ${{ github.event_name == 'workflow_dispatch' && 'Manual' || 'Automatic' }}
+            **Triage reason:** ${{ needs.triage.outputs.reason }}
+
+            ---
+
+            > **Please review carefully before merging.** This PR was generated by AI based on product changes.
+          labels: ai-generated
+          branch: ai-update/${{ needs.resolve-inputs.outputs.product }}
+          commit-message: "Update ${{ needs.resolve-inputs.outputs.product }} skill based on product changes"

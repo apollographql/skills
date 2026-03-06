@@ -14,7 +14,7 @@
 ## 8.2 When to use comments
 
 Use `//` comments (double slashed) when something can't be expressed clearly in code, like:
-* **Safety Guarantees**, some of done can be better expressed with code conditionals.
+* **Safety Guarantees**, some of which can be better expressed with code conditionals.
 * Workarounds or **Optimizations**.
 * Legacy or **platform-specific** behaviors. Some of them can be expressed with `#[cfg(..)]`.
 * Links to **Design Docs** or **ADRs**.
@@ -52,7 +52,7 @@ fn compute(counter: &mut usize) {
 
 ### ❌ Too long or outdated
 ```rust
-// Originally written in 2028 for some now-defunt platform
+// Originally written in 2028 for some now-defunct platform
 ```
 
 ## 8.4 Don't Write Living Documentation (living comments)
@@ -105,7 +105,7 @@ fn save_auth_user(&self) -> Result<PathBuf, MyError> {
 ## 8.6 `TODO` should become issues
 
 Don't leave `// TODO:` scattered around the codebase with no owner. Instead:
-1. File Github Issue or Jira Ticker. (Prefer github issues on public repositories).
+1. File Github Issue or Jira Ticket. (Prefer github issues on public repositories).
 2. Reference the issue in the code:
 
 ```rust
