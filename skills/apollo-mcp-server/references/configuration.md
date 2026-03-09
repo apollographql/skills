@@ -289,16 +289,27 @@ custom_scalars: ./scalars.json
 
 ```yaml
 cors:
-  allow_origins:
+  enabled: true
+  origins:
     - http://localhost:3000
     - https://app.example.com
+  # OR use match_origins for regex pattern matching:
+  # match_origins:
+  #   - "^https://([a-z0-9]+[.])*example.com$"
+  # OR allow all origins (cannot be used with allow_credentials):
+  # allow_any_origin: true
+  allow_credentials: true
   allow_methods:
     - GET
     - POST
   allow_headers:
-    - Content-Type
-    - Authorization
-  allow_credentials: true
+    - accept
+    - content-type
+    - mcp-protocol-version
+    - mcp-session-id
+  expose_headers:
+    - mcp-session-id
+  max_age: 7200
 ```
 
 ### Health Check
