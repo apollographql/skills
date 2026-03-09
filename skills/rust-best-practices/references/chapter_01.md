@@ -376,7 +376,7 @@ const THREE_HALVES: f32 = 1.5;
 fn q_rsqrt(number: f32 ) -> f32 {
     let mut i: i32 = number.to_bits() as i32;
     i = 0x5F375A86_i32.wrapping_sub(i >> 1);
-    let y: f32 = f32::from_bits(i as u32);
+    let y = f32::from_bits(i as u32);
     y * (THREE_HALVES - (number * 0.5 * y * y))
 }
 ```
