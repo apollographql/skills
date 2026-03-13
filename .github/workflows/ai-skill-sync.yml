@@ -139,25 +139,26 @@ jobs:
             - The skill already accurately and comprehensively reflects the product source
             - Minor differences that don't affect correctness
 
-            Respond with exactly one line:
-            NEEDS_UPDATE: <brief reason>
-            or
-            NO_UPDATE_NEEDED: <brief reason>
-          claude_args: "--allowedTools Read,Glob,Grep --max-turns 10"
+            Respond with your assessment as structured output.
+          claude_args: >-
+            --allowedTools Read,Glob,Grep
+            --max-turns 10
+            --output-format json
+            --json-schema '{"type":"object","properties":{"needs_update":{"type":"boolean"},"reason":{"type":"string"}},"required":["needs_update","reason"]}'
 
       - name: Parse triage result
         id: parse
         env:
-          TRIAGE_RESULT: ${{ steps.triage.outputs.result }}
+          TRIAGE_OUTPUT: ${{ steps.triage.outputs.structured_output }}
         run: |
-          RESULT="$TRIAGE_RESULT"
-          if echo "$RESULT" | grep -q "^NEEDS_UPDATE:"; then
-            echo "needs_update=true" >> "$GITHUB_OUTPUT"
-            REASON=$(echo "$RESULT" | grep "^NEEDS_UPDATE:" | sed 's/^NEEDS_UPDATE: //')
-            echo "reason=$REASON" >> "$GITHUB_OUTPUT"
-          else
+          if [ -z "$TRIAGE_OUTPUT" ]; then
+            echo "::warning::Triage produced no structured output, skipping update"
             echo "needs_update=false" >> "$GITHUB_OUTPUT"
-            REASON=$(echo "$RESULT" | grep "^NO_UPDATE_NEEDED:" | sed 's/^NO_UPDATE_NEEDED: //' || true)
+            echo "reason=Triage produced no output" >> "$GITHUB_OUTPUT"
+          else
+            NEEDS_UPDATE=$(echo "$TRIAGE_OUTPUT" | jq -r '.needs_update')
+            REASON=$(echo "$TRIAGE_OUTPUT" | jq -r '.reason')
+            echo "needs_update=$NEEDS_UPDATE" >> "$GITHUB_OUTPUT"
             echo "reason=$REASON" >> "$GITHUB_OUTPUT"
           fi
 
