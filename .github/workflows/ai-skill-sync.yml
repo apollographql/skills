@@ -106,28 +106,6 @@ jobs:
           repository: ${{ needs.resolve-inputs.outputs.repository }}
           ref: ${{ needs.resolve-inputs.outputs.version }}
           path: product-repo
-          fetch-depth: 0
-
-      - name: Generate diff between releases
-        id: diff
-        env:
-          VERSION: ${{ needs.resolve-inputs.outputs.version }}
-        run: |
-          cd product-repo
-          # Find the previous stable release tag
-          PREV_TAG=$(git tag --list 'v*' --sort=-version:refname \
-            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
-            | grep -v "^${VERSION}$" \
-            | head -1) || true
-          if [ -n "$PREV_TAG" ]; then
-            git diff "${PREV_TAG}...${VERSION}" > ../changes.diff
-            echo "prev_tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
-          else
-            # First release — diff entire tree
-            git diff --no-index /dev/null . > ../changes.diff || true
-            echo "prev_tag=" >> "$GITHUB_OUTPUT"
-          fi
-          echo "Diff size: $(wc -c < ../changes.diff) bytes"
 
       - name: Triage changes
         id: triage
@@ -135,31 +113,30 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            The ${{ needs.resolve-inputs.outputs.product }} product has a new release.
+            The ${{ needs.resolve-inputs.outputs.product }} product is at version
+            ${{ needs.resolve-inputs.outputs.version }}.
             Repository: ${{ needs.resolve-inputs.outputs.repository }}
-            Version: ${{ needs.resolve-inputs.outputs.version }}
-            Previous version: ${{ steps.diff.outputs.prev_tag }}
 
-            The full diff between releases is in changes.diff.
-            The product source code is in product-repo/.
-
-            Review the diff against the current skill in
-            skills/${{ needs.resolve-inputs.outputs.product }}/.
+            The product source code at this version is in product-repo/.
+            The current skill content is in skills/${{ needs.resolve-inputs.outputs.product }}/.
 
             Read all skill files (SKILL.md and everything in references/) to
             understand what the skill currently documents.
 
-            Determine if the skill needs updating. It DOES need updating if:
+            Then read the relevant product source code (docs, README, config
+            schemas, CLI help, public APIs) to understand the current state of
+            the product.
+
+            Compare the skill content against the product source and determine
+            if the skill needs updating. It DOES need updating if:
             - An API or config option documented in the skill has changed
             - A code example in the skill is now incorrect
             - A recommended pattern has been deprecated or replaced
             - A breaking change affects the skill's guidance
 
             It does NOT need updating if:
-            - New features were added that the skill doesn't cover yet
-            - Internal refactoring with no user-facing impact
-            - Minor bug fixes unrelated to skill content
-            - Documentation typo fixes in the product repo
+            - The skill already accurately reflects the product source
+            - Minor differences that don't affect correctness
 
             Respond with exactly one line:
             NEEDS_UPDATE: <brief reason>
@@ -201,47 +178,31 @@ jobs:
           repository: ${{ needs.resolve-inputs.outputs.repository }}
           ref: ${{ needs.resolve-inputs.outputs.version }}
           path: product-repo
-          fetch-depth: 0
-
-      - name: Generate diff between releases
-        id: diff
-        env:
-          VERSION: ${{ needs.resolve-inputs.outputs.version }}
-        run: |
-          cd product-repo
-          PREV_TAG=$(git tag --list 'v*' --sort=-version:refname \
-            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
-            | grep -v "^${VERSION}$" \
-            | head -1) || true
-          if [ -n "$PREV_TAG" ]; then
-            git diff "${PREV_TAG}...${VERSION}" > ../changes.diff
-            echo "prev_tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
-          else
-            git diff --no-index /dev/null . > ../changes.diff || true
-            echo "prev_tag=" >> "$GITHUB_OUTPUT"
-          fi
 
       - name: Generate skill updates with AI
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            The ${{ needs.resolve-inputs.outputs.product }} product has been updated.
+            The ${{ needs.resolve-inputs.outputs.product }} product is at version
+            ${{ needs.resolve-inputs.outputs.version }}.
             Repository: ${{ needs.resolve-inputs.outputs.repository }}
-            Version: ${{ needs.resolve-inputs.outputs.version }}
-            Previous version: ${{ steps.diff.outputs.prev_tag }}
             Triage reason: ${{ needs.triage.outputs.reason }}
 
-            The full diff between releases is in changes.diff.
-            The product source code is in product-repo/.
+            The product source code at this version is in product-repo/.
+            The current skill content is in skills/${{ needs.resolve-inputs.outputs.product }}/.
 
-            Read all skill files in skills/${{ needs.resolve-inputs.outputs.product }}/
-            (SKILL.md and everything in references/) to understand current content.
+            Read all skill files (SKILL.md and everything in references/) to
+            understand current content.
 
-            Then review the diff and update the skill accordingly.
+            Then read the relevant product source code (docs, README, config
+            schemas, CLI help, public APIs) to understand the current state of
+            the product.
+
+            Update the skill to accurately reflect the product at this version.
 
             Rules:
-            - Only update content affected by the changes
+            - Only update content that is inaccurate or outdated
             - Do NOT add coverage for new features unless they replace existing ones
             - Focus on correcting APIs, config options, examples, and
               troubleshooting scenarios that are now inaccurate
@@ -259,7 +220,6 @@ jobs:
 
             **Repository:** ${{ needs.resolve-inputs.outputs.repository }}
             **Version:** ${{ needs.resolve-inputs.outputs.version }}
-            **Previous version:** ${{ steps.diff.outputs.prev_tag }}
             **Trigger:** ${{ github.event_name == 'workflow_dispatch' && 'Manual' || 'Automatic' }}
             **Triage reason:** ${{ needs.triage.outputs.reason }}
 
