@@ -133,10 +133,10 @@ jobs:
             - A code example in the skill is now incorrect
             - A recommended pattern has been deprecated or replaced
             - A breaking change affects the skill's guidance
+            - New product features are not covered in the skill
 
             It does NOT need updating if:
-            - The skill already accurately reflects the product source
-            - Product features not yet covered in the skill (adding new coverage is out of scope)
+            - The skill already accurately and comprehensively reflects the product source
             - Minor differences that don't affect correctness
 
             Respond with exactly one line:
@@ -203,10 +203,8 @@ jobs:
             Update the skill to accurately reflect the product at this version.
 
             Rules:
-            - Only update content that is inaccurate or outdated
-            - Do NOT add coverage for new features unless they replace existing ones
-            - Focus on correcting APIs, config options, examples, and
-              troubleshooting scenarios that are now inaccurate
+            - Correct content that is inaccurate or outdated
+            - Add coverage for new product features that are missing from the skill
             - Preserve the existing structure and style of the skill files
             - If the version changed, update the version in SKILL.md frontmatter
           claude_args: "--allowedTools Read,Write,Edit,Glob,Grep --max-turns 20"
