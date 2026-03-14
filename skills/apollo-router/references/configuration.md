@@ -187,22 +187,21 @@ authorization:
   require_authentication: true
 ```
 
-## Response Caching
+## Response Caching (v2.6.0+)
+
+> Response caching uses the `response_cache` top-level key (not `supergraph.cache`).
+> See [response-caching.md](response-caching.md) for full setup, schema directives, invalidation, and observability.
 
 ```yaml
-# In-memory response caching
-supergraph:
-  cache:
-    in_memory:
-      limit: 100MB
-
-# Redis-backed caching
-supergraph:
-  cache:
-    redis:
-      urls:
-        - redis://localhost:6379
-      ttl: 300s
+# Minimal response caching setup
+response_cache:
+  enabled: true
+  subgraph:
+    all:
+      enabled: true
+      ttl: 5m
+      redis:
+        urls: ["redis://localhost:6379"]
 ```
 
 ## Persisted Queries (APQ)

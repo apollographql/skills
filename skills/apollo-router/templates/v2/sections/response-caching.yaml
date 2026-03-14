@@ -1,0 +1,19 @@
+# Response Caching — v2 (v2.6.0+)
+# Requires Redis. Entity-level and root-field caching for subgraph responses.
+# Use @cacheControl and @cacheTag directives in subgraph schemas to control behavior.
+# See references/response-caching.md for full setup, invalidation, and observability.
+response_cache:
+  enabled: true
+  subgraph:
+    all:
+      enabled: true
+      ttl: ${env.CACHE_DEFAULT_TTL:-5m}
+      redis:
+        urls:
+          - ${env.CACHE_REDIS_URL:-redis://localhost:6379}
+      invalidation:
+        enabled: true
+        shared_key: ${env.INVALIDATION_SHARED_KEY}
+  invalidation:
+    listen: 127.0.0.1:4000
+    path: /invalidation
