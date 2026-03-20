@@ -10,7 +10,7 @@ license: MIT
 compatibility: Works with Claude Code, Claude Desktop, Cursor.
 metadata:
   author: apollographql
-  version: "1.1.0"
+  version: "1.1.1"
 allowed-tools: Bash(rover:*) Bash(npx:*) Read Write Edit Glob Grep
 ---
 
@@ -124,8 +124,10 @@ operations:
     - ./operations/
 ```
 
+Each file must contain exactly one operation. Each named operation becomes an MCP tool.
+
 ```graphql
-# operations/users.graphql
+# operations/GetUser.graphql
 query GetUser($id: ID!) {
   user(id: $id) {
     id
@@ -133,7 +135,10 @@ query GetUser($id: ID!) {
     email
   }
 }
+```
 
+```graphql
+# operations/CreateUser.graphql
 mutation CreateUser($input: CreateUserInput!) {
   createUser(input: $input) {
     id
@@ -141,8 +146,6 @@ mutation CreateUser($input: CreateUserInput!) {
   }
 }
 ```
-
-Each named operation becomes an MCP tool.
 
 ### 2. Operation Collections
 
