@@ -45,7 +45,7 @@ response_cache:
   subgraph:
     all:
       enabled: true
-      ttl: ${env.CACHE_DEFAULT_TTL:-5m}
+      ttl: "${env.CACHE_DEFAULT_TTL:-5m}"
       redis:
         urls: ["${env.CACHE_REDIS_URL:-redis://localhost:6379}"]
         fetch_timeout: 250ms   # Default: 150ms
@@ -56,7 +56,7 @@ response_cache:
         required_to_start: false   # Set true to block startup if Redis is down
       invalidation:
         enabled: true
-        shared_key: ${env.INVALIDATION_SHARED_KEY}
+        shared_key: "${env.INVALIDATION_SHARED_KEY}"
     subgraphs:
       inventory:
         enabled: false  # Disable caching for a specific subgraph
@@ -194,7 +194,7 @@ response_cache:
         urls: ["${env.CACHE_REDIS_URL:-redis://localhost:6379}"]
       invalidation:
         enabled: true
-        shared_key: ${env.INVALIDATION_SHARED_KEY}
+        shared_key: "${env.INVALIDATION_SHARED_KEY}"
 ```
 
 **Invalidation request formats:**
@@ -359,13 +359,13 @@ response_cache:
       enabled: true
       redis:
         urls: ["rediss://${env.REDIS_HOST}:6379"]
-        username: ${env.REDIS_USERNAME}
-        password: ${env.REDIS_PASSWORD}
+        username: "${env.REDIS_USERNAME}"
+        password: "${env.REDIS_PASSWORD}"
         tls:
-          certificate_authorities: ${file./path/to/ca.crt}
+          certificate_authorities: "${file./path/to/ca.crt}"
           client_authentication:
-            certificate_chain: ${file./path/to/certificate_chain.pem}
-            key: ${file./path/to/key.pem}
+            certificate_chain: "${file./path/to/certificate_chain.pem}"
+            key: "${file./path/to/key.pem}"
 ```
 
 ## Observability
