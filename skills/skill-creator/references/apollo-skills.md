@@ -158,6 +158,81 @@ references/
 └── troubleshooting.md # Common errors and solutions
 ```
 
+## Security Patterns
+
+Many Apollo skills generate configuration that has security implications. When a skill touches auth, caching, CORS, data exposure, or secrets, follow these patterns.
+
+### Label security sections explicitly
+
+Use `## Security` as the heading — not "Private data", "Customization", or "Advanced". The LLM needs the literal word "Security" to categorize the content correctly.
+
+```markdown
+## Security
+
+> **Security: data leakage risk.** Response caching is PUBLIC by default.
+> Any field not explicitly marked `scope: PRIVATE` with a configured
+> `private_id` will be shared across all users. User-specific fields
+> (profile data, preferences, bookmarks) MUST use PRIVATE scope.
+```
+
+### Place warnings at the point of risk
+
+Put security guidance directly next to the config that creates the risk. Do not rely on a separate reference file alone.
+
+```markdown
+### Caching scope
+
+> **Security: cross-user data leakage.** The default scope is PUBLIC —
+> all users share the same cache entries. You MUST identify which fields
+> are user-specific and mark them `scope: PRIVATE` before enabling caching.
+
+\`\`\`yaml
+response_cache:
+  enabled: true
+  subgraph:
+    subgraphs:
+      accounts:
+        private_id: "user_id"  # Required for PRIVATE-scoped fields
+\`\`\`
+```
+
+### Require data model understanding
+
+When correct configuration depends on knowing the user's data model, instruct the LLM to ask — never guess:
+
+```markdown
+## Ground Rules
+
+- ALWAYS ask which fields contain user-specific data before generating cache config
+- NEVER assume a field is safe to cache publicly without explicit confirmation
+```
+
+### Add security items to validation checklists
+
+Every security-sensitive feature must have corresponding validation checks:
+
+```markdown
+## Security
+
+- [ ] **Private fields identified**: All user-specific fields use `scope: PRIVATE`
+- [ ] **private_id configured**: Every subgraph serving PRIVATE data has `private_id` set
+- [ ] **Debug disabled** (production): `debug` is absent or `false`
+- [ ] **Endpoints not publicly exposed**: Internal endpoints bind to `127.0.0.1`, not `0.0.0.0`
+- [ ] **Secrets use env vars**: No hardcoded credentials, tokens, or keys
+```
+
+### Security ground rules
+
+Use ALWAYS/NEVER for security requirements — these are the strongest signal to the LLM:
+
+```markdown
+- NEVER enable debug mode in production config
+- NEVER bind internal endpoints to 0.0.0.0 in production
+- ALWAYS use environment variables for secrets, credentials, and keys
+- ALWAYS ask the user which fields are user-specific before configuring cache scope
+- NEVER generate cache config that assumes all data is public without confirming with the user
+```
+
 ## Ground Rules Format
 
 Use consistent formatting for ground rules:
@@ -197,3 +272,7 @@ Before submitting a new Apollo skill:
 - [ ] Error messages reference troubleshooting guide
 - [ ] Links to official Apollo documentation are correct
 - [ ] Content follows Apollo Voice guidelines
+- [ ] Security-sensitive features have a labeled `## Security` section
+- [ ] Security warnings appear at the point of risk, not only in reference files
+- [ ] Validation checklist includes security checks for every security-sensitive feature
+- [ ] Skill instructs the LLM to ask about the data model before generating security-sensitive config
