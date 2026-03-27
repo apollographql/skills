@@ -41,11 +41,22 @@ Run through this checklist after generating a `router.yaml` to catch common mist
 
 ## Response Caching (if enabled)
 
-- [ ] **Redis URL uses env var**: `${env.CACHE_REDIS_URL}`, not hardcoded
-- [ ] **Invalidation shared key uses env var**: `${env.INVALIDATION_SHARED_KEY}`
+### Security
+
+- [ ] **User-specific fields identified**: Confirmed with the user which fields return per-user data
+- [ ] **PRIVATE scope set**: All user-specific fields use `@cacheControl(scope: PRIVATE)` in subgraph schemas
+- [ ] **private_id configured**: Every subgraph serving PRIVATE-scoped data has `private_id` set
+- [ ] **User identifier extracted**: Rhai script or coprocessor populates the `private_id` context key from auth token
+- [ ] **No unprotected user data**: Verified that no user-specific field is cached as PUBLIC (the default)
 - [ ] **Debug mode disabled** (production): `response_cache.debug` is absent or `false`
-- [ ] **TTL is set**: explicit `ttl` on `subgraph.all` or per-subgraph
 - [ ] **Invalidation endpoint not publicly exposed** (production): bind to `127.0.0.1`, not `0.0.0.0`
+- [ ] **Invalidation shared key uses env var**: `${env.INVALIDATION_SHARED_KEY}`
+
+### Operational
+
+- [ ] **Redis URL uses env var**: `${env.CACHE_REDIS_URL}`, not hardcoded
+- [ ] **TTL is set**: explicit `ttl` on `subgraph.all` or per-subgraph
+- [ ] **Redis credentials use env vars**: No hardcoded passwords or usernames
 
 ## Recommended Final Step
 

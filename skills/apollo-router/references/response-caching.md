@@ -18,6 +18,68 @@ Response caching enables the router to cache origin responses and reuse them acr
 
 When an origin response contains multiple entity representations, the router uses the minimum TTL across all representations. Client responses never claim to be fresher than their least-fresh component.
 
+## Security
+
+### Data leakage risk: PUBLIC scope is the default
+
+> **Security: cross-user data leakage.** All cached data uses PUBLIC scope by default. Any subgraph response cached without `scope: PRIVATE` and a configured `private_id` is shared across ALL users. If user-specific fields (profile data, preferences, bookmarks, cart contents) are cached as PUBLIC, any user can receive another user's data.
+
+This is the highest-severity risk in response caching. Misconfiguration means silently serving one user's private data to others.
+
+### Before enabling response caching, you MUST:
+
+1. **Identify every field that returns user-specific data** — ask the user which types and fields vary per user. Do not guess. Common examples: user profiles, preferences, bookmarks, cart contents, order history, notifications, permissions.
+
+2. **Mark user-specific fields with `scope: PRIVATE`** in the subgraph schema:
+   ```graphql
+   type User @key(fields: "id") {
+     id: ID!
+     name: String!
+     email: String! @cacheControl(maxAge: 60, scope: PRIVATE)
+     preferences: UserPreferences! @cacheControl(maxAge: 300, scope: PRIVATE)
+   }
+   ```
+
+3. **Configure `private_id`** for every subgraph that serves PRIVATE-scoped data:
+   ```yaml
+   response_cache:
+     enabled: true
+     subgraph:
+       subgraphs:
+         accounts:
+           private_id: "user_id"  # REQUIRED for PRIVATE scope to work
+   ```
+
+4. **Extract the user identifier** from the request (e.g., JWT `sub` claim) via a Rhai script:
+   ```rhai
+   fn supergraph_service(service) {
+     let request_callback = |request| {
+       let claims = request.context[Router.APOLLO_AUTHENTICATION_JWT_CLAIMS];
+       if claims != () {
+         request.context["user_id"] = claims["sub"];
+       }
+     };
+     service.map_request(request_callback);
+   }
+   ```
+
+**What happens if `private_id` is missing:** When a subgraph returns a PRIVATE-scoped response but no `private_id` is configured, the router cannot identify the user. The cache is bypassed entirely for those requests — no data leakage occurs, but you get no caching benefit. However, if a field *should* be PRIVATE but is not marked as such in the schema, it will be cached as PUBLIC and shared across users.
+
+### Additional security requirements
+
+- **Debug mode**: NEVER enable `response_cache.debug: true` in production. It exposes internal cache keys, tags, and entry metadata to Apollo Sandbox.
+- **Invalidation endpoint**: ALWAYS bind to loopback (`127.0.0.1`), NEVER `0.0.0.0`. Exposing the invalidation endpoint publicly allows anyone to flush your cache.
+- **Shared key**: ALWAYS use `${env.INVALIDATION_SHARED_KEY}` for the invalidation shared key. Never hardcode it.
+- **Redis credentials**: ALWAYS use `${env.*}` expansion for Redis URLs, usernames, and passwords.
+
+### When NOT to cache
+
+Not all data benefits from caching. Avoid response caching when:
+
+- Data contains highly sensitive information (financial records, health data, PII) where even a misconfiguration risk is unacceptable
+- User identification is unreliable across requests (anonymous users, inconsistent auth)
+- Data changes too frequently to benefit from caching (real-time feeds, live scores)
+
 ## Setup
 
 ### Minimal configuration
@@ -256,35 +318,9 @@ If tags depend on runtime data (not entity keys or field args), set them in the 
 
 ### Private data caching
 
-Cache user-specific data by configuring `private_id` — a context key containing the user identifier:
+> **Security: see the [Security section](#security) above.** You MUST configure `private_id` and mark user-specific fields with `scope: PRIVATE` before enabling caching on subgraphs that serve user-specific data. Failure to do so causes cross-user data leakage.
 
-```yaml
-response_cache:
-  enabled: true
-  subgraph:
-    all:
-      enabled: true
-      redis:
-        urls: ["${env.CACHE_REDIS_URL:-redis://localhost:6379}"]
-    subgraphs:
-      accounts:
-        private_id: "user_id"
-```
-
-Extract the user ID from JWT claims via a Rhai script:
-
-```rhai
-// main.rhai
-fn supergraph_service(service) {
-  let request_callback = |request| {
-    let claims = request.context[Router.APOLLO_AUTHENTICATION_JWT_CLAIMS];
-    if claims != () {
-      request.context["user_id"] = claims["sub"];
-    }
-  };
-  service.map_request(request_callback);
-}
-```
+For full configuration, Rhai script examples, and the security checklist, see [Security](#security).
 
 ### Custom cache keys
 
