@@ -105,6 +105,15 @@ operations:
   source: uplink
 ```
 
+#### Introspect (schema-driven inference)
+
+Auto-generates operations by introspecting the schema. Useful for exploration when no operation files exist.
+
+```yaml
+operations:
+  source: introspect
+```
+
 ---
 
 ## Transport
@@ -126,7 +135,7 @@ Defaults: `address: 127.0.0.1`, `port: 8000`. The MCP endpoint is served at `htt
 |--------|---------|-------------|
 | `address` | `127.0.0.1` | Bind address |
 | `port` | `8000` | Listen port |
-| `stateful_mode` | - | Session handling mode |
+| `stateful_mode` | `true` | Set to `false` for stateless mode (enables horizontal scaling) |
 
 #### Host Validation
 
@@ -144,21 +153,43 @@ transport:
 
 #### Auth
 
-OAuth-based authentication for streamable_http transport:
+OAuth 2.1-based authentication for streamable_http transport:
 
 ```yaml
 transport:
   type: streamable_http
   auth:
     servers:
-      - https://auth.example.com/.well-known/openid-configuration
+      - https://auth.example.com
     audiences:
       - https://api.example.com
     scopes:
       - read
       - write
-    scope_mode: any  # any | all
+    scope_mode: require_all  # require_all | require_any | disabled
+    allow_any_audience: false
+    discovery_timeout: 5s
+    discovery_headers:
+      User-Agent: apollo-mcp-server
+    allow_anonymous_mcp_discovery: false
 ```
+
+**Scope modes:**
+
+| Mode | Behavior |
+|------|----------|
+| `require_all` | Token must have all configured scopes (default) |
+| `require_any` | Token must have at least one configured scope |
+| `disabled` | Skip scope checks entirely |
+
+**Other auth options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `allow_any_audience` | `false` | Skip audience validation entirely |
+| `discovery_timeout` | `5s` | Timeout per discovery URL attempt |
+| `discovery_headers` | - | Custom headers sent to OIDC/JWKS endpoints |
+| `allow_anonymous_mcp_discovery` | `false` | Allow unauthenticated `initialize`, `tools/list`, `resources/list` |
 
 ### Stdio (Default)
 
@@ -234,6 +265,14 @@ Control mutation behavior and other global settings.
 ```yaml
 overrides:
   mutation_mode: explicit  # all | explicit | none
+  disable_descriptions: false
+  output_schema: false
+  descriptions_map:
+    GetUser: "Fetches a user by ID"
+  required_scopes:
+    DeleteUser:
+      - user:write
+      - admin
 ```
 
 ### Mutation Modes
@@ -243,6 +282,15 @@ overrides:
 | `all` | Execute mutations directly |
 | `explicit` | Require user confirmation |
 | `none` | Block all mutations (default) |
+
+### Other overrides
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `disable_descriptions` | `false` | Omit tool descriptions to reduce token usage |
+| `output_schema` | `false` | Include the full schema in tool output |
+| `descriptions_map` | - | Override tool descriptions per operation name |
+| `required_scopes` | - | Per-operation OAuth scope requirements for step-up authorization |
 
 ---
 
@@ -355,13 +403,23 @@ telemetry:
   service_name: graphql-mcp-server
 ```
 
+### Server info
+
+Customize the server name and version reported to MCP clients:
+
+```yaml
+server_info:
+  name: my-api-mcp-server
+  version: "2.0.0"
+```
+
 ---
 
 ## Environment Variables
 
 ### Config File Expansion
 
-Use `${env.VAR_NAME}` syntax inside YAML config files to reference environment variables:
+Use `${env.VAR_NAME}` syntax inside YAML config files to reference environment variables. Use `${env.VAR:-default}` to provide a fallback value:
 
 ```yaml
 endpoint: ${env.GRAPHQL_ENDPOINT}
@@ -369,6 +427,7 @@ headers:
   Authorization: "Bearer ${env.API_TOKEN}"
 graphos:
   apollo_key: ${env.APOLLO_KEY}
+  apollo_graph_ref: ${env.APOLLO_GRAPH_REF:-my-graph@current}
 ```
 
 ### Environment Variable Overrides
