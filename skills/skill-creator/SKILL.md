@@ -29,9 +29,14 @@ A skill requires at minimum a `SKILL.md` file:
 ```
 skill-name/
 ├── SKILL.md              # Required - main instructions
-└── references/           # Optional - detailed documentation
-    ├── topic-a.md
-    └── topic-b.md
+├── references/           # Optional - detailed documentation
+│   ├── topic-a.md
+│   └── topic-b.md
+├── scripts/              # Optional - executable helpers
+│   └── validate.sh
+├── templates/            # Optional - config/code templates
+│   └── config.yaml
+└── assets/               # Optional - static resources (images, schemas, data files)
 ```
 
 ## SKILL.md Format
@@ -189,6 +194,32 @@ Link to references from `SKILL.md`:
 - [Setup](references/setup.md) - Installation and configuration
 - [Patterns](references/patterns.md) - Common patterns and examples
 ```
+
+## Scripts
+
+Use `scripts/` for executable helpers agents can run:
+
+```
+scripts/
+├── validate.sh       # Validation commands
+├── setup.py          # Setup automation
+└── check-version.sh  # Version checking
+```
+
+Scripts should be self-contained, include error handling, and have a usage comment at the top. Pre-approve them in `allowed-tools` (e.g., `Bash(./scripts/validate.sh:*)`).
+
+## Templates
+
+Use `templates/` for config files, boilerplate, or starter code:
+
+```
+templates/
+├── config.yaml       # Default configuration
+├── config-v2.yaml    # Version-specific variant
+└── example-app/      # Starter project
+```
+
+Templates are copied or adapted by the agent — not executed directly.
 
 ## Writing Style
 
