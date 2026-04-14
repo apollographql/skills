@@ -95,7 +95,6 @@ jobs:
       reason: ${{ steps.parse.outputs.reason }}
     permissions:
       contents: read
-      id-token: write
     steps:
       - name: Checkout skills repo
         uses: actions/checkout@v6
@@ -107,60 +106,59 @@ jobs:
           ref: ${{ needs.resolve-inputs.outputs.version }}
           path: product-repo
 
+      - name: Install Claude Code
+        run: curl -fsSL https://claude.ai/install.sh | bash
+
       - name: Triage changes
         id: triage
-        uses: anthropics/claude-code-action@v1
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: |
-            The ${{ needs.resolve-inputs.outputs.product }} product is at version
-            ${{ needs.resolve-inputs.outputs.version }}.
-            Repository: ${{ needs.resolve-inputs.outputs.repository }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          cat <<'PROMPT' > /tmp/triage-prompt.txt
+          The ${{ needs.resolve-inputs.outputs.product }} product is at version
+          ${{ needs.resolve-inputs.outputs.version }}.
+          Repository: ${{ needs.resolve-inputs.outputs.repository }}
 
-            The product source code at this version is in product-repo/.
-            The current skill content is in skills/${{ needs.resolve-inputs.outputs.product }}/.
+          The product source code at this version is in product-repo/.
+          The current skill content is in skills/${{ needs.resolve-inputs.outputs.product }}/.
 
-            Read all skill files (SKILL.md and everything in references/) to
-            understand what the skill currently documents.
+          Read all skill files (SKILL.md and everything in references/) to
+          understand what the skill currently documents.
 
-            Then read the relevant product source code (docs, README, config
-            schemas, CLI help, public APIs) to understand the current state of
-            the product.
+          Then read the relevant product source code (docs, README, config
+          schemas, CLI help, public APIs) to understand the current state of
+          the product.
 
-            Compare the skill content against the product source and determine
-            if the skill needs updating. It DOES need updating if:
-            - An API or config option documented in the skill has changed
-            - A code example in the skill is now incorrect
-            - A recommended pattern has been deprecated or replaced
-            - A breaking change affects the skill's guidance
-            - New product features are not covered in the skill
+          Compare the skill content against the product source and determine
+          if the skill needs updating. It DOES need updating if:
+          - An API or config option documented in the skill has changed
+          - A code example in the skill is now incorrect
+          - A recommended pattern has been deprecated or replaced
+          - A breaking change affects the skill's guidance
+          - New product features are not covered in the skill
 
-            It does NOT need updating if:
-            - The skill already accurately and comprehensively reflects the product source
-            - Minor differences that don't affect correctness
+          It does NOT need updating if:
+          - The skill already accurately and comprehensively reflects the product source
+          - Minor differences that don't affect correctness
+          PROMPT
 
-            Respond with your assessment as structured output.
-          claude_args: >-
-            --allowedTools Read,Glob,Grep
-            --max-turns 10
-            --output-format json
-            --json-schema '{"type":"object","properties":{"needs_update":{"type":"boolean"},"reason":{"type":"string"}},"required":["needs_update","reason"]}'
+          ~/.local/bin/claude \
+            --print \
+            --model claude-opus-4-6 \
+            --allowedTools Read,Glob,Grep \
+            --max-turns 10 \
+            --output-format json \
+            --json-schema '{"type":"object","properties":{"needs_update":{"type":"boolean"},"reason":{"type":"string"}},"required":["needs_update","reason"]}' \
+            < /tmp/triage-prompt.txt > /tmp/triage-result.json
 
       - name: Parse triage result
         id: parse
-        env:
-          TRIAGE_OUTPUT: ${{ steps.triage.outputs.structured_output }}
         run: |
-          if [ -z "$TRIAGE_OUTPUT" ]; then
-            echo "::warning::Triage produced no structured output, skipping update"
-            echo "needs_update=false" >> "$GITHUB_OUTPUT"
-            echo "reason=Triage produced no output" >> "$GITHUB_OUTPUT"
-          else
-            NEEDS_UPDATE=$(echo "$TRIAGE_OUTPUT" | jq -r '.needs_update')
-            REASON=$(echo "$TRIAGE_OUTPUT" | jq -r '.reason')
-            echo "needs_update=$NEEDS_UPDATE" >> "$GITHUB_OUTPUT"
-            echo "reason=$REASON" >> "$GITHUB_OUTPUT"
-          fi
+          cat /tmp/triage-result.json
+          NEEDS_UPDATE=$(jq -r '.structured_output.needs_update' /tmp/triage-result.json)
+          REASON=$(jq -r '.structured_output.reason // empty' /tmp/triage-result.json | head -1)
+          echo "needs_update=$NEEDS_UPDATE" >> "$GITHUB_OUTPUT"
+          echo "reason=$REASON" >> "$GITHUB_OUTPUT"
 
   update-skill:
     needs: [resolve-inputs, triage]
@@ -169,7 +167,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      id-token: write
     steps:
       - name: Checkout skills repo
         uses: actions/checkout@v6
@@ -181,34 +178,52 @@ jobs:
           ref: ${{ needs.resolve-inputs.outputs.version }}
           path: product-repo
 
+      - name: Install Claude Code
+        run: curl -fsSL https://claude.ai/install.sh | bash
+
       - name: Generate skill updates with AI
-        uses: anthropics/claude-code-action@v1
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: |
-            The ${{ needs.resolve-inputs.outputs.product }} product is at version
-            ${{ needs.resolve-inputs.outputs.version }}.
-            Repository: ${{ needs.resolve-inputs.outputs.repository }}
-            Triage reason: ${{ needs.triage.outputs.reason }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          cat <<'PROMPT' > /tmp/update-prompt.txt
+          The ${{ needs.resolve-inputs.outputs.product }} product is at version
+          ${{ needs.resolve-inputs.outputs.version }}.
+          Repository: ${{ needs.resolve-inputs.outputs.repository }}
+          Triage reason: ${{ needs.triage.outputs.reason }}
 
-            The product source code at this version is in product-repo/.
-            The current skill content is in skills/${{ needs.resolve-inputs.outputs.product }}/.
+          The product source code at this version is in product-repo/.
+          The current skill content is in skills/${{ needs.resolve-inputs.outputs.product }}/.
 
-            Read all skill files (SKILL.md and everything in references/) to
-            understand current content.
+          Step 1: Read skills/skill-creator/SKILL.md and its references to
+          understand skill structure conventions.
 
-            Then read the relevant product source code (docs, README, config
-            schemas, CLI help, public APIs) to understand the current state of
-            the product.
+          Step 2: Read all current skill files (SKILL.md and everything in
+          references/) in skills/${{ needs.resolve-inputs.outputs.product }}/.
 
-            Update the skill to accurately reflect the product at this version.
+          Step 3: Read the product documentation in product-repo/docs/ and
+          product-repo/README.md to identify ALL user-facing features.
 
-            Rules:
-            - Correct content that is inaccurate or outdated
-            - Add coverage for new product features that are missing from the skill
-            - Preserve the existing structure and style of the skill files
-            - If the version changed, update the version in SKILL.md frontmatter
-          claude_args: "--allowedTools Read,Write,Edit,Glob,Grep --max-turns 20"
+          Step 4: Compare the skill against the product docs. For each major
+          feature in the product that is missing from the skill, create a new
+          reference file (e.g. references/feature-name.md). Also update
+          existing files that are inaccurate or outdated.
+
+          Step 5: Update SKILL.md to link to any new reference files and
+          update the version in frontmatter.
+
+          Rules:
+          - Every major product feature should have coverage in the skill
+          - Create new reference files for features not yet covered
+          - Correct content that is inaccurate or outdated
+          - Follow skill-creator conventions for file structure and style
+          PROMPT
+
+          ~/.local/bin/claude \
+            --print \
+            --model claude-opus-4-6 \
+            --allowedTools Read,Write,Edit,Glob,Grep \
+            --max-turns 50 \
+            < /tmp/update-prompt.txt
 
       - name: Create pull request
         uses: peter-evans/create-pull-request@v8
