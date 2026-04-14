@@ -5,12 +5,13 @@ description: >
   Use this skill when: (1) setting up or configuring Apollo MCP Server,
   (2) defining MCP tools from GraphQL operations, (3) using introspection
   tools (introspect, search, validate, execute), (4) troubleshooting
-  MCP server connectivity or tool execution issues.
+  MCP server connectivity or tool execution issues, (5) customizing server
+  behavior with Rhai scripting, (6) building MCP Apps with custom UI.
 license: MIT
-compatibility: Works with Claude Code, Claude Desktop, Cursor.
+compatibility: Works with Claude Code, Claude Desktop, Cursor, Goose, Windsurf, Cline, OpenCode.
 metadata:
   author: apollographql
-  version: "1.1.1"
+  version: "1.2.0"
 allowed-tools: Bash(rover:*) Bash(npx:*) Read Write Edit Glob Grep
 ---
 
@@ -20,7 +21,21 @@ Apollo MCP Server exposes GraphQL operations as MCP tools, enabling AI agents to
 
 ## Quick Start
 
-### Step 1: Install
+### Option A: New project with Rover CLI (recommended)
+
+Requires Rover CLI v0.37+ and Node.js v18+.
+
+```bash
+# 1. Initialize a new MCP project
+rover init --mcp
+
+# 2. Run the MCP server alongside your local graph
+rover dev --supergraph-config supergraph.yaml --mcp .apollo/mcp.local.yaml
+```
+
+This starts a GraphQL server at `http://localhost:4000` and an MCP server at `http://127.0.0.1:8000`.
+
+### Option B: Standalone binary
 
 ```bash
 # Linux / MacOS
@@ -29,8 +44,6 @@ curl -sSL https://mcp.apollo.dev/download/nix/latest | sh
 # Windows
 iwr 'https://mcp.apollo.dev/download/win/latest' | iex
 ```
-
-### Step 2: Configure
 
 Create `config.yaml` in your project root:
 
@@ -63,13 +76,9 @@ apollo-mcp-server ./config.yaml
 
 The MCP endpoint is available at `http://127.0.0.1:8000/mcp` (streamable_http defaults: address `127.0.0.1`, port `8000`). The GraphQL endpoint defaults to `http://localhost:4000/` — override with the `endpoint` key if your API runs elsewhere.
 
-### Step 3: Connect
+### Connect to an MCP client
 
-Add to your MCP client configuration:
-
-**Streamable HTTP (recommended):**
-
-Claude Desktop (`claude_desktop_config.json`):
+**Claude Desktop** (`claude_desktop_config.json`):
 ```json
 {
   "mcpServers": {
@@ -81,14 +90,12 @@ Claude Desktop (`claude_desktop_config.json`):
 }
 ```
 
-Claude Code:
+**Claude Code:**
 ```bash
 claude mcp add graphql-api -- npx mcp-remote http://127.0.0.1:8000/mcp
 ```
 
 **Stdio (client launches the server directly):**
-
-Claude Desktop (`claude_desktop_config.json`) or Claude Code (`.mcp.json`):
 ```json
 {
   "mcpServers": {
@@ -124,7 +131,7 @@ operations:
     - ./operations/
 ```
 
-Each file must contain exactly one operation. Each named operation becomes an MCP tool.
+Each file must contain exactly one named operation. Each operation becomes an MCP tool.
 
 ```graphql
 # operations/GetUser.graphql
@@ -137,22 +144,15 @@ query GetUser($id: ID!) {
 }
 ```
 
-```graphql
-# operations/CreateUser.graphql
-mutation CreateUser($input: CreateUserInput!) {
-  createUser(input: $input) {
-    id
-    name
-  }
-}
-```
-
 ### 2. Operation Collections
 
 ```yaml
 operations:
   source: collection
   id: your-collection-id
+graphos:
+  apollo_key: ${env.APOLLO_KEY}
+  apollo_graph_ref: my-graph@current
 ```
 
 Use GraphOS Studio to manage operations collaboratively.
@@ -173,6 +173,9 @@ Detailed documentation for specific topics:
 
 - [Tools](references/tools.md) - Introspection tools and minify notation
 - [Configuration](references/configuration.md) - All configuration options
+- [Deployment](references/deployment.md) - Rover CLI, Docker, Apollo Runtime Container
+- [Rhai Scripting](references/rhai-scripting.md) - Customize request lifecycle with scripts
+- [MCP Apps](references/mcp-apps.md) - Build custom UI experiences
 - [Troubleshooting](references/troubleshooting.md) - Common issues and solutions
 
 ## Key Rules
@@ -183,6 +186,7 @@ Detailed documentation for specific topics:
 - Use `headers` configuration for API keys and tokens
 - Disable introspection tools in production (they are disabled by default)
 - Set `overrides.mutation_mode: explicit` to require confirmation for mutations
+- Use GraphOS contract variants to control which schema types AI can access
 
 ### Authentication
 
@@ -200,9 +204,13 @@ transport:
   type: streamable_http
   auth:
     servers:
-      - https://auth.example.com/.well-known/openid-configuration
+      - https://auth.example.com
     audiences:
       - https://api.example.com
+    scopes:
+      - read
+      - write
+    scope_mode: require_all  # require_all | require_any | disabled
 ```
 
 ### Token Optimization
@@ -283,7 +291,7 @@ health_check:
   enabled: true
 ```
 
-### Docker
+### Docker (standalone container)
 
 ```yaml
 transport:
@@ -298,6 +306,29 @@ health_check:
   enabled: true
 ```
 
+```bash
+docker run \
+  -p 8000:8000 \
+  -v ./config.yaml:/config.yaml \
+  -v $PWD/graphql:/data \
+  ghcr.io/apollographql/apollo-mcp-server:latest /config.yaml
+```
+
+### Rhai Scripting
+
+Customize request behavior without recompiling. Create `rhai/main.rhai` alongside your config:
+
+```rhai
+fn on_execute_graphql_operation(ctx) {
+    let token = ctx.incoming_request.headers["authorization"];
+    if token != "" {
+        ctx.headers["x-forwarded-auth"] = token;
+    }
+}
+```
+
+See [Rhai Scripting](references/rhai-scripting.md) for lifecycle hooks and built-in functions.
+
 ## Ground Rules
 
 - ALWAYS configure authentication before exposing to AI agents
@@ -305,5 +336,7 @@ health_check:
 - NEVER expose introspection tools with write access to production data
 - PREFER operation files over ad-hoc execute for predictable behavior
 - PREFER streamable_http transport for remote and multi-client deployments
+- PREFER the Apollo Runtime Container for production deployments
 - USE stdio only when the MCP client launches the server process directly
 - USE GraphOS Studio collections for team collaboration
+- USE Rhai scripting for dynamic header forwarding and request routing

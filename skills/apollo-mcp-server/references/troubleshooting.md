@@ -149,11 +149,12 @@ transport:
   type: streamable_http
   auth:
     servers:
-      - https://auth.example.com/.well-known/openid-configuration
+      - https://auth.example.com
     audiences:
       - https://api.example.com
     scopes:
       - read
+    scope_mode: require_all  # require_all | require_any | disabled
 ```
 
 For forwarding user tokens to the upstream GraphQL API:
