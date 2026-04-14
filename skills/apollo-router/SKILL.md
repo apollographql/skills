@@ -12,7 +12,7 @@ license: MIT
 compatibility: Linux/macOS/Windows. Requires a composed supergraph schema from Rover or GraphOS.
 metadata:
   author: apollographql
-  version: "2.2.1"
+  version: "2.4.0"
 allowed-tools: Bash(router:*) Bash(./router:*) Bash(rover:*) Bash(curl:*) Bash(docker:*) Read Write Edit Glob Grep
 ---
 
@@ -75,6 +75,7 @@ Ask which features to include:
 - [ ] Connectors (REST API integration — Router v2 only; GA key is `connectors`, early v2 preview key was `preview_connectors`)
 - [ ] Subscriptions
 - [ ] Header Propagation
+- [ ] Response Caching (entity + root field caching with Redis — Router v2 only, v2.6.0+)
 
 ## Step 4: Gather Parameters
 
@@ -130,6 +131,18 @@ The same principle applies to `max_height`, `max_aliases`, and `max_root_fields`
 - Client-facing rate limit capacity (default: 1000 req/s)
 - Router timeout (default: 60s)
 - Subgraph timeout (default: 30s)
+
+### Response Caching (v2 only, v2.6.0+)
+
+> **Security: data leakage risk.** Before generating any response cache config, you MUST ask the user which types and fields return user-specific data. All cached data is PUBLIC by default — user-specific fields cached without `scope: PRIVATE` and a `private_id` will be shared across all users.
+
+- Ask: **Which subgraphs serve user-specific data?** (e.g., accounts, profiles, carts)
+- Ask: **How do you identify users?** (JWT `sub` claim, session token, API key)
+- Redis URL (default: `redis://localhost:6379`)
+- Default TTL (default: `5m`)
+- Enable active invalidation? If yes: invalidation listen address and shared key
+- Use section template: `templates/v2/sections/response-caching.yaml`
+- For security requirements, schema directives, and advanced config: `references/response-caching.md` (start with the Security section)
 
 ## Step 5: Generate Config
 
@@ -216,6 +229,7 @@ If the user asks for executable shell commands, provide them on request. Otherwi
 - [Plugins](references/plugins.md) — Rhai scripts and coprocessors
 - [Telemetry](references/telemetry.md) — Tracing, metrics, and logging
 - [Connectors](references/connectors.md) — Router v2 connectors configuration
+- [Response Caching](references/response-caching.md) — Entity/root-field caching, invalidation, and observability (v2 only)
 - [Troubleshooting](references/troubleshooting.md) — Common issues and solutions
 - [Divergence Map](divergence-map.md) — v1 ↔ v2 config differences
 - [Validation Checklist](validation/checklist.md) — Post-generation checks
@@ -260,3 +274,11 @@ Options:
 - MUST state that Rover is required only for the local supergraph path; GraphOS-managed runtime does not require local Rover composition
 - USE `max_depth: 50` as the default starting point, not 15 (too aggressive) or 100 (too permissive)
 - RECOMMEND `warn_only: true` for initial limits rollout to observe real traffic before enforcing
+- ONLY offer Response Caching when `ROUTER_VERSION=v2` (requires v2.6.0+)
+- ALWAYS use `${env.*}` for Redis URLs, passwords, and invalidation shared keys
+- NEVER enable `response_cache.debug: true` in production config
+- RECOMMEND combining @cacheControl (passive TTL) with @cacheTag (active invalidation) for production
+- ALWAYS ask which fields return user-specific data before generating response cache config — never assume all data is safe to cache publicly
+- ALWAYS configure `private_id` and `scope: PRIVATE` for subgraphs that serve user-specific data
+- NEVER generate response cache config without addressing private data — if the user says "no user-specific data", confirm explicitly before proceeding
+- ALWAYS bind the invalidation endpoint to `127.0.0.1`, NEVER `0.0.0.0` in production

@@ -88,6 +88,18 @@ Common metrics:
 - `apollo_router_http_request_duration_seconds` - Latency histogram
 - `apollo_router_cache_hit_count` - Cache hit/miss
 
+### Response Cache Metrics (v2.6.0+)
+
+| Metric | Description |
+|--------|-------------|
+| `apollo.router.operations.response_cache.fetch` | Time to fetch from cache |
+| `apollo.router.operations.response_cache.insert` | Time to insert into cache |
+| `apollo.router.operations.response_cache.invalidation.entry` | Entries invalidated |
+| `apollo.router.cache.redis.commands_executed` | Total Redis commands |
+| `apollo.router.cache.redis.errors` | Redis errors by type |
+
+Full metrics reference and telemetry config: [response-caching.md](response-caching.md#observability)
+
 ### OTLP Metrics
 
 ```yaml
