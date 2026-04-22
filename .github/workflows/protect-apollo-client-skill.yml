@@ -1,0 +1,35 @@
+name: Protect apollo-client skill from direct edits
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'skills/apollo-client/**'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Fail if this is not a sync PR
+        if: "!startsWith(github.head_ref, 'sync/apollo-client-skill-')"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --body "$(cat <<'EOF'
+          ## ⚠️ Direct edits to the \`apollo-client\` skill are not allowed
+
+          This PR modifies files under \`skills/apollo-client/\`, which is a **read-only mirror** of the skill maintained in [apollographql/apollo-client](https://github.com/apollographql/apollo-client).
+
+          Please make your changes there instead:
+          - Edit files under \`docs/agent-skills/apollo-client/\` in [apollographql/apollo-client](https://github.com/apollographql/apollo-client)
+          - Once merged, a sync workflow will automatically open a PR here
+
+          EOF
+          )"
+          echo "::error::Direct edits to skills/apollo-client/ are not allowed. See PR comment for instructions."
+          exit 1
