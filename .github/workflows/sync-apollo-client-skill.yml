@@ -1,0 +1,55 @@
+name: Sync apollo-client skill from apollo-client repo
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: 'SHA in apollographql/apollo-client to sync from'
+        required: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch skill files from apollo-client
+        run: |
+          BASE="https://raw.githubusercontent.com/apollographql/apollo-client/${{ inputs.source_sha }}/docs/agent-skills/apollo-client"
+
+          mkdir -p skills/apollo-client/references
+
+          curl -fsSL "$BASE/SKILL.md" -o skills/apollo-client/SKILL.md
+
+          for ref in caching error-handling fragments integration-client \
+                     integration-nextjs integration-react-router \
+                     integration-tanstack-start mutations queries \
+                     state-management suspense-hooks troubleshooting \
+                     typescript-codegen; do
+            curl -fsSL "$BASE/references/${ref}.md" \
+              -o "skills/apollo-client/references/${ref}.md"
+          done
+
+      - name: Create or update PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="sync/apollo-client-skill-${{ inputs.source_sha }}"
+          git config user.name "Apollo GitHub Actions Bot"
+          git config user.email "bot@apollographql.com"
+          git checkout -b "$BRANCH"
+          git add skills/apollo-client/
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "sync: apollo-client skill from apollographql/apollo-client@${{ inputs.source_sha }}"
+          git push -u origin "$BRANCH"
+          # Create PR if one doesn't exist for this branch, or skip
+          gh pr create \
+            --title "sync: apollo-client skill from apollo-client@${{ inputs.source_sha }}" \
+            --body "Automated sync from [apollographql/apollo-client@${{ inputs.source_sha }}](https://github.com/apollographql/apollo-client/commit/${{ inputs.source_sha }})." \
+            --base main \
+            --head "$BRANCH" || true
+          # Enable auto-merge
+          gh pr merge "$BRANCH" --auto --squash || true
