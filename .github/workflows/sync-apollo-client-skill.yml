@@ -17,34 +17,38 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Fetch skill files from apollo-client
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
         run: |
-          git clone --filter=blob:none --no-checkout --depth=1 \
+          git clone --filter=blob:none --no-checkout \
             https://github.com/apollographql/apollo-client.git /tmp/apollo-client
           cd /tmp/apollo-client
           git sparse-checkout init --cone
           git sparse-checkout set docs/agent-skills/apollo-client
-          git checkout ${{ inputs.source_sha }}
+          git fetch --depth=1 origin "$SOURCE_SHA"
+          git checkout FETCH_HEAD
 
           rsync -a --delete \
             /tmp/apollo-client/docs/agent-skills/apollo-client/ \
-            ${{ github.workspace }}/skills/apollo-client/
+            "$GITHUB_WORKSPACE/skills/apollo-client/"
 
       - name: Create or update PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
         run: |
-          BRANCH="sync/apollo-client-skill-${{ inputs.source_sha }}"
+          BRANCH="sync/apollo-client-skill-$SOURCE_SHA"
           git config user.name "Apollo GitHub Actions Bot"
           git config user.email "bot@apollographql.com"
           git checkout -b "$BRANCH"
           git add skills/apollo-client/
           git diff --cached --quiet && echo "No changes" && exit 0
-          git commit -m "sync: apollo-client skill from apollographql/apollo-client@${{ inputs.source_sha }}"
-          git push -u origin "$BRANCH"
+          git commit -m "sync: apollo-client skill from apollographql/apollo-client@$SOURCE_SHA"
+          git push --force-with-lease -u origin "$BRANCH"
           # Create PR if one doesn't exist for this branch, or skip
           gh pr create \
-            --title "sync: apollo-client skill from apollo-client@${{ inputs.source_sha }}" \
-            --body "Automated sync from [apollographql/apollo-client@${{ inputs.source_sha }}](https://github.com/apollographql/apollo-client/commit/${{ inputs.source_sha }})." \
+            --title "sync: apollo-client skill from apollo-client@$SOURCE_SHA" \
+            --body "Automated sync from [apollographql/apollo-client@${SOURCE_SHA}](https://github.com/apollographql/apollo-client/commit/${SOURCE_SHA})." \
             --base main \
             --head "$BRANCH" || true
           # Enable auto-merge
