@@ -14,23 +14,22 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Fetch skill files from apollo-client
-        env:
-          SOURCE_SHA: ${{ inputs.source_sha }}
+      - name: Checkout apollo-client at source SHA
+        uses: actions/checkout@v6
+        with:
+          repository: apollographql/apollo-client
+          ref: ${{ inputs.source_sha }}
+          path: source
+          sparse-checkout: docs/agent-skills/apollo-client
+          sparse-checkout-cone-mode: true
+
+      - name: Mirror skill into skills/apollo-client
         run: |
-          git clone --filter=blob:none --no-checkout \
-            https://github.com/apollographql/apollo-client.git /tmp/apollo-client
-          cd /tmp/apollo-client
-          git sparse-checkout init --cone
-          git sparse-checkout set docs/agent-skills/apollo-client
-          git fetch --depth=1 origin "$SOURCE_SHA"
-          git checkout FETCH_HEAD
-
           rsync -a --delete \
-            /tmp/apollo-client/docs/agent-skills/apollo-client/ \
-            "$GITHUB_WORKSPACE/skills/apollo-client/"
+            source/docs/agent-skills/apollo-client/ \
+            skills/apollo-client/
 
       - name: Create or update PR
         env:
