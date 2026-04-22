@@ -3,6 +3,7 @@
 !/AGENTS.md
 !/skills/
 /skills/*
-!/skills/apollo-client/
+# Apollo Client skill is maintained in another repository and synced over, don't want to format that.
+/skills/apollo-client/
 !/skills/apollo-server/
 !/skills/graphql-operations/
