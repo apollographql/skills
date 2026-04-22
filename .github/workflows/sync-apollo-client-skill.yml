@@ -18,20 +18,16 @@ jobs:
 
       - name: Fetch skill files from apollo-client
         run: |
-          BASE="https://raw.githubusercontent.com/apollographql/apollo-client/${{ inputs.source_sha }}/docs/agent-skills/apollo-client"
+          git clone --filter=blob:none --no-checkout --depth=1 \
+            https://github.com/apollographql/apollo-client.git /tmp/apollo-client
+          cd /tmp/apollo-client
+          git sparse-checkout init --cone
+          git sparse-checkout set docs/agent-skills/apollo-client
+          git checkout ${{ inputs.source_sha }}
 
-          mkdir -p skills/apollo-client/references
-
-          curl -fsSL "$BASE/SKILL.md" -o skills/apollo-client/SKILL.md
-
-          for ref in caching error-handling fragments integration-client \
-                     integration-nextjs integration-react-router \
-                     integration-tanstack-start mutations queries \
-                     state-management suspense-hooks troubleshooting \
-                     typescript-codegen; do
-            curl -fsSL "$BASE/references/${ref}.md" \
-              -o "skills/apollo-client/references/${ref}.md"
-          done
+          rsync -a --delete \
+            /tmp/apollo-client/docs/agent-skills/apollo-client/ \
+            ${{ github.workspace }}/skills/apollo-client/
 
       - name: Create or update PR
         env:
