@@ -30,20 +30,18 @@ import Apollo
 import Foundation
 
 final class AppInterceptorProvider: InterceptorProvider, Sendable {
-  private let tokenStore: AuthTokenStore
-  private let refresh: @Sendable () async throws -> String
+  private let tokenManager: AuthTokenManager
 
-  init(tokenStore: AuthTokenStore, refresh: @escaping @Sendable () async throws -> String) {
-    self.tokenStore = tokenStore
-    self.refresh = refresh
+  init(tokenManager: AuthTokenManager) {
+    self.tokenManager = tokenManager
   }
 
   func graphQLInterceptors<Operation: GraphQLOperation>(
     for operation: Operation
   ) -> [any GraphQLInterceptor] {
     [
-      MaxRetryInterceptor(maxRetriesAllowed: 3),                      // safety-net retry cap (must be first)
-      AuthInterceptor(tokenStore: tokenStore, refresh: refresh),      // attach + refresh + retry-on-401
+      MaxRetryInterceptor(maxRetriesAllowed: 3),               // safety-net retry cap (must be first)
+      AuthInterceptor(tokenManager: tokenManager),             // attach + refresh + retry-on-401
       AutomaticPersistedQueryInterceptor(),
     ]
   }
@@ -60,7 +58,7 @@ final class AppInterceptorProvider: InterceptorProvider, Sendable {
 Wire the provider into the transport:
 
 ```swift
-let provider = AppInterceptorProvider(tokenStore: tokenStore)
+let provider = AppInterceptorProvider(tokenManager: tokenManager)
 let transport = RequestChainNetworkTransport(
   urlSession: URLSession(configuration: .default),
   interceptorProvider: provider,
@@ -68,6 +66,8 @@ let transport = RequestChainNetworkTransport(
   endpointURL: URL(string: "https://api.example.com/graphql")!
 )
 ```
+
+`AuthTokenManager` is an app-owned actor that holds the current access token and knows how to refresh it against your auth service. See the next section for its shape.
 
 ## Auth: attach + refresh + retry in one interceptor
 
@@ -85,15 +85,30 @@ import Apollo
 import ApolloAPI
 import Foundation
 
-actor AuthTokenStore {
+/// App-owned actor that holds the current access token and can refresh it.
+/// Replace the body of `refreshToken()` with your real auth flow — exchanging a
+/// stored refresh token at `/oauth/refresh`, prompting Sign in with Apple, etc.
+actor AuthTokenManager {
   private(set) var token: String?
-  func update(_ token: String?) { self.token = token }
+
+  init(initialToken: String? = nil) { self.token = initialToken }
+
   func currentToken() -> String? { token }
+
+  func refreshToken() async throws -> String {
+    let newToken = try await performServerRefresh()
+    self.token = newToken
+    return newToken
+  }
+
+  private func performServerRefresh() async throws -> String {
+    // TODO: replace with your app's refresh call.
+    fatalError("Implement performServerRefresh() against your auth service")
+  }
 }
 
 struct AuthInterceptor: GraphQLInterceptor {
-  let tokenStore: AuthTokenStore
-  let refresh: @Sendable () async throws -> String
+  let tokenManager: AuthTokenManager
 
   func intercept<Request: GraphQLRequest>(
     request: Request,
@@ -101,23 +116,22 @@ struct AuthInterceptor: GraphQLInterceptor {
   ) async throws -> InterceptorResultStream<Request> {
     // Pre-flight: attach the current token.
     var request = request
-    if let token = await tokenStore.currentToken() {
+    if let token = await tokenManager.currentToken() {
       request.additionalHeaders["Authorization"] = "Bearer \(token)"
     }
 
     // Post-flight: observe 401, refresh, and trigger a retry.
     let originalRequest = request
-    return await next(request).mapErrors { [tokenStore, refresh] error in
+    return await next(request).mapErrors { [tokenManager] error in
       guard let codeError = error as? ResponseCodeInterceptor.ResponseCodeError,
             codeError.response.statusCode == 401 else {
         throw error
       }
-      let newToken = try await refresh()
-      await tokenStore.update(newToken)
+      _ = try await tokenManager.refreshToken()
 
       // Hand RequestChain the request to retry with. On the next pass through
       // the chain, this same interceptor will re-attach the freshly-rotated
-      // token from the store.
+      // token from the manager.
       throw RequestChain.Retry(request: originalRequest)
     }
   }
@@ -143,7 +157,7 @@ struct StaticAuthInterceptor: GraphQLInterceptor {
 }
 ```
 
-**When `HTTPInterceptor` makes sense instead:** if the header is purely HTTP-scoped (unrelated to the operation, never participates in retry), put it in an `HTTPInterceptor`. Static instrumentation headers (`User-Agent`, `Accept-Encoding`, a CSRF token keyed to an HTTP session) fit naturally. A team that prefers strict layer separation may also choose to attach the auth token at the HTTP layer using `request.setValue(_, forHTTPHeaderField:)` — functionally identical, but costs a second interceptor and cross-layer coordination through the shared `AuthTokenStore`.
+**When `HTTPInterceptor` makes sense instead:** if the header is purely HTTP-scoped (unrelated to the operation, never participates in retry), put it in an `HTTPInterceptor`. Static instrumentation headers (`User-Agent`, `Accept-Encoding`, a CSRF token keyed to an HTTP session) fit naturally. A team that prefers strict layer separation may also choose to attach the auth token at the HTTP layer using `request.setValue(_, forHTTPHeaderField:)` — functionally identical, but costs a second interceptor and cross-layer coordination through the shared `AuthTokenManager`.
 
 ## Logging interceptor (debug builds only)
 
