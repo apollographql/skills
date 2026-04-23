@@ -1,6 +1,6 @@
 # Code Generation
 
-This reference covers the `apollo-codegen-config.json` file, CLI commands, custom scalars, test mocks, Swift 6 compatibility flags, and build-time automation.
+This reference covers the `apollo-codegen-config.json` file, CLI commands, renaming generated types, test mocks, Swift 6 compatibility flags, and build-time automation. For customizing how a custom GraphQL scalar maps to a Swift type (default is `String`), see [custom-scalars.md](custom-scalars.md).
 
 If you don't yet have a codegen config, start with [setup.md](setup.md), which walks through the three project-configuration questions and generates a working config from your answers.
 
@@ -221,48 +221,23 @@ If your app runs under Swift 6.2+ with default `@MainActor` isolation and you se
 }
 ```
 
-## Custom scalars
+## Renaming generated types
 
-Map a GraphQL custom scalar to a Swift type. Apollo iOS requires the Swift type to conform to `CustomScalarType`.
+`options.schemaCustomization.customTypeNames` changes the Swift name of a generated type — scalar, enum case, enum type, input object, or input-object field. This is **only about naming**; it does not affect the underlying type mapping. (For changing the Swift type of a custom scalar — e.g. making a `DateTime` scalar a `Foundation.Date` instead of the default `String` — see [custom-scalars.md](custom-scalars.md).)
 
-### 1. Declare the mapping in the config
+Simple rename (scalar or object type):
 
 ```json
 "options": {
   "schemaCustomization": {
     "customTypeNames": {
-      "DateTime": "CustomDateTime"
+      "DateTime": "APIDateTime"
     }
   }
 }
 ```
 
-### 2. Provide the conforming Swift type
-
-Codegen emits a stub file for each custom scalar (in the schema types directory). Edit it to provide the real implementation:
-
-```swift
-import ApolloAPI
-import Foundation
-
-public struct CustomDateTime: CustomScalarType {
-  public let value: Date
-
-  public init(_jsonValue value: JSONValue) throws {
-    guard let string = value as? String,
-          let date = ISO8601DateFormatter().date(from: string) else {
-      throw JSONDecodingError.couldNotConvert(value: value, to: Date.self)
-    }
-    self.value = date
-  }
-
-  public var _jsonValue: JSONValue {
-    ISO8601DateFormatter().string(from: value)
-  }
-}
-```
-
-You can also customize enum case names and input-object field names:
+Rename an enum and remap specific case names:
 
 ```json
 "customTypeNames": {
@@ -271,7 +246,14 @@ You can also customize enum case names and input-object field names:
       "name": "CustomSkinCovering",
       "cases": { "HAIR": "CUSTOMHAIR" }
     }
-  },
+  }
+}
+```
+
+Rename an input object and remap field names:
+
+```json
+"customTypeNames": {
   "PetSearchFilters": {
     "inputObject": {
       "name": "CustomPetSearchFilters",
@@ -280,6 +262,8 @@ You can also customize enum case names and input-object field names:
   }
 }
 ```
+
+Use this when the generated Swift name collides with something in your app, or when the schema's naming conventions don't match Swift conventions. It is not needed for routine setup.
 
 ## `schemaDownload`
 

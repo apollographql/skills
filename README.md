@@ -342,14 +342,14 @@ npx skills add apollographql/skills@apollo-ios
 
 **Categories covered:**
 
-- SPM installation and `apollo-ios-cli` setup
-- The three project-configuration decisions (modules, schema module type, operation models)
-- Code generation config (`apollo-codegen-config.json`, custom scalars, test mocks, Swift 6 flags)
+- SPM installation, product linking (`Apollo` vs `ApolloAPI`), and `apollo-ios-cli` setup
+- Code generation config (`apollo-codegen-config.json`) with the canonical `swiftPackage` + `relative` defaults
+- Custom scalars (default `String` typealias, when and how to replace it)
 - Queries, mutations, watchers, and cache policies with async/await
 - Normalized cache, `@typePolicy` cache keys, manual reads/writes
-- Interceptor architecture and auth token patterns
-- WebSocket subscriptions with `SplitNetworkTransport` and scene-phase pause/resume
-- Testing with `ApolloTestSupport` and generated mocks
+- Interceptor architecture split across HTTP and GraphQL layers (auth token attachment + token refresh + retry)
+- Subscriptions over HTTP multipart and WebSocket, with scene-phase pause/resume
+- Testing with `ApolloTestSupport` and generated `Mock<Type>` fixtures (enabled lazily when tests need them)
 
 **Examples:**
 
@@ -361,6 +361,7 @@ npx skills add apollographql/skills@apollo-ios
 [SKILL.md](skills/apollo-ios/SKILL.md) ·
 [Setup](skills/apollo-ios/references/setup.md) ·
 [Codegen](skills/apollo-ios/references/codegen.md) ·
+[Custom Scalars](skills/apollo-ios/references/custom-scalars.md) ·
 [Operations](skills/apollo-ios/references/operations.md) ·
 [Caching](skills/apollo-ios/references/caching.md) ·
 [Interceptors](skills/apollo-ios/references/interceptors.md) ·
