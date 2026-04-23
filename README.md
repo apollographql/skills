@@ -1,7 +1,7 @@
 # Apollo GraphQL Agent Skills
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-12-green.svg)](#skills)
+[![Skills](https://img.shields.io/badge/skills-11-green.svg)](#skills)
 
 A collection of skills for AI coding agents working with Apollo GraphQL tools and technologies.
 

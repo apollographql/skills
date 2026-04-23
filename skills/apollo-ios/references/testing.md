@@ -122,8 +122,13 @@ In tests, conform a fake type to `GraphQLService` and return mocks:
 import ApolloTestSupport
 import MyAPITestMocks
 
+// `GraphQLService: Sendable`, so `FakeGraphQLService` must also be Sendable.
+// Under Swift 6 strict concurrency that means stored properties must be `let` —
+// inject the canned response at init time rather than mutating it after
+// construction.
 final class FakeGraphQLService: GraphQLService {
-  var userToReturn: GetUserQuery.Data.User?
+  let userToReturn: GetUserQuery.Data.User?
+  init(userToReturn: GetUserQuery.Data.User?) { self.userToReturn = userToReturn }
   func getUser(id: String) async throws -> GetUserQuery.Data.User? { userToReturn }
 }
 
@@ -135,8 +140,7 @@ func viewModelLoadsUser() async throws {
   let mockUser = Mock<User>(id: "1", name: "Grace Hopper")
   let data = await GetUserQuery.Data.from(Mock<Query>(user: mockUser))
 
-  let service = FakeGraphQLService()
-  service.userToReturn = data.user
+  let service = FakeGraphQLService(userToReturn: data.user)
 
   let viewModel = UserViewModel(service: service)
   await viewModel.load(userID: "1")
