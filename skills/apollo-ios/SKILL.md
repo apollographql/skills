@@ -36,7 +36,7 @@ Follow this process when adding or working with Apollo iOS:
 ## Reference Files
 
 - [Setup](references/setup.md) — Install the SDK and CLI, link the right product (`Apollo` / `ApolloAPI` / `ApolloSQLite` / `ApolloWebSocket` / `ApolloTestSupport`) to each target, generate the canonical `apollo-codegen-config.json`, download the schema, run initial codegen, initialize `ApolloClient`, wire it into SwiftUI.
-- [Codegen](references/codegen.md) — Full `apollo-codegen-config.json` reference: `schemaTypes.moduleType` (`swiftPackage` / `embeddedInTarget` / `other`) and `operations` (`relative` / `inSchemaModule` / `absolute`) with tradeoffs and fragment-sharing patterns, custom scalars, test mocks, Swift 6 / MainActor flags, pre-build script.
+- [Codegen](references/codegen.md) — Full `apollo-codegen-config.json` reference: `schemaTypes.moduleType` (`swiftPackage` / `embeddedInTarget` / `other`) and `operations` (`relative` / `inSchemaModule` / `absolute`) with tradeoffs and fragment-sharing patterns, custom scalars, test mocks, Swift 6 / MainActor flags, and why you should not auto-run codegen from an Xcode build phase.
 - [Operations](references/operations.md) — Queries, mutations, watchers, cache policies, error handling, and SwiftUI `@Observable` view-model patterns with async/await.
 - [Caching](references/caching.md) — Choosing between in-memory and SQLite cache, declaring cache keys with the `@typePolicy` directive, programmatic cache keys as advanced fallback, watching the cache, manual reads/writes.
 - [Interceptors](references/interceptors.md) — The four interceptor protocols, building a custom `InterceptorProvider`, auth token interceptor, logging, retry, APQ.
@@ -56,6 +56,7 @@ Follow this process when adding or working with Apollo iOS:
 - Target linking is a per-target decision made as modules grow — there is no upfront decision to make. Link `Apollo` to targets using `ApolloClient`; link `ApolloAPI` to targets that only consume generated response models.
 - Keep `schema.graphqls`, `.graphql` operation files, and `apollo-codegen-config.json` in source control so builds are reproducible.
 - Regenerate code after every schema or `.graphql` operation change. Never hand-edit generated files.
+- Commit the generated Swift files to source control. Do **not** wire `apollo-ios-cli generate` into an Xcode Run Script build phase — it measurably slows compile times on every build. Regenerate manually or via a dedicated script alias.
 - Create a **single shared `ApolloClient`** per endpoint. Inject it via SwiftUI `Environment`; never construct a new client per request.
 - Prefer `@typePolicy` schema directives over programmatic cache key resolution when declaring cache keys for types.
 - Attach auth tokens in an `HTTPInterceptor` (header mutation is an HTTP concern). Put token-refresh and retry orchestration in a `GraphQLInterceptor` so it wraps the entire operation — `MaxRetryInterceptor` lives at the GraphQL layer for this reason. Never put auth or retry in view code.

@@ -340,20 +340,15 @@ Generates Swift types. Pass `--path` if your config file lives elsewhere.
 
 Writes an operation manifest for Automatic Persisted Queries. See [interceptors.md](interceptors.md#apq) for how the manifest is consumed at runtime.
 
-## Automating generation on build
+## Running generation
 
-Add a **Run Script** build phase (in the app target's Build Phases, before "Compile Sources"):
+Run `./apollo-ios-cli generate` manually after editing `schema.graphqls` or any `.graphql` operation file, and commit the generated Swift alongside the source. A shell alias or project script (`make codegen`, `./scripts/codegen.sh`) makes the common case a single keystroke.
 
-```bash
-cd "$SRCROOT"
-./apollo-ios-cli generate
-```
-
-Tick **"Based on dependency analysis"** off so Xcode always runs the script (the script is idempotent and fast when there are no schema changes). Add the output files as explicit outputs of the build phase if you want accurate incremental builds.
+**Do not wire codegen into an Xcode Run Script build phase.** Running `apollo-ios-cli generate` on every build measurably slows compile times — the generator scans the full schema regardless of what changed, and the cost compounds as the schema grows. Deliberate regeneration + committed output is the recommended pattern. The rare exceptions are CI jobs that need to verify the generated files are up to date (run `generate`, check for a dirty tree, fail if anything changed), or developer machines where a pre-commit hook catches forgotten regeneration.
 
 ## Multi-module projects
 
-If you picked `moduleType: swiftPackage` in [setup.md Q2](setup.md#q2-which-schema-moduletype), the schema becomes its own SPM package:
+If you picked `moduleType: swiftPackage` (see [setup.md](setup.md#generate-apollo-codegen-configjson)), the schema becomes its own SPM package:
 
 ```
 MyAPI/

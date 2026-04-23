@@ -161,14 +161,9 @@ Once the config file and schema are in place, generate types:
 ./apollo-ios-cli generate
 ```
 
-Rerun `generate` after every change to `schema.graphqls` or any `.graphql` operation file.
+**Run codegen manually** — after editing `schema.graphqls` or any `.graphql` operation file, re-run the command. Commit the generated Swift files alongside the `.graphql` source so CI and other contributors don't need to re-run codegen.
 
-To automate this in Xcode, add a **Run Script** build phase to your app target that runs **before** "Compile Sources":
-
-```bash
-cd "$SRCROOT"
-./apollo-ios-cli generate
-```
+Do **not** wire `apollo-ios-cli generate` into an Xcode **Run Script** build phase. Running codegen on every build measurably slows compile times (generation scans the entire schema, even for small schemas); the slowdown compounds as the schema grows. Regenerate deliberately, not on every Cmd+B. If you want a shortcut, wrap it in a shell alias or project script (`make codegen`, `./scripts/codegen.sh`) rather than a build phase.
 
 ## Initialize `ApolloClient`
 
@@ -257,7 +252,7 @@ See [operations.md](operations.md) for the `@Observable` view-model pattern that
 - Default to the canonical `swiftPackage` + `relative` codegen config unless the project has a specific constraint (no SPM, legacy structure, fragment-sharing needs that require `inSchemaModule`, etc.). See [codegen.md](codegen.md) for when to deviate.
 - Link `Apollo` to targets that use `ApolloClient`. Link `ApolloAPI` to targets that only read generated models. Do this per target — there is no upfront decision to make before writing the codegen config.
 - Commit `apollo-codegen-config.json`, `schema.graphqls`, and all `.graphql` files to source control so builds are reproducible.
-- Commit generated Swift files unless a build-time `generate` step is guaranteed (for example via a pre-build script) on every build machine including CI.
-- Regenerate after every schema or operation change. Never hand-edit generated files.
+- Commit generated Swift files to source control. Do not rely on a build-phase script to regenerate them on every build — that slows compile times unnecessarily.
+- Regenerate deliberately (manually, or via a dedicated script alias) after every `.graphql` or schema change. Never hand-edit generated files.
 - Create one `ApolloClient` per endpoint, hold it for the lifetime of the app, and inject it via `Environment`. Never construct a new client per request or per view.
 - Put authentication and retry logic in interceptors (see [interceptors.md](interceptors.md)). Never embed them in view code or view models.
