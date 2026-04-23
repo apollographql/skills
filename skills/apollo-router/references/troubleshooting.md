@@ -261,6 +261,14 @@ supergraph:
 
 2. **Check for complex queries** that generate large query plans.
 
+### Response Cache Misses
+
+1. **Check subgraph Cache-Control headers**: origin must return `Cache-Control` without `no-store`
+2. **Verify Cache-Control headers**: subgraph responses need `Cache-Control: max-age=N` (via `@cacheControl` in Apollo Server, or set directly in other frameworks)
+3. **Check scope**: `Cache-Control: private` requires `private_id` to be configured on the router
+4. **Verify Redis connectivity**: check `apollo.router.cache.redis.errors` metric
+5. **Enable cache debugger** (dev only): set `response_cache.debug: true` and use Apollo Sandbox to inspect cache state
+
 ## Federation Issues
 
 ### Composition Errors at Runtime

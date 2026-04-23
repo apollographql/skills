@@ -10,7 +10,7 @@ license: MIT
 compatibility: Works with Claude Code and similar AI coding assistants that support Agent Skills.
 metadata:
   author: apollographql
-  version: "1.0.0"
+  version: "1.1.0"
 allowed-tools: Read Write Edit Glob Grep
 ---
 
@@ -105,9 +105,10 @@ The markdown body contains instructions the agent follows. Structure it for clar
 1. **Overview** - Brief explanation of the skill's purpose
 2. **Process** - Step-by-step workflow (use checkboxes for multi-step processes)
 3. **Quick Reference** - Common patterns and syntax
-4. **Reference Files** - Links to detailed documentation
-5. **Key Rules** - Important guidelines organized by topic
-6. **Ground Rules** - Critical do's and don'ts
+4. **Security** - Risks, mitigations, and validation (if the skill touches anything security-sensitive)
+5. **Reference Files** - Links to detailed documentation
+6. **Key Rules** - Important guidelines organized by topic
+7. **Ground Rules** - Critical do's and don'ts
 
 ### Example Structure
 
@@ -135,6 +136,14 @@ type Example {
 }
 \`\`\`
 
+## Security
+
+> **Risk: [brief description of what can go wrong].**
+> [What the user MUST do to prevent it.]
+
+- ALWAYS [secure default behavior]
+- NEVER [dangerous configuration] in production
+
 ## Reference Files
 
 - [Topic A](references/topic-a.md) - Detailed guide for topic A
@@ -157,6 +166,47 @@ type Example {
 - NEVER do this problematic thing
 - PREFER this approach over that approach
 ```
+
+## Security-Sensitive Content
+
+When a skill generates configuration, code, or guidance that could cause security issues if misused, the skill MUST make those risks explicit and visible to the LLM. An LLM cannot infer security implications from context alone — it needs clearly labeled signals.
+
+### When does a skill need security guidance?
+
+If any of these apply, the skill is security-sensitive:
+
+- Generates config that controls access to data (caching, auth, CORS, permissions)
+- Handles secrets, credentials, or tokens
+- Produces code that runs with elevated privileges
+- Controls what data is shared, public, or exposed to users
+- Configures network bindings, endpoints, or external access
+
+### How to surface security in a skill
+
+1. **Dedicated Security section** in SKILL.md or a reference file, labeled `## Security`. Not "Private data" or "Customization" — use the word "Security" so the LLM recognizes the category.
+
+2. **Explicit warnings at the point of risk** — place security guidance next to the config or code that creates the risk, not in a separate file the LLM may not load:
+
+   ```markdown
+   ### Response caching scope
+
+   > **Security: data leakage risk.** All cached data is PUBLIC by default.
+   > User-specific fields MUST use `scope: PRIVATE` with a `private_id`
+   > configured, or they will be shared across all users.
+   ```
+
+3. **Validation checklist items** — every security-sensitive feature must have corresponding checks in the validation checklist. Group them under a `## Security` heading.
+
+4. **Ground rules** — add ALWAYS/NEVER rules for security-critical behavior. These are the strongest signal to the LLM.
+
+5. **Require the data model** — if correct security configuration depends on understanding the user's data model (e.g., which fields are user-specific), the skill must instruct the LLM to ask the user before generating config. Do not let the LLM guess.
+
+### Anti-patterns
+
+- Describing a security-sensitive default (like "public by default") without labeling it as a security concern
+- Placing security guidance only in reference files that load on demand — the SKILL.md itself must contain the key warnings
+- Using soft language ("you may want to consider") for hard security requirements — use "MUST" and "NEVER"
+- Assuming the LLM understands which fields in a schema are private — require explicit user input
 
 ## Progressive Disclosure
 
@@ -298,3 +348,8 @@ Before publishing a skill, verify:
 - PREFER opinionated guidance over listing multiple options
 - USE `allowed-tools` to pre-approve tools the skill needs
 - NEVER include `Bash(curl:*)` in `allowed-tools` as it grants unrestricted network access and enables `curl | sh` remote code execution patterns
+- ALWAYS include a `## Security` section when the skill generates config or code that controls access, caching, auth, secrets, or data exposure
+- NEVER bury security-critical guidance only in reference files — the key warnings must appear in SKILL.md where the LLM will always see them
+- ALWAYS instruct the LLM to ask the user about their data model before generating security-sensitive config (e.g., which fields are user-specific, which data is public)
+- USE explicit blockquote warnings (`> **Security: ...**`) next to config or code that creates security risks
+- ALWAYS add validation checklist items for every security-sensitive feature, grouped under a `## Security` heading
