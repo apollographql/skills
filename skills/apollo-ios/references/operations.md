@@ -41,13 +41,13 @@ func loadUser(id: String) async throws -> GetUserQuery.Data.User? {
     query: GetUserQuery(id: id),
     cachePolicy: .cacheFirst
   )
-  if let errors = response.errors, !errors.isEmpty {
-    throw GraphQLErrors(errors)
+  if let firstError = response.errors?.first {
+    // `GraphQLError` conforms to `Error`, so it can be thrown directly.
+    // Inspect `response.errors` for all of them if you need the full list.
+    throw firstError
   }
   return response.data?.user
 }
-
-struct GraphQLErrors: Error { let errors: [GraphQLError]; init(_ e: [GraphQLError]) { self.errors = e } }
 ```
 
 ### Two responses — `cacheAndNetwork`
@@ -89,8 +89,8 @@ func updateUserName(id: String, name: String) async throws {
   let response = try await apolloClient.perform(
     mutation: UpdateUserNameMutation(id: id, name: name)
   )
-  if let errors = response.errors, !errors.isEmpty {
-    throw GraphQLErrors(errors)
+  if let firstError = response.errors?.first {
+    throw firstError
   }
 }
 ```
@@ -107,7 +107,7 @@ The handler is a closure, not an `AsyncSequence`:
 public typealias ResultHandler = @Sendable (Result<GraphQLResponse<Query>, any Swift.Error>) -> Void
 ```
 
-### Bridging a watcher to an `AsyncStream` for SwiftUI
+### Bridging a watcher to an `@State` variable for SwiftUI
 
 Store the watcher for the lifetime of the view and tear it down on cancellation:
 
@@ -194,10 +194,11 @@ A network response can succeed (no thrown error) while still containing GraphQL 
 ```swift
 let response = try await apolloClient.fetch(query: GetUserQuery(id: id))
 
-if let errors = response.errors, !errors.isEmpty {
-  // GraphQL-level errors returned by the server. `response.data` may still
-  // contain partial data.
-  throw GraphQLErrors(errors)
+// `response.errors` is `[GraphQLError]?`. Each `GraphQLError` conforms to
+// `Error` and carries `.message`, `.locations`, `.path`, and `.extensions`.
+// `response.data` may still contain partial data when there are errors.
+if let firstError = response.errors?.first {
+  throw firstError
 }
 
 guard let user = response.data?.user else {
@@ -205,6 +206,20 @@ guard let user = response.data?.user else {
   throw UserNotFound()
 }
 ```
+
+If you need to propagate *all* GraphQL errors (not just the first) and don't want to lose the rest, wrap them in an app-owned error type — for example:
+
+```swift
+enum APIError: Error {
+  case graphQL([GraphQLError])
+}
+
+if let errors = response.errors, !errors.isEmpty {
+  throw APIError.graphQL(errors)
+}
+```
+
+`APIError` here is an app-level type you define and name to match your codebase — it is **not** provided by Apollo iOS. Apollo iOS ships only the singular `GraphQLError`; any aggregation wrapper is yours to design.
 
 Errors that *prevent* a response entirely (network failures, cancellations, parsing errors) are thrown from `fetch` / `perform` / `subscribe` and surface as `Swift.Error`. Check specifically for `CancellationError` when an async `Task` is cancelled.
 

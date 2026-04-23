@@ -99,7 +99,7 @@ final class ApolloGraphQLService: GraphQLService {
 
   func getUser(id: String) async throws -> GetUserQuery.Data.User? {
     let response = try await client.fetch(query: GetUserQuery(id: id))
-    if let errors = response.errors, !errors.isEmpty { throw GraphQLErrors(errors) }
+    if let firstError = response.errors?.first { throw firstError }
     return response.data?.user
   }
 }
