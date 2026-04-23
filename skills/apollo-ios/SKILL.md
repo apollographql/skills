@@ -24,8 +24,9 @@ Apollo iOS is a strongly-typed GraphQL client for Apple platforms. It generates 
 Follow this process when adding or working with Apollo iOS:
 
 - [ ] Confirm target platforms, GraphQL endpoint(s), and how the schema is sourced.
-- [ ] Add `Apollo` to the project via Swift Package Manager and install the `apollo-ios-cli`.
-- [ ] Answer the three project-configuration questions (modules, schema module type, operations location) **before** writing `apollo-codegen-config.json`.
+- [ ] Add Apollo iOS via Swift Package Manager and install the `apollo-ios-cli`.
+- [ ] Link each target to the correct product (`Apollo` for targets using `ApolloClient`, `ApolloAPI` for targets that only read generated models).
+- [ ] Write `apollo-codegen-config.json` using the canonical default (`moduleType: swiftPackage`, `operations: relative`); deviate only when the project has a specific constraint.
 - [ ] Run codegen and wire it into the build.
 - [ ] Create a single shared `ApolloClient` and inject it via SwiftUI `Environment`.
 - [ ] Implement operations (queries, mutations, subscriptions) from `@Observable` view models.
@@ -34,13 +35,13 @@ Follow this process when adding or working with Apollo iOS:
 
 ## Reference Files
 
-- [Setup](references/setup.md) — Install the SDK and CLI, answer the three project-configuration questions, generate `apollo-codegen-config.json`, download the schema, run initial codegen, initialize `ApolloClient`, wire it into SwiftUI.
-- [Codegen](references/codegen.md) — Ongoing and advanced code generation: full `apollo-codegen-config.json` reference, custom scalars, test mocks, Swift 6 / MainActor flags, pre-build script, multi-module setups.
+- [Setup](references/setup.md) — Install the SDK and CLI, link the right product (`Apollo` / `ApolloAPI` / `ApolloSQLite` / `ApolloWebSocket` / `ApolloTestSupport`) to each target, generate the canonical `apollo-codegen-config.json`, download the schema, run initial codegen, initialize `ApolloClient`, wire it into SwiftUI.
+- [Codegen](references/codegen.md) — Full `apollo-codegen-config.json` reference: `schemaTypes.moduleType` (`swiftPackage` / `embeddedInTarget` / `other`) and `operations` (`relative` / `inSchemaModule` / `absolute`) with tradeoffs and fragment-sharing patterns, custom scalars, test mocks, Swift 6 / MainActor flags, pre-build script.
 - [Operations](references/operations.md) — Queries, mutations, watchers, cache policies, error handling, and SwiftUI `@Observable` view-model patterns with async/await.
 - [Caching](references/caching.md) — Choosing between in-memory and SQLite cache, declaring cache keys with the `@typePolicy` directive, programmatic cache keys as advanced fallback, watching the cache, manual reads/writes.
 - [Interceptors](references/interceptors.md) — The four interceptor protocols, building a custom `InterceptorProvider`, auth token interceptor, logging, retry, APQ.
 - [Subscriptions](references/subscriptions.md) — Choosing between HTTP multipart and WebSocket transports, `SplitNetworkTransport` wiring, `connection_init` auth, pause/resume on scene phase, consuming subscriptions from SwiftUI.
-- [Testing](references/testing.md) — `ApolloTestSupport`, generated `Mock<Type>` fixtures, `MockNetworkTransport`, testing watchers.
+- [Testing](references/testing.md) — `ApolloTestSupport`, generated `Mock<Type>` fixtures, the protocol-wrapper pattern for testable view models, integration testing with a fake `NetworkTransport`, testing watchers.
 
 ## Scripts
 
@@ -50,7 +51,8 @@ Follow this process when adding or working with Apollo iOS:
 
 - Use Apollo iOS **v2+**. v1.x and v0.x are legacy — do not target them for new work.
 - Install via **Swift Package Manager**. CocoaPods and Carthage are not the recommended distribution mechanism for apollo-ios.
-- **Before writing `apollo-codegen-config.json`, ask the user the three project-configuration questions** (see [Setup](references/setup.md)). Do not assume defaults silently — a wrong config forces painful rework later.
+- Default the codegen config to `moduleType: swiftPackage` and `operations: relative` (see [Setup](references/setup.md)). This shape works for single-target and multi-module apps alike. Deviate only when the project cannot use SPM or has specific fragment-sharing needs (see [Codegen](references/codegen.md)).
+- Target linking is a per-target decision made as modules grow — there is no upfront decision to make. Link `Apollo` to targets using `ApolloClient`; link `ApolloAPI` to targets that only consume generated response models.
 - Keep `schema.graphqls`, `.graphql` operation files, and `apollo-codegen-config.json` in source control so builds are reproducible.
 - Regenerate code after every schema or `.graphql` operation change. Never hand-edit generated files.
 - Create a **single shared `ApolloClient`** per endpoint. Inject it via SwiftUI `Environment`; never construct a new client per request.

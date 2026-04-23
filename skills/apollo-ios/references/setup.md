@@ -1,6 +1,6 @@
 # Setup
 
-Use this guide to take an empty Xcode project to a running `ApolloClient` with generated types. Covers SDK install, codegen CLI install, the three project-configuration decisions, writing `apollo-codegen-config.json`, running initial codegen, and wiring `ApolloClient` into SwiftUI.
+Use this guide to take an empty Xcode project to a running `ApolloClient` with generated types. Covers SDK install, codegen CLI install, writing `apollo-codegen-config.json`, running initial codegen, and wiring `ApolloClient` into SwiftUI.
 
 ## Add the SDK
 
@@ -20,22 +20,53 @@ dependencies: [
 ],
 ```
 
-Link the products you need to each target that uses them:
+In Xcode, the equivalent workflow is **File → Add Package Dependencies → https://github.com/apollographql/apollo-ios.git**.
+
+### Link the right product to each target
+
+Apollo iOS ships five products. Pick per target based on what that target actually does:
+
+| Product | Link when the target… |
+|---|---|
+| `Apollo` | …creates or uses `ApolloClient` — executes operations, configures the interceptor chain, reads/writes the normalized cache directly. Depends on `ApolloAPI`, so linking `Apollo` gives you the generated types as well. |
+| `ApolloAPI` | …only consumes generated response models (queries, mutations, fragments) without ever touching `ApolloClient`. Typical for UI / presentation modules in multi-module apps. |
+| `ApolloSQLite` | …wires up `SQLiteNormalizedCache` (persistent on-disk cache). Usually the same target that constructs `ApolloClient`. |
+| `ApolloWebSocket` | …uses `WebSocketTransport` — for subscription-only WebSocket setups, or when every operation flows over the WebSocket. See [subscriptions.md](subscriptions.md). |
+| `ApolloTestSupport` | …is a test target using generated `Mock<Type>` fixtures. See [testing.md](testing.md). |
+
+Single-target apps almost always link just `Apollo` (plus optionally `ApolloSQLite` / `ApolloWebSocket`). Multi-module apps mix `Apollo` for infrastructure / data-layer modules and `ApolloAPI` for UI modules that only read generated models — this keeps the networking layer out of view code and reduces binary size. Target linking is a lazy decision — add products as new targets need them; there is no upfront decision to make before writing `apollo-codegen-config.json`. See the official [Project Modularization](https://www.apollographql.com/docs/ios/project-configuration/modularization) docs for the detailed rationale.
+
+Example — a single-target SwiftUI app with persistent caching:
 
 ```swift
 .target(
   name: "MyApp",
   dependencies: [
     .product(name: "Apollo", package: "apollo-ios"),
-    // Optional, if you need persistent cache:
     .product(name: "ApolloSQLite", package: "apollo-ios"),
-    // Optional, if you need subscriptions:
-    .product(name: "ApolloWebSocket", package: "apollo-ios"),
   ]
 ),
 ```
 
-In Xcode, the equivalent workflow is **File → Add Package Dependencies → https://github.com/apollographql/apollo-ios.git** and adding `Apollo` (plus optional `ApolloSQLite` / `ApolloWebSocket`) to the target.
+Example — a multi-module app where `DataLayer` owns the `ApolloClient` and `Feature` only reads models:
+
+```swift
+.target(
+  name: "DataLayer",
+  dependencies: [
+    .product(name: "Apollo", package: "apollo-ios"),
+    .product(name: "ApolloSQLite", package: "apollo-ios"),
+    "MyAPI", // the generated schema package — see codegen.md
+  ]
+),
+.target(
+  name: "Feature",
+  dependencies: [
+    .product(name: "ApolloAPI", package: "apollo-ios"),
+    "MyAPI",
+  ]
+),
+```
 
 ## Install the codegen CLI
 
@@ -49,80 +80,19 @@ This produces an executable at `./apollo-ios-cli`. Prefix CLI invocations below 
 
 For CI and non-SPM setups, download the universal macOS binary from the [Apollo iOS Releases](https://github.com/apollographql/apollo-ios/releases) page.
 
-## Answer the three project-configuration questions **first**
-
-Before writing `apollo-codegen-config.json`, decide three things. These are the decisions the Apollo docs ([Project Configuration](https://www.apollographql.com/docs/ios/project-configuration/intro)) consider foundational. A wrong answer forces painful rework later — **ask the user using `AskUserQuestion` before generating a config**.
-
-### Q1: Single vs. multiple modules?
-
-Will Apollo types live in one target, or be shared across multiple Swift packages / Xcode targets?
-
-- **Single target** — one app target, no shared frameworks. Default recommendation for new apps.
-- **Multiple modules** — shared schema used by several feature modules (common in modular SwiftUI apps and iOS/macOS-shared codebases).
-
-Docs: [Project Modularization](https://www.apollographql.com/docs/ios/project-configuration/modularization).
-
-### Q2: Which schema `moduleType`?
-
-How should the generated schema types be packaged?
-
-| `moduleType` | When to use | JSON key |
-|---|---|---|
-| `embeddedInTarget` | Single target — generated files live inside an existing target. | `"embeddedInTarget"` |
-| `swiftPackage` | Multiple modules — generated schema lives in its own SPM package. | `"swiftPackage"` |
-| `other` | Custom build system (Tuist, Bazel, etc.); you manage the module yourself. | `"other"` |
-
-Docs: [Schema Types](https://www.apollographql.com/docs/ios/project-configuration/schema-types).
-
-### Q3: Where should operation models live?
-
-Where should the generated query / mutation / subscription types sit relative to the schema?
-
-| `operations` | When to use | JSON key |
-|---|---|---|
-| Together with the schema | Single target, or you want all operations in one place. | `"inSchemaModule"` |
-| Beside the `.graphql` file that defines them | Feature modules that own their own operations. | `"relative"` |
-| At a fixed path | You need a specific location that does not match either pattern above. | `"absolute"` |
-
-Docs: [Operation Models](https://www.apollographql.com/docs/ios/project-configuration/operation-models).
-
 ## Generate `apollo-codegen-config.json`
 
-The easiest way to create a config file is `./apollo-ios-cli init`, which writes a minimal config you can edit. Pass the answers from the three questions above:
+The canonical default is a dedicated schema SPM package with operation files generated next to each `.graphql` that defines them. This shape works for single-target and multi-module apps alike, and is the shape the rest of this reference assumes.
+
+Generate a minimal config with `./apollo-ios-cli init`:
 
 ```bash
 ./apollo-ios-cli init \
   --schema-namespace MyAPI \
-  --module-type embeddedInTarget \
-  --target-name MyApp
+  --module-type swiftPackage
 ```
 
-The config below is the canonical **single-target** shape (maps to the answers: single target, `embeddedInTarget`, `inSchemaModule`):
-
-```json
-{
-  "schemaNamespace": "MyAPI",
-  "input": {
-    "schemaSearchPaths": ["**/*.graphqls"],
-    "operationSearchPaths": ["**/*.graphql"]
-  },
-  "output": {
-    "schemaTypes": {
-      "path": "./MyApp/MyAPI",
-      "moduleType": {
-        "embeddedInTarget": {
-          "name": "MyApp",
-          "accessModifier": "internal"
-        }
-      }
-    },
-    "operations": { "inSchemaModule": {} },
-    "testMocks": { "none": {} }
-  }
-}
-```
-
-For a **multi-module** project with the schema in its own SPM package:
+Then edit it to the canonical shape:
 
 ```json
 {
@@ -136,7 +106,7 @@ For a **multi-module** project with the schema in its own SPM package:
       "path": "./MyAPI",
       "moduleType": { "swiftPackage": {} }
     },
-    "operations": { "inSchemaModule": {} },
+    "operations": { "relative": {} },
     "testMocks": {
       "swiftPackage": { "targetName": "MyAPITestMocks" }
     }
@@ -144,9 +114,13 @@ For a **multi-module** project with the schema in its own SPM package:
 }
 ```
 
-For feature modules that own their operations alongside feature code, use `"operations": { "relative": {} }` instead of `"inSchemaModule"`.
+What this config does:
 
-See [codegen.md](codegen.md) for the full config reference, custom scalars, and advanced options.
+- **`moduleType: swiftPackage`** generates `./MyAPI/` as its own Swift package containing the schema types. Other targets in your workspace depend on it like any other SPM package. This is the recommended default for any SPM-based project (either a `Package.swift` or an Xcode project that uses SPM for dependencies).
+- **`operations: relative`** (with no subpath) writes each generated operation file next to the `.graphql` file that defines it. This co-locates operations with the feature code that uses them — easy to find, easy to own, easy to move. Targets containing generated operation files must link both `MyAPI` (the schema module) and `ApolloAPI` (the runtime types the operations conform to).
+- **`testMocks: swiftPackage`** adds a sibling `MyAPITestMocks` target inside the `MyAPI` package that test targets can depend on.
+
+**Deviating from the default.** If the project cannot use SPM (no `Package.swift`, Xcode project configured without SPM), use `moduleType: embeddedInTarget` or `moduleType: other` instead. If you prefer a single shared location for generated operations (or want to share fragments across modules differently), pick `operations: inSchemaModule` or `operations: absolute`. See [codegen.md](codegen.md) for the full reference of each option, their tradeoffs, and fragment-sharing patterns.
 
 ## Download the schema
 
@@ -160,7 +134,7 @@ Add a `schemaDownload` section to your config, then run `./apollo-ios-cli fetch-
         "endpointURL": "https://api.example.com/graphql"
       }
     },
-    "outputPath": "./MyApp/MyAPI/schema.graphqls"
+    "outputPath": "./MyAPI/schema.graphqls"
   }
 }
 ```
@@ -268,9 +242,10 @@ See [operations.md](operations.md) for the `@Observable` view-model pattern that
 
 ## Ground rules
 
-- **Ask before writing `apollo-codegen-config.json`.** The three project-configuration questions are the foundation — bad defaults cascade into hours of rework.
+- Default to the canonical `swiftPackage` + `relative` codegen config unless the project has a specific constraint (no SPM, legacy structure, fragment-sharing needs that require `inSchemaModule`, etc.). See [codegen.md](codegen.md) for when to deviate.
+- Link `Apollo` to targets that use `ApolloClient`. Link `ApolloAPI` to targets that only read generated models. Do this per target — there is no upfront decision to make before writing the codegen config.
 - Commit `apollo-codegen-config.json`, `schema.graphqls`, and all `.graphql` files to source control so builds are reproducible.
-- Commit the generated Swift files as well if your `moduleType` is `embeddedInTarget`; gitignore is acceptable only when a build-time `generate` step is guaranteed (for example via a pre-build script).
+- Commit generated Swift files unless a build-time `generate` step is guaranteed (for example via a pre-build script) on every build machine including CI.
 - Regenerate after every schema or operation change. Never hand-edit generated files.
 - Create one `ApolloClient` per endpoint, hold it for the lifetime of the app, and inject it via `Environment`. Never construct a new client per request or per view.
-- Put authentication and retry logic in an interceptor. Never embed them in view code or view models.
+- Put authentication and retry logic in interceptors (see [interceptors.md](interceptors.md)). Never embed them in view code or view models.
