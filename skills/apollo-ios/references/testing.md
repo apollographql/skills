@@ -60,7 +60,11 @@ Add the dependency to your test target only:
 
 ## Build test fixtures with `Mock<Type>`
 
-`Mock<ObjectType>` is `@dynamicMemberLookup` — set the fields you need and feed the mock into selection-set conversion helpers:
+A generated operation's `Data` is always rooted at the schema's root type (typically `Query` for queries, `Mutation` for mutations). To build a fixture:
+
+1. Mock each nested entity in the response tree.
+2. Mock the root type (`Query`/`Mutation`) and wire the nested mocks in as field values.
+3. Call `<Operation>.Data.from(rootMock)` to coerce the root mock into the operation's `Data` type. This helper is `async`.
 
 ```swift
 import ApolloTestSupport
@@ -69,19 +73,26 @@ import Testing
 
 @Test
 func viewModelDisplaysUser() async throws {
-  let userMock = Mock<User>()
-  userMock.id = "user-1"
-  userMock.name = "Ada Lovelace"
-  userMock.email = "ada@example.com"
+  // 1. Leaf entity mock.
+  let mockUser = Mock<User>(
+    id: "user-1",
+    name: "Ada Lovelace",
+    email: "ada@example.com"
+  )
 
-  let data = GetUserQuery.Data.from(userMock)
-  // `data` is a real GetUserQuery.Data — feed it into view models or
-  // selection-set tests exactly as you would a server response.
+  // 2. Root `Query` mock with the leaf mock attached to the `user` field.
+  let mockQuery = Mock<Query>(user: mockUser)
+
+  // 3. Coerce into a real `GetUserQuery.Data`. `.from(_:)` is async.
+  let data = await GetUserQuery.Data.from(mockQuery)
+
   #expect(data.user?.name == "Ada Lovelace")
 }
 ```
 
-Use `Mock<Type>.from(…)` / the typed `Data.from(_:)` helpers emitted by codegen (when test mocks are enabled) to coerce mocks into the precise `Data` type the operation expects.
+Codegen emits a `convenience init` on each `Mock<SchemaType>` with keyword arguments for every field on that type, so you can build deep fixtures concisely. For partial overrides, you can also use the `@dynamicMemberLookup` setters (`mockUser.name = "…"`) after calling `Mock<User>()`.
+
+For mutations, mock the root `Mutation` type and feed it into `<Mutation>.Data.from(_:)`. The same rule applies — root first, leaves attached.
 
 ## Testability architecture — wrap `ApolloClient`
 
@@ -118,12 +129,14 @@ final class FakeGraphQLService: GraphQLService {
 
 @Test
 func viewModelLoadsUser() async throws {
-  let user = Mock<User>()
-  user.id = "1"
-  user.name = "Grace Hopper"
+  // Build the fixture root-first (Mock<Query> with the User attached),
+  // convert to the operation's Data, then hand the nested user field
+  // back to the fake service.
+  let mockUser = Mock<User>(id: "1", name: "Grace Hopper")
+  let data = await GetUserQuery.Data.from(Mock<Query>(user: mockUser))
 
   let service = FakeGraphQLService()
-  service.userToReturn = GetUserQuery.Data.User.from(user)
+  service.userToReturn = data.user
 
   let viewModel = UserViewModel(service: service)
   await viewModel.load(userID: "1")
@@ -205,19 +218,19 @@ func watcherReactsToCacheUpdate() async throws {
     }
   }
 
+  let beforeData = await GetUserQuery.Data.from(
+    Mock<Query>(user: Mock<User>(id: "1", name: "Before"))
+  )
   try await store.withinReadWriteTransaction { tx in
-    try tx.write(
-      data: /* mocked GetUserQuery.Data with name: "Before" */,
-      for: GetUserQuery(id: "1")
-    )
+    try tx.write(data: beforeData, for: GetUserQuery(id: "1"))
   }
   try await Task.sleep(for: .milliseconds(50))
 
+  let afterData = await GetUserQuery.Data.from(
+    Mock<Query>(user: Mock<User>(id: "1", name: "After"))
+  )
   try await store.withinReadWriteTransaction { tx in
-    try tx.write(
-      data: /* mocked GetUserQuery.Data with name: "After" */,
-      for: GetUserQuery(id: "1")
-    )
+    try tx.write(data: afterData, for: GetUserQuery(id: "1"))
   }
   try await Task.sleep(for: .milliseconds(50))
 
