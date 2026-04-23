@@ -170,25 +170,27 @@ The consuming module must declare the fragment-owning module as a SPM dependency
 
 Controls generation of `Mock<Type>` helpers that you use in unit tests.
 
+**Default to `none`.** Generated mocks add files, increase codegen time, and pull `ApolloTestSupport` into the dependency graph. Keep them off until you actually start writing tests that use them, then switch to `swiftPackage` (or `absolute`) and regenerate. This is a lazy decision — flip it when the need appears.
+
 ```json
 "testMocks": { "none": {} }
 ```
 
-Emits no mocks. Use this if you don't need test mocks.
+Default. Emits no mocks.
 
 ```json
 "testMocks": { "swiftPackage": { "targetName": "MyAPITestMocks" } }
 ```
 
-Emits a sibling test-mocks target in the schema SPM package.
+Emits a sibling test-mocks target in the schema SPM package. Use this with `moduleType: swiftPackage` — the mocks target ends up inside the generated schema package and test targets depend on `MyAPITestMocks` alongside `MyAPI`.
 
 ```json
 "testMocks": { "absolute": { "path": "./MyAppTests/Mocks" } }
 ```
 
-Emits mocks at a specific location.
+Emits mocks at a specific location. Use this with `moduleType: embeddedInTarget` or `other`, or when you want mocks outside the schema module for any reason.
 
-See [testing.md](testing.md) for how to use the generated mocks.
+See [testing.md](testing.md) for how to use the generated mocks and the full setup flow when you enable them for the first time.
 
 ## `options`
 

@@ -7,9 +7,13 @@ Apollo iOS emits two distinct sets of testing affordances:
 
 This reference covers both, plus the recommended architecture for making view models testable without a real GraphQL server.
 
-## Enable test mocks in codegen
+## Enable test mocks
 
-In `apollo-codegen-config.json`:
+Test-mock generation is **off by default** in the canonical setup ([setup.md](setup.md#generate-apollo-codegen-configjson) ships `testMocks: { "none": {} }`). The first time you write a test that uses `Mock<Type>`, flip the config to emit them, regenerate, and link the produced target.
+
+### 1. Flip `output.testMocks` in `apollo-codegen-config.json`
+
+For a project using `moduleType: swiftPackage` (the canonical default):
 
 ```json
 "output": {
@@ -19,7 +23,7 @@ In `apollo-codegen-config.json`:
 }
 ```
 
-Or for non-SPM projects:
+For a project using `moduleType: embeddedInTarget` or `other`, pick a location for the mocks yourself:
 
 ```json
 "testMocks": {
@@ -27,11 +31,15 @@ Or for non-SPM projects:
 }
 ```
 
-Regenerate:
+### 2. Regenerate
 
 ```bash
 ./apollo-ios-cli generate
 ```
+
+Commit the newly generated `MyAPITestMocks` files (or the files at the `absolute` path) alongside the config change.
+
+### 3. Link the mocks target — see the next section.
 
 ## Link `ApolloTestSupport` to your test target
 
@@ -222,7 +230,7 @@ func watcherReactsToCacheUpdate() async throws {
 
 - **Wrap `ApolloClient` in an app-owned protocol**; test view models against the protocol. Keep Apollo-specific types behind that boundary.
 - Never hit the real network in unit tests. If you must exercise `ApolloClient` itself, use a fake `NetworkTransport`.
-- Enable `output.testMocks` in `apollo-codegen-config.json` once you start writing tests — the generated `.from(_:)` helpers cut fixture setup dramatically.
+- Keep `output.testMocks: { "none": {} }` until the first test that needs `Mock<Type>` is being written, then flip it on and regenerate. Generating mocks early wastes time and bloats the module for no benefit.
 - Do not share `Mock<Type>` instances across tests. Build a fresh mock per test to avoid state bleed.
 - Test watcher behavior by directly manipulating the `ApolloStore` in `withinReadWriteTransaction`, not by sending real network responses.
 - Prefer Swift Testing (`@Test`, `#expect`) for new tests; XCTest also works with the same patterns.

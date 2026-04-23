@@ -119,9 +119,7 @@ Then edit it to the canonical shape:
       "moduleType": { "swiftPackage": {} }
     },
     "operations": { "relative": {} },
-    "testMocks": {
-      "swiftPackage": { "targetName": "MyAPITestMocks" }
-    }
+    "testMocks": { "none": {} }
   }
 }
 ```
@@ -130,7 +128,7 @@ What this config does:
 
 - **`moduleType: swiftPackage`** generates `./MyAPI/` as its own Swift package containing the schema types. Other targets in your workspace depend on it like any other SPM package. This is the recommended default for any SPM-based project (either a `Package.swift` or an Xcode project that uses SPM for dependencies).
 - **`operations: relative`** (with no subpath) writes each generated operation file next to the `.graphql` file that defines it. This co-locates operations with the feature code that uses them — easy to find, easy to own, easy to move. Targets containing generated operation files must link both `MyAPI` (the schema module) and `ApolloAPI` (the runtime types the operations conform to).
-- **`testMocks: swiftPackage`** adds a sibling `MyAPITestMocks` target inside the `MyAPI` package that test targets can depend on.
+- **`testMocks: none`** skips generating test mocks until they are actually needed. Mocks take up space and increase codegen time; turn them on only once you start writing tests that use them — see [testing.md](testing.md#enable-test-mocks).
 
 **Deviating from the default.** If the project cannot use SPM (no `Package.swift`, Xcode project configured without SPM), use `moduleType: embeddedInTarget` or `moduleType: other` instead. If you prefer a single shared location for generated operations (or want to share fragments across modules differently), pick `operations: inSchemaModule` or `operations: absolute`. See [codegen.md](codegen.md) for the full reference of each option, their tradeoffs, and fragment-sharing patterns.
 

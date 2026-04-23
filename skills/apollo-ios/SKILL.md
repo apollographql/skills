@@ -31,7 +31,7 @@ Follow this process when adding or working with Apollo iOS:
 - [ ] Create a single shared `ApolloClient` and inject it via SwiftUI `Environment`.
 - [ ] Implement operations (queries, mutations, subscriptions) from `@Observable` view models.
 - [ ] Add interceptors for auth and logging.
-- [ ] Validate behavior with tests against generated mocks.
+- [ ] When the first test that needs `Mock<Type>` is written, flip `output.testMocks` in `apollo-codegen-config.json` from `none` to `swiftPackage` (or `absolute`), regenerate, and link the mocks target to the test target.
 
 ## Reference Files
 
@@ -57,6 +57,7 @@ Follow this process when adding or working with Apollo iOS:
 - Keep `schema.graphqls`, `.graphql` operation files, and `apollo-codegen-config.json` in source control so builds are reproducible.
 - Regenerate code after every schema or `.graphql` operation change. Never hand-edit generated files.
 - Commit the generated Swift files to source control. Do **not** wire `apollo-ios-cli generate` into an Xcode Run Script build phase — it measurably slows compile times on every build. Regenerate manually or via a dedicated script alias.
+- Generate test mocks lazily. The canonical codegen config ships with `output.testMocks: { "none": {} }`. Flip it on (and regenerate) only when the first test that needs `Mock<Type>` is being written — see [Testing](references/testing.md#enable-test-mocks).
 - Create a **single shared `ApolloClient`** per endpoint. Inject it via SwiftUI `Environment`; never construct a new client per request.
 - Prefer `@typePolicy` schema directives over programmatic cache key resolution when declaring cache keys for types.
 - Attach auth tokens in an `HTTPInterceptor` (header mutation is an HTTP concern). Put token-refresh and retry orchestration in a `GraphQLInterceptor` so it wraps the entire operation — `MaxRetryInterceptor` lives at the GraphQL layer for this reason. Never put auth or retry in view code.
