@@ -134,7 +134,7 @@ The same principle applies to `max_height`, `max_aliases`, and `max_root_fields`
 
 ### Response Caching (v2 only, v2.6.0+)
 
-> **Security: data leakage risk.** Before generating any response cache config, you MUST ask the user which types and fields return user-specific data. All cached data is PUBLIC by default — user-specific fields cached without `scope: PRIVATE` and a `private_id` will be shared across all users.
+> **Security: data leakage risk.** Before generating any response cache config, you MUST ask the user which types and fields return user-specific data.  Cached data defaults to shared — subgraph responses without `Cache-Control: private` are visible to all users.  User-specific subgraphs must return `Cache-Control: private` and have `private_id` configured on the router.
 
 - Ask: **Which subgraphs serve user-specific data?** (e.g., accounts, profiles, carts)
 - Ask: **How do you identify users?** (JWT `sub` claim, session token, API key)
@@ -277,8 +277,8 @@ Options:
 - ONLY offer Response Caching when `ROUTER_VERSION=v2` (requires v2.6.0+)
 - ALWAYS use `${env.*}` for Redis URLs, passwords, and invalidation shared keys
 - NEVER enable `response_cache.debug: true` in production config
-- RECOMMEND combining @cacheControl (passive TTL) with @cacheTag (active invalidation) for production
-- ALWAYS ask which fields return user-specific data before generating response cache config — never assume all data is safe to cache publicly
-- ALWAYS configure `private_id` and `scope: PRIVATE` for subgraphs that serve user-specific data
+- RECOMMEND combining Cache-Control headers (passive TTL) with @cacheTag (active invalidation) for production
+- ALWAYS ask which fields return user-specific data before generating response cache config — never assume all data is safe to cache as shared
+- ALWAYS configure `private_id` for subgraphs that serve user-specific data, and ensure those subgraphs return `Cache-Control: private` (via `@cacheControl(scope: PRIVATE)` in Apollo Server, or by setting the header directly in other frameworks)
 - NEVER generate response cache config without addressing private data — if the user says "no user-specific data", confirm explicitly before proceeding
 - ALWAYS bind the invalidation endpoint to `127.0.0.1`, NEVER `0.0.0.0` in production

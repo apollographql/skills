@@ -9,10 +9,14 @@ Response caching enables the router to cache origin responses and reuse them acr
 - **Entity representations**: Cached independently per origin — each origin's contribution to an entity is cached separately and reusable across different queries
 - **Root query fields**: Cached as complete units (the entire response for that root field)
 
+Response caching applies to **query operations only** — mutations and subscriptions are never cached.
+
 ### Scope
 
-- **PUBLIC** (default): Data is identical for all users and shared in the cache
-- **PRIVATE**: Data is user-specific; requires `private_id` configuration to cache per-user
+Scope is determined by the `Cache-Control` header the subgraph returns.  (The router docs call these "PUBLIC" and "PRIVATE" — we use "shared" and "private" here because they describe the actual behavior more clearly.)
+
+- **Shared** (default — no `private` directive in the header): Data is identical for all users and stored in a single shared cache entry
+- **Private** (`Cache-Control: private`): Data is user-specific; requires `private_id` configuration to cache per-user in separate entries
 
 ### Mixed TTLs
 
@@ -20,17 +24,21 @@ When an origin response contains multiple entity representations, the router use
 
 ## Security
 
-### Data leakage risk: PUBLIC scope is the default
+### Data leakage risk: cached data defaults to shared
 
-> **Security: cross-user data leakage.** All cached data uses PUBLIC scope by default. Any subgraph response cached without `scope: PRIVATE` and a configured `private_id` is shared across ALL users. If user-specific fields (profile data, preferences, bookmarks, cart contents) are cached as PUBLIC, any user can receive another user's data.
+> **Security: cross-user data leakage.** Caching requires opt-in — subgraphs must return a `Cache-Control` header for the router to cache anything.  But once a response IS cached, it defaults to PUBLIC scope (shared across all users).  If a subgraph returns `Cache-Control: max-age=300` for user-specific data without also including `private`, that data is shared across all users.
 
-This is the highest-severity risk in response caching. Misconfiguration means silently serving one user's private data to others.
+The risk is not "everything gets cached" — it's "data that IS cached defaults to shared."  If a subgraph opts into caching but forgets to mark user-specific responses as `private`, those responses are silently served to other users.
 
 ### Before enabling response caching, you MUST:
 
 1. **Identify every field that returns user-specific data** — ask the user which types and fields vary per user. Do not guess. Common examples: user profiles, preferences, bookmarks, cart contents, order history, notifications, permissions.
 
-2. **Mark user-specific fields with `scope: PRIVATE`** in the subgraph schema:
+2. **Ensure user-specific responses include `Cache-Control: private`** — how you do this depends on your subgraph framework:
+   - **Apollo Server**: use `@cacheControl(scope: PRIVATE)` in your schema
+   - **Other servers**: set the header directly, e.g., `Cache-Control: private, max-age=60`
+
+   Apollo Server example:
    ```graphql
    type User @key(fields: "id") {
      id: ID!
@@ -40,14 +48,14 @@ This is the highest-severity risk in response caching. Misconfiguration means si
    }
    ```
 
-3. **Configure `private_id`** for every subgraph that serves PRIVATE-scoped data:
+3. **Configure `private_id`** for every subgraph that serves private-scoped data:
    ```yaml
    response_cache:
      enabled: true
      subgraph:
        subgraphs:
          accounts:
-           private_id: "user_id"  # REQUIRED for PRIVATE scope to work
+           private_id: "user_id"  # REQUIRED for private scope to work
    ```
 
 4. **Extract the user identifier** from the request (e.g., JWT `sub` claim) via a Rhai script:
@@ -63,7 +71,7 @@ This is the highest-severity risk in response caching. Misconfiguration means si
    }
    ```
 
-**What happens if `private_id` is missing:** When a subgraph returns a PRIVATE-scoped response but no `private_id` is configured, the router cannot identify the user. The cache is bypassed entirely for those requests — no data leakage occurs, but you get no caching benefit. However, if a field *should* be PRIVATE but is not marked as such in the schema, it will be cached as PUBLIC and shared across users.
+**What happens if `private_id` is missing:** When a subgraph returns `Cache-Control: private` but no `private_id` is configured, the router cannot identify the user.  The cache is bypassed entirely for those requests — no data leakage occurs, but you get no caching benefit.  However, if a response *should* be private but the subgraph doesn't include `private` in the `Cache-Control` header, it will be cached as shared and served to all users.
 
 ### Additional security requirements
 
@@ -90,7 +98,7 @@ response_cache:
   subgraph:
     all:
       enabled: true
-      ttl: 5m  # Required: fallback TTL when responses lack Cache-Control headers
+      ttl: 5m  # Required: used when Cache-Control header lacks max-age
       redis:
         urls: ["${env.CACHE_REDIS_URL:-redis://localhost:6379}"]
 ```
@@ -141,40 +149,25 @@ Format: `redis[s][-cluster]://[[username:]password@]host[:port][/database]`
 
 Clustered URLs can include `?node=host1:port1&node=host2:port2` query parameters or be provided as a YAML array of URLs.
 
-## Schema Directives
+## Cache-Control Header
 
-### @cacheControl(maxAge, scope, inheritMaxAge)
+The router determines caching behavior from the `Cache-Control` HTTP response header returned by each subgraph.  It does not read schema directives directly — only the headers they produce.
 
-Controls the `Cache-Control` header the subgraph returns. The router reads that header to determine TTLs — the directive itself does not directly affect what the router caches.
+### What the router reads
 
-First, add the directive definition to your subgraph schema:
+| Header directive | Effect |
+|-----------------|--------|
+| `max-age=N` | Cache for N seconds (overrides the configured fallback `ttl`) |
+| `private` | Data is user-specific — requires `private_id` to cache per-user |
+| `no-store` | Do not cache this response |
 
-```graphql
-enum CacheControlScope {
-  PUBLIC
-  PRIVATE
-}
+If the subgraph returns **no `Cache-Control` header at all**, the response is **not cached** — even when a fallback `ttl` is configured.  The fallback TTL only applies when a `Cache-Control` header is present but lacks `max-age`.
 
-directive @cacheControl(
-  maxAge: Int
-  scope: CacheControlScope
-  inheritMaxAge: Boolean
-) on FIELD_DEFINITION | OBJECT | INTERFACE | UNION
-```
+When a subgraph response contains multiple entities with different TTLs, the router uses the minimum `max-age` across all of them.
 
-Apollo Server recognizes this directive automatically. For other servers, consult your server's documentation for `Cache-Control` header support.
+### How to emit Cache-Control headers
 
-**Type-level** — sets a default TTL for all fields returning this type:
-
-```graphql
-type Product @key(fields: "id") @cacheControl(maxAge: 240) {
-  id: ID!
-  name: String!
-  price: Int
-}
-```
-
-**Field-level** — overrides type-level settings:
+**Apollo Server** — use the `@cacheControl` directive in your subgraph schema.  Apollo Server translates this into `Cache-Control` headers automatically.  See the [Apollo Server caching documentation](https://www.apollographql.com/docs/apollo-server/performance/caching) for the full directive reference (field-level vs. type-level TTLs, `inheritMaxAge`, dynamic TTLs in resolvers, etc.).
 
 ```graphql
 type Product @key(fields: "id") @cacheControl(maxAge: 240) {
@@ -185,11 +178,13 @@ type Product @key(fields: "id") @cacheControl(maxAge: 240) {
 }
 ```
 
-When a query requests fields with different TTLs, the origin returns `Cache-Control` with the minimum `max-age`.
+**Other GraphQL servers** (Java, Go, Python, etc.) — set the `Cache-Control` header directly in your HTTP response using whatever mechanism your framework provides.  For example: `Cache-Control: public, max-age=240` or `Cache-Control: private, max-age=60`.
+
+> The `@cacheControl` directive is Apollo Server-specific.  The router only sees the HTTP header — how your subgraph produces that header is an implementation detail.
 
 ### @cacheTag(format)
 
-Tags cached data for active invalidation. Introduced in Federation v2.12. Import it via:
+Tags cached data for active invalidation.  This is a federation directive (not Apollo Server-specific) — the router reads it from the composed supergraph schema.  Introduced in Federation v2.12.  Import it via:
 
 ```graphql
 extend schema
@@ -199,11 +194,12 @@ extend schema
   )
 ```
 
+> `@cacheTag` controls invalidation tags, not whether data is cached.  The subgraph must still return `Cache-Control` headers (see above) for caching to take effect.
+
 **On entities** — use `{$key.<field>}` for dynamic tags based on entity keys:
 
 ```graphql
 type User @key(fields: "id")
-  @cacheControl(maxAge: 60)
   @cacheTag(format: "user-{$key.id}")
   @cacheTag(format: "user") {
   id: ID!
@@ -216,7 +212,6 @@ type User @key(fields: "id")
 ```graphql
 type Query {
   postsByUser(userId: ID!): [Post!]!
-    @cacheControl(maxAge: 120)
     @cacheTag(format: "posts-user-{$args.userId}")
 }
 ```
@@ -231,9 +226,8 @@ type Query {
 ### Passive (TTL-based)
 
 Data automatically expires based on:
-1. `@cacheControl(maxAge: N)` directives in the subgraph schema (translated to `Cache-Control` headers)
-2. `Cache-Control` headers returned by the origin
-3. The configured `ttl` fallback (used when no `Cache-Control` header or `max-age` is present)
+1. `Cache-Control: max-age=N` headers returned by the subgraph (set via `@cacheControl` in Apollo Server, or emitted directly by other servers)
+2. The configured `ttl` fallback (used when a `Cache-Control` header is present but lacks `max-age`)
 
 The router uses the minimum TTL across all components in a response.
 
@@ -318,7 +312,7 @@ If tags depend on runtime data (not entity keys or field args), set them in the 
 
 ### Private data caching
 
-> **Security: see the [Security section](#security) above.** You MUST configure `private_id` and mark user-specific fields with `scope: PRIVATE` before enabling caching on subgraphs that serve user-specific data. Failure to do so causes cross-user data leakage.
+> **Security: see the [Security section](#security) above.** You MUST configure `private_id` and ensure user-specific subgraph responses include `Cache-Control: private` before enabling caching on subgraphs that serve user-specific data.  Failure to do so causes cross-user data leakage.
 
 For full configuration, Rhai script examples, and the security checklist, see [Security](#security).
 
@@ -479,7 +473,7 @@ telemetry:
 | Selector | Values | Description |
 |----------|--------|-------------|
 | `response_cache` | `hit` or `miss` | Number of cache hits/misses for a subgraph request |
-| `response_cache_status` | `hit`, `partial_hit`, `miss`, `status` | Cache status for the subgraph request |
+| `response_cache_status` | `hit`, `partial_hit`, `miss`, or `status` | When set to `hit`/`partial_hit`/`miss`: returns a count.  When set to `status`: returns the status string (`hit`, `partial_hit`, or `miss`) as an attribute value. |
 | `response_cache_control` | `max_age`, `scope`, `no_store` | Data from the computed `Cache-Control` header |
 
 Example — log uncached subgraph responses:
