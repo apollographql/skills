@@ -149,6 +149,34 @@ Format: `redis[s][-cluster]://[[username:]password@]host[:port][/database]`
 
 Clustered URLs can include `?node=host1:port1&node=host2:port2` query parameters or be provided as a YAML array of URLs.
 
+## Redis deployment
+
+This skill configures the router to talk to Redis, but does not cover deploying or operating Redis itself.  Plan for these operational concerns separately.
+
+### Topology and high availability
+
+For production workloads, use Redis with **replica sets** — a primary with one or more replicas and automated failover.  Most managed Redis services provide this natively (AWS ElastiCache replication groups, Azure Cache for Redis, GCP Memorystore Standard, Upstash, Redis Enterprise, etc.), handling failover transparently at the DNS level so a standalone URL continues to work.
+
+- **Single-node** (`redis://`, `rediss://`) — fine for local development; not recommended for production.
+- **Replica set** (still `redis://` or `rediss://`, pointing at the primary endpoint) — the typical production topology.
+- **Redis Cluster** (`redis-cluster://`, `rediss-cluster://`) — for horizontal sharding when cache size exceeds a single node's memory.  Most response cache workloads do not need Cluster; start with a replica set and only move to Cluster if you outgrow it.
+
+Keep Redis colocated with routers (same VPC, same region).  Every cache fetch is in the request path, so network latency directly affects user-facing response time.
+
+### Eviction policy
+
+Configure Redis with `allkeys-lru` (or `allkeys-lfu`) eviction.  With `noeviction` (Redis's default), writes fail once memory is full and the router logs insert errors instead of caching new responses.  `volatile-*` policies also work since the router sets TTLs on every entry.
+
+### Graceful degradation
+
+When Redis is unreachable, the router bypasses the cache and sends requests directly to subgraphs — your graph keeps serving traffic without caching benefits, but it does not fail.  This is the default behavior.
+
+If you set `required_to_start: true`, the router refuses to start without a Redis connection.  Use this only when you cannot tolerate a cache-cold deployment.
+
+### Cold start
+
+After a router restart with empty Redis (or a Redis flush), the first wave of requests will all be cache misses, producing a spike of subgraph traffic.  Plan for this when rolling out caching to a high-traffic graph — consider a gradual rollout or pre-warming if your origins are sensitive to the spike.
+
 ## Cache-Control Header
 
 The router determines caching behavior from the `Cache-Control` HTTP response header returned by each subgraph.  It does not read schema directives directly — only the headers they produce.
@@ -399,6 +427,20 @@ response_cache:
 ```
 
 ## Observability
+
+### What to watch
+
+Four signals tell you whether response caching is healthy.  If you set up a dashboard for this feature, start with these:
+
+1. **Cache hit rate** — derived from `apollo.router.response.cache` (counter that records hits and misses for subgraph requests; filter by cache status to compute hit / (hit + miss)).  No universal target — depends on TTLs and traffic shape — but watch for sudden drops, which usually mean subgraphs stopped emitting `Cache-Control` headers or Redis is misbehaving.
+
+2. **Redis error rate** — `apollo.router.cache.redis.errors` (counter, tagged by error type: auth, timeout, io, etc.).  Any sustained non-zero rate warrants investigation.
+
+3. **Cache fetch and insert latency** — `apollo.router.operations.response_cache.fetch` and `apollo.router.operations.response_cache.insert` (histograms, seconds).  The p99 should be well under your subgraph response time, otherwise the cache is *adding* latency rather than removing it.  If p99 climbs, check Redis CPU/memory and the `pool_size` setting.
+
+4. **Reconnection rate** — `apollo.router.response_cache.reconnection`.  Spikes indicate network instability or Redis restarts.
+
+For invalidation specifically, also watch `apollo.router.operations.response_cache.invalidation.error` (failed invalidations leave stale data) and `apollo.router.operations.response_cache.invalidation.duration` (slow invalidations indicate Redis pressure).
 
 ### Metrics
 
