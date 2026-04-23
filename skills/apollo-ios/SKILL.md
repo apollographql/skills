@@ -52,6 +52,7 @@ Follow this process when adding or working with Apollo iOS:
 - Use Apollo iOS **v2+**. v1.x and v0.x are legacy — do not target them for new work.
 - Install via **Swift Package Manager**. CocoaPods and Carthage are not the recommended distribution mechanism for apollo-ios.
 - Default the codegen config to `moduleType: swiftPackage` and `operations: relative` (see [Setup](references/setup.md)). This shape works for single-target and multi-module apps alike. Deviate only when the project cannot use SPM or has specific fragment-sharing needs (see [Codegen](references/codegen.md)).
+- Name the generated schema module after the project, using the `<ProjectName>API` convention (e.g. `RocketReserverAPI` for a project called `RocketReserver`). Derive the project name from `Package.swift` / the `.xcodeproj` / the app product name — never ship the `MyAPI` placeholder. If the project name is not obvious, ask the user with `AskUserQuestion`.
 - Target linking is a per-target decision made as modules grow — there is no upfront decision to make. Link `Apollo` to targets using `ApolloClient`; link `ApolloAPI` to targets that only consume generated response models.
 - Keep `schema.graphqls`, `.graphql` operation files, and `apollo-codegen-config.json` in source control so builds are reproducible.
 - Regenerate code after every schema or `.graphql` operation change. Never hand-edit generated files.

@@ -24,6 +24,8 @@ The CLI reads `apollo-codegen-config.json` to determine where inputs live, where
 }
 ```
 
+`schemaNamespace` is the name of the generated schema module and the Swift module that other targets will `import`. **Base it on the project name** (convention: `<ProjectName>API`, e.g. `RocketReserverAPI` for a project called `RocketReserver`). Every example in this reference uses `MyAPI` as a placeholder — substitute your chosen name (and `MyAPITestMocks` for the test-mocks target) everywhere it appears. If the project name is unclear, ask the user rather than guessing.
+
 ### `input`
 
 - `schemaSearchPaths: [String]` — glob patterns resolved relative to the config file for schema files (`.graphqls`). Include extension files (such as `@typePolicy` declarations) here.

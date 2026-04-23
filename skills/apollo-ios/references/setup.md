@@ -84,6 +84,18 @@ For CI and non-SPM setups, download the universal macOS binary from the [Apollo 
 
 The canonical default is a dedicated schema SPM package with operation files generated next to each `.graphql` that defines them. This shape works for single-target and multi-module apps alike, and is the shape the rest of this reference assumes.
 
+### Choose a schema module name first
+
+Before running `init`, pick a name for the generated schema module. The convention is `<ProjectName>API` — for a project called `RocketReserver` you would use `RocketReserverAPI`; for `PetFinder` you would use `PetFinderAPI`. This name becomes:
+
+- the value of `schemaNamespace` in `apollo-codegen-config.json`
+- the name of the generated SPM package directory and target
+- the module that other targets import (`import PetFinderAPI`)
+
+**Derive the name from the actual project** — check `Package.swift`, the `.xcodeproj` filename, or the app's product name. If the project name is unclear, ask the user with `AskUserQuestion` rather than guessing. The examples below use `MyAPI` as a placeholder; substitute your real name wherever you see it (including `MyAPITestMocks`). Likewise, `MyApp` in the `embeddedInTarget` example stands in for whatever target name you are embedding into.
+
+### Run `init` with your chosen name
+
 Generate a minimal config with `./apollo-ios-cli init`:
 
 ```bash
