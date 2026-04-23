@@ -8,17 +8,18 @@ This reference explains the four protocols, how to build a custom provider, and 
 
 | Protocol | Sees | Use for |
 |---|---|---|
-| `GraphQLInterceptor` | `GraphQLRequest` and the parsed `ParsedResult` stream | Retry, token refresh & replay, logging at the operation layer, APQ |
-| `HTTPInterceptor` | `URLRequest` and `HTTPResponse` | Attaching auth tokens and other headers, logging raw bytes |
+| `GraphQLInterceptor` | `GraphQLRequest` (mutable, including `additionalHeaders`) and the parsed `ParsedResult` stream | Auth (attach + refresh + retry), general retry, operation-level logging, APQ. **Default choice for most cross-cutting concerns.** |
+| `HTTPInterceptor` | `URLRequest` and `HTTPResponse` | Genuinely HTTP-scoped concerns — static headers unrelated to the operation (`User-Agent`, `Accept-Encoding`), raw-bytes logging, mTLS wiring, response-code instrumentation. |
 | `CacheInterceptor` | Pre-flight cache lookup, post-flight cache write | Custom caching strategies (rare) |
 | `ResponseParsingInterceptor` | Raw response → `ParsedResult` | Custom wire formats (very rare) |
 
 **Decision rubric:**
-- Attaching a bearer token or adding any HTTP header → `HTTPInterceptor`.
-- Retrying on specific server errors (HTTP 5xx, GraphQL `UNAUTHENTICATED`, etc.) → `GraphQLInterceptor` (use the existing `MaxRetryInterceptor` as a starting point).
-- Token refresh + replay-on-401 → `GraphQLInterceptor`. It has to sit at the same layer as `MaxRetryInterceptor` so the whole operation (including a new HTTP request with the refreshed token) is replayed.
-- Logging — pick the layer that matches what you need to see: `HTTPInterceptor` for URL / status / headers / raw bytes; `GraphQLInterceptor` for operation names and parsed results.
-- Replacing the cache or wire format → `CacheInterceptor` / `ResponseParsingInterceptor` (almost never needed).
+
+- Anything that touches the operation lifecycle (auth, retry, logging per-operation, APQ, conditional retargeting) → `GraphQLInterceptor`. It can mutate `request.additionalHeaders` to set HTTP headers, and it's the only layer that can trigger a full-operation retry via `RequestChain.Retry`.
+- Static, operation-independent HTTP configuration (`User-Agent`, `Accept-Encoding`, URL-level logging, response-code instrumentation) → `HTTPInterceptor`.
+- Custom caching or wire-format handling → `CacheInterceptor` / `ResponseParsingInterceptor` (almost never needed).
+
+**Why not split "attach token" into an `HTTPInterceptor`?** You can, and it works — but for any app that also handles token refresh + retry, you end up needing a `GraphQLInterceptor` anyway (see [Auth](#auth-attach--refresh--retry-in-one-interceptor) below). Consolidating attach and refresh in one place avoids a shared token-store coordinated across two layers and keeps auth logic in one file.
 
 ## Custom `InterceptorProvider`
 
@@ -41,20 +42,15 @@ final class AppInterceptorProvider: InterceptorProvider, Sendable {
     for operation: Operation
   ) -> [any GraphQLInterceptor] {
     [
-      MaxRetryInterceptor(maxRetriesAllowed: 3),                          // outermost — catches and replays
-      AuthRefreshInterceptor(tokenStore: tokenStore, refresh: refresh),   // refresh + rethrow on 401
+      MaxRetryInterceptor(maxRetriesAllowed: 3),                      // safety-net retry cap (must be first)
+      AuthInterceptor(tokenStore: tokenStore, refresh: refresh),      // attach + refresh + retry-on-401
       AutomaticPersistedQueryInterceptor(),
     ]
   }
 
-  func httpInterceptors<Operation: GraphQLOperation>(
-    for operation: Operation
-  ) -> [any HTTPInterceptor] {
-    [
-      AuthTokenInterceptor(tokenStore: tokenStore),                       // attach token to URLRequest
-      ResponseCodeInterceptor(),
-    ]
-  }
+  // Most apps don't need custom HTTPInterceptors beyond the default ResponseCodeInterceptor
+  // (provided automatically via the protocol extension). Override only when adding
+  // static HTTP-scoped headers like User-Agent.
 
   // `cacheInterceptor` and `responseParser` fall back to the DefaultInterceptorProvider
   // implementations from an extension on InterceptorProvider.
@@ -73,12 +69,20 @@ let transport = RequestChainNetworkTransport(
 )
 ```
 
-## Auth token interceptor (#1 use case)
+## Auth: attach + refresh + retry in one interceptor
 
-Attach a bearer token to every outgoing request. Use an `HTTPInterceptor` because auth is an HTTP concern.
+Attach a bearer token on every request, detect 401 responses, refresh the token, and retry the operation — all in a single `GraphQLInterceptor`. This is the canonical pattern for any app that needs token refresh.
+
+The mechanics:
+
+- **Attach** by mutating `request.additionalHeaders["Authorization"]` in the pre-flight phase. Apollo iOS copies `additionalHeaders` into the outgoing `URLRequest` via `createDefaultRequest()` — functionally equivalent to setting the header at the HTTP layer.
+- **Detect** failures post-flight via `.mapErrors`. When a 401 from the server surfaces, it arrives as a `ResponseCodeInterceptor.ResponseCodeError` with `response.statusCode == 401`.
+- **Retry** by throwing `RequestChain.Retry(request:)`. The `RequestChain` specifically catches this error type and restarts the interceptor chain from step 1 with the request you provide. Every other thrown error bubbles up to the caller.
+- **Cap infinite loops** with `MaxRetryInterceptor`. It tracks how many times the chain has been re-entered and throws `MaxRetryInterceptor.MaxRetriesError` once the limit is hit. It does **not** catch errors or trigger retries itself — it is a safety net on top of `RequestChain.Retry`.
 
 ```swift
 import Apollo
+import ApolloAPI
 import Foundation
 
 actor AuthTokenStore {
@@ -87,26 +91,7 @@ actor AuthTokenStore {
   func currentToken() -> String? { token }
 }
 
-struct AuthTokenInterceptor: HTTPInterceptor {
-  let tokenStore: AuthTokenStore
-
-  func intercept(
-    request: URLRequest,
-    next: NextHTTPInterceptorFunction
-  ) async throws -> HTTPResponse {
-    var request = request
-    if let token = await tokenStore.currentToken() {
-      request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-    }
-    return try await next(request)
-  }
-}
-```
-
-Token refresh + retry is a **GraphQL-layer** concern, not HTTP. `MaxRetryInterceptor` is itself a `GraphQLInterceptor`, so the refresh interceptor must also be a `GraphQLInterceptor` to sit in the same layer and trigger a full-operation replay. Observe errors from downstream (HTTP failures, parser errors, etc.) via `mapErrors`, refresh the token, and rethrow — `MaxRetryInterceptor` catches the rethrown error and replays the chain, at which point the HTTP-layer `AuthTokenInterceptor` attaches the freshly-rotated token:
-
-```swift
-struct AuthRefreshInterceptor: GraphQLInterceptor {
+struct AuthInterceptor: GraphQLInterceptor {
   let tokenStore: AuthTokenStore
   let refresh: @Sendable () async throws -> String
 
@@ -114,39 +99,51 @@ struct AuthRefreshInterceptor: GraphQLInterceptor {
     request: Request,
     next: NextInterceptorFunction<Request>
   ) async throws -> InterceptorResultStream<Request> {
-    return await next(request).mapErrors { error in
-      guard Self.isUnauthorized(error) else { throw error }
+    // Pre-flight: attach the current token.
+    var request = request
+    if let token = await tokenStore.currentToken() {
+      request.additionalHeaders["Authorization"] = "Bearer \(token)"
+    }
+
+    // Post-flight: observe 401, refresh, and trigger a retry.
+    let originalRequest = request
+    return await next(request).mapErrors { [tokenStore, refresh] error in
+      guard let codeError = error as? ResponseCodeInterceptor.ResponseCodeError,
+            codeError.response.statusCode == 401 else {
+        throw error
+      }
       let newToken = try await refresh()
       await tokenStore.update(newToken)
-      // Rethrow so the outer MaxRetryInterceptor replays the chain.
-      // On replay, AuthTokenInterceptor attaches the fresh token.
-      throw AuthError.unauthorized
+
+      // Hand RequestChain the request to retry with. On the next pass through
+      // the chain, this same interceptor will re-attach the freshly-rotated
+      // token from the store.
+      throw RequestChain.Retry(request: originalRequest)
     }
   }
-
-  private static func isUnauthorized(_ error: any Error) -> Bool {
-    if let response = error as? ResponseCodeInterceptor.ResponseCodeError,
-       response.response.statusCode == 401 { return true }
-    return false
-  }
 }
-
-enum AuthError: Error { case unauthorized }
 ```
 
-Order matters in `graphQLInterceptors(for:)`: `MaxRetryInterceptor` must come **before** `AuthRefreshInterceptor` so it wraps it and catches the rethrown error:
+Order in `graphQLInterceptors(for:)` matters: `MaxRetryInterceptor` must come **first** so it is re-entered on every retry and can count toward its cap. The `AppInterceptorProvider` shown above already orders them correctly.
+
+**Simpler case — static token, no refresh:** if your app only needs to attach a token and never refreshes it, the attach-only half of the interceptor is the whole thing:
 
 ```swift
-func graphQLInterceptors<Operation: GraphQLOperation>(
-  for operation: Operation
-) -> [any GraphQLInterceptor] {
-  [
-    MaxRetryInterceptor(maxRetriesAllowed: 3),
-    AuthRefreshInterceptor(tokenStore: tokenStore, refresh: refresh),
-    AutomaticPersistedQueryInterceptor(),
-  ]
+struct StaticAuthInterceptor: GraphQLInterceptor {
+  let token: String
+
+  func intercept<Request: GraphQLRequest>(
+    request: Request,
+    next: NextInterceptorFunction<Request>
+  ) async throws -> InterceptorResultStream<Request> {
+    var request = request
+    request.additionalHeaders["Authorization"] = "Bearer \(token)"
+    return await next(request)
+  }
 }
 ```
+
+**When `HTTPInterceptor` makes sense instead:** if the header is purely HTTP-scoped (unrelated to the operation, never participates in retry), put it in an `HTTPInterceptor`. Static instrumentation headers (`User-Agent`, `Accept-Encoding`, a CSRF token keyed to an HTTP session) fit naturally. A team that prefers strict layer separation may also choose to attach the auth token at the HTTP layer using `request.setValue(_, forHTTPHeaderField:)` — functionally identical, but costs a second interceptor and cross-layer coordination through the shared `AuthTokenStore`.
 
 ## Logging interceptor (debug builds only)
 
@@ -194,7 +191,11 @@ func graphQLInterceptors<Operation: GraphQLOperation>(
 
 ## Retry
 
-The built-in `MaxRetryInterceptor` handles retry with optional exponential backoff and jitter:
+Retries in Apollo iOS are triggered by throwing `RequestChain.Retry(request:)` from an interceptor. When the `RequestChain` sees this specific error type, it restarts the chain from step 1 with the request you provided — same interceptor instances, same store, same session. Any other thrown error propagates to the caller normally.
+
+`MaxRetryInterceptor` is a safety net that **prevents infinite retry loops**. On each pass through the chain, it increments an internal counter; once the counter exceeds its configured max, it throws `MaxRetryInterceptor.MaxRetriesError` before calling `next`. It does not catch errors itself and does not trigger retries.
+
+Configure it with optional exponential backoff and jitter:
 
 ```swift
 MaxRetryInterceptor(
@@ -209,9 +210,29 @@ MaxRetryInterceptor(
 )
 ```
 
-Put it **first** in `graphQLInterceptors(for:)` so it wraps every other interceptor. `MaxRetryInterceptor` is stateful per-operation — never share an instance across operations. The `InterceptorProvider` contract is to create new instances each call, which is why the example above returns a freshly constructed `MaxRetryInterceptor()` from the function.
+Put it **first** in `graphQLInterceptors(for:)` so it is re-entered on every retry and can count accurately. `MaxRetryInterceptor` is stateful per-operation — never share an instance across operations. The `InterceptorProvider` contract is to create fresh instances each call, which is why the example above returns a freshly constructed `MaxRetryInterceptor()` from the function.
 
-If you throw from a later interceptor (for example `AuthRefreshInterceptor`), `MaxRetryInterceptor` catches the error and replays the chain up to `maxRetries` times.
+### Writing a custom retry
+
+Any interceptor can trigger a retry by throwing `RequestChain.Retry(request:)` from either pre-flight or post-flight (`.map` / `.mapErrors`) code. Mutate the request first if you want the retry to carry different state — a new header, a different `fetchBehavior`, a fallback endpoint. Example: if an HTTP response code error comes back, fall back to cache-only for the retry:
+
+```swift
+struct FallbackToCacheOnFailure: GraphQLInterceptor {
+  func intercept<Request: GraphQLRequest>(
+    request: Request,
+    next: NextInterceptorFunction<Request>
+  ) async throws -> InterceptorResultStream<Request> {
+    return await next(request).mapErrors { error in
+      guard error is ResponseCodeInterceptor.ResponseCodeError else { throw error }
+      var request = request
+      request.fetchBehavior = FetchBehavior.CacheOnly
+      throw RequestChain.Retry(request: request)
+    }
+  }
+}
+```
+
+If you write a custom retry interceptor, always keep `MaxRetryInterceptor` in the chain so a pathological retry loop can't run forever.
 
 ## Automatic Persisted Queries (APQ)
 
@@ -228,7 +249,8 @@ See [codegen.md](codegen.md#cli-commands) for the manifest command and the [APQ 
 ## Ground rules
 
 - **Create fresh interceptor instances per operation.** Sharing an instance across operations causes state bleed — for example, `MaxRetryInterceptor` counts retries per instance.
-- **Split auth across two interceptors.** Put token attachment (`Authorization` header) in an `HTTPInterceptor` — it's a stateless URL-request mutation. Put token-refresh and replay orchestration in a `GraphQLInterceptor` so it lives at the same layer as `MaxRetryInterceptor` and can trigger a full-operation retry.
-- Put retry in a `GraphQLInterceptor` (use `MaxRetryInterceptor` or a variant); retries should cover the whole operation, not just one HTTP call.
+- **Put auth (attach + refresh + retry) in a single `GraphQLInterceptor`.** Attach the token by mutating `request.additionalHeaders["Authorization"]`; catch 401s via `.mapErrors`; trigger retry by throwing `RequestChain.Retry(request:)`. Reserve `HTTPInterceptor` for genuinely HTTP-scoped headers like `User-Agent` or `Accept-Encoding`.
+- **Trigger retries with `RequestChain.Retry(request:)`, not by rethrowing arbitrary errors.** Only that specific error type restarts the chain. `MaxRetryInterceptor` is a safety-net cap on retry count — it does not catch or replay.
+- Always include a `MaxRetryInterceptor` (at the start of `graphQLInterceptors(for:)`) whenever any interceptor may throw `RequestChain.Retry`, so a retry storm cannot loop forever.
 - Keep logging interceptors `#if DEBUG` — logging request bodies in release builds leaks data and slows the network path.
 - Do not subclass or monkey-patch `DefaultInterceptorProvider` — implement `InterceptorProvider` directly. Most methods have default implementations via protocol extension.
