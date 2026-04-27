@@ -55,3 +55,13 @@ Skills should be validated against the Agent Skills specification at https://age
 2. Add reference files in `skills/<skill-name>/references/` as needed
 3. Update `README.md` to document the new skill (follow existing patterns)
 4. Ensure consistency with existing skills' frontmatter format
+
+## Releasing / Versioning
+
+The only version that requires thought is **plugin** (`.claude-plugin/plugin.json#version`) — bump on every PR that changes `skills/`, `commands/`, `agents/`, `hooks/`, or `plugin.json` itself. This is what `claude plugin update apollo-skills@apollo-marketplace` checks; without a bump, `claude plugin update` reports users as already on the latest version and they will not pull your changes. Fresh installs are unaffected. CI's `version-check` job enforces it.
+
+Use semver: patch for fixes/refactors, minor for added skills, major for breaking removals.
+
+`marketplace.json#metadata.version` is intentionally pinned. This repo has a single plugin and no marketplace structure changes are anticipated; if that ever changes (a second plugin, a rename, moving sources), bump it manually then.
+
+`package.json#version` is npm metadata for a private package; ignore it.
