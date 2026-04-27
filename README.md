@@ -65,6 +65,39 @@ Once installed, skills are available as namespaced slash commands:
 | `/apollo-skills:rust-best-practices` | Rust best practices — idiomatic Rust following Apollo conventions |
 | `/apollo-skills:skill-creator` | Skill creator — guide for creating new Apollo skills |
 
+## GitHub CLI
+
+You can also install skills with the [GitHub CLI](https://cli.github.com/) using `gh skill` (preview):
+
+```bash
+# Install one skill into the current project for Claude Code
+gh skill install apollographql/skills apollo-client --agent claude-code
+
+# Install at user scope (available everywhere)
+gh skill install apollographql/skills apollo-client --agent claude-code --scope user
+
+# Pin to a specific release
+gh skill install apollographql/skills apollo-client@v1.0.0 --agent claude-code
+
+# Preview a skill before installing
+gh skill preview apollographql/skills apollo-client
+```
+
+`--agent` supports many hosts beyond Claude Code (Cursor, Codex, Gemini CLI, GitHub Copilot, and more); run `gh skill install --help` for the full list.
+
+## Releases
+
+Releases are tagged with semver and published automatically whenever a content change is merged to `main`. The full list lives at [github.com/apollographql/skills/releases](https://github.com/apollographql/skills/releases).
+
+| Install path | What you get |
+|---|---|
+| `gh skill install apollographql/skills <name>` | Latest tagged release |
+| `gh skill install apollographql/skills <name>@v1.0.0` | Pinned to a specific release |
+| `npx skills add apollographql/skills@<name>` | Latest content from `main` (no tag) |
+| Claude Code plugin (`claude plugin install`) | Latest plugin version (auto-updates via `claude plugin update`) |
+
+If you need stability, pin via `gh skill install …@vX.Y.Z`. For the freshest content, the other paths track `main` HEAD directly.
+
 ## Available Skills
 
 ### apollo-connectors
