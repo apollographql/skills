@@ -12,7 +12,7 @@ compatibility: iOS 15+, macOS 12+, tvOS 15+, watchOS 8+, visionOS 1+. Swift 6.1+
 metadata:
   author: apollographql
   version: "1.0.0"
-allowed-tools: Bash(apollo-ios-cli:*) Bash(swift:*) Bash(xcodebuild:*) Bash(curl:*) Bash(git:*) Read Write Edit Glob Grep WebFetch
+allowed-tools: Bash(apollo-ios-cli:*) Bash(swift:*) Bash(xcodebuild:*) Bash(git:*) Read Write Edit Glob Grep WebFetch
 ---
 
 # Apollo iOS Guide

@@ -65,6 +65,42 @@ Regenerate after editing:
 
 See the official [Cache Key Resolution](https://www.apollographql.com/docs/ios/caching/cache-key-resolution) page for the full directive reference.
 
+## `@fieldPolicy` — cache resolution for fields with arguments
+
+`@typePolicy` tells the cache how to identify an _object_. `@fieldPolicy` tells the cache how to resolve a _field call with arguments_ to a cache record. Use them together.
+
+The motivating problem: with only `@typePolicy(keyFields: "id")` on `User`, calling `client.fetch(query: GetUserQuery(id: "42"))` always hits the network even when a previous query already populated `User:42` in the cache. The cache stores the user record, but it has no way to know that the operation `user(id: "42")` should resolve to it. `@fieldPolicy` closes that gap.
+
+Declare it on the type that owns the field (typically `Query`) in the same schema extension file used for `@typePolicy`:
+
+```graphql
+# cacheKeys.graphqls
+extend type User @typePolicy(keyFields: "id")
+
+extend type Query
+  @fieldPolicy(forField: "user", keyArgs: "id")
+  @fieldPolicy(forField: "book", keyArgs: "isbn")
+```
+
+Now `client.fetch(query: GetUserQuery(id: "42"), cachePolicy: .cacheFirst)` returns the cached `User:42` record without a network round-trip. The same applies to `cacheOnly` reads — they succeed against fields the app has never directly fetched, as long as the underlying object exists in the cache.
+
+`keyArgs` is space-delimited and order-significant — argument order in the string determines the structure of the generated cache key:
+
+```graphql
+# Multi-argument field — resolves to one cache record per (species, habitat) pair.
+extend type Query @fieldPolicy(forField: "allAnimals", keyArgs: "species habitat")
+```
+
+A field can have multiple `@fieldPolicy` directives stacked when the same query type owns multiple resolvable fields. Add them as you ship features that benefit from cache deduplication — there is no cost to declaring more.
+
+**When to use which:**
+
+| Goal | Directive |
+|---|---|
+| Identify a cached object by its own fields | `@typePolicy(keyFields: ...)` on the object type |
+| Resolve a query field's arguments to that cached object | `@fieldPolicy(forField: ..., keyArgs: ...)` on the parent type |
+| Cache-key a parameterized collection (e.g., `allAnimals(species:, habitat:)`) | `@fieldPolicy(forField: ..., keyArgs: ...)` on `Query` |
+
 ## Programmatic cache keys (advanced fallback)
 
 Use programmatic keys only when `@typePolicy` cannot express what you need — for example, keys derived from nested fields, or interface types that key differently per concrete type.
@@ -163,7 +199,8 @@ This clears the entire normalized cache. For finer-grained clears (single record
 ## Ground rules
 
 - Declare `@typePolicy` for every type you want deduplicated in the cache. This is the recommended default.
-- Only drop to programmatic `cacheKeyInfo` when `@typePolicy` cannot express the key.
+- Pair `@typePolicy` with `@fieldPolicy` on argument-bearing query fields (`Query.user(id:)`, `Query.book(isbn:)`, etc.) so cache reads can resolve to the deduplicated record without going through the network.
+- Only drop to programmatic `cacheKeyInfo` when neither `@typePolicy` nor `@fieldPolicy` can express the key.
 - Always wrap cache writes in `withinReadWriteTransaction` — concurrent writes without a transaction corrupt state.
 - Never access the raw cache (`InMemoryNormalizedCache` / `SQLiteNormalizedCache`) directly. Always go through `ApolloStore`.
 - Clear the cache on logout so the next user doesn't see cached data from the previous session.
