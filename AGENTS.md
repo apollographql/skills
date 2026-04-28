@@ -49,6 +49,8 @@ allowed-tools: Bash(tool:*) Read Write Edit Glob Grep
 
 Skills should be validated against the Agent Skills specification at https://agentskills.io/specification
 
+Validate locally with `gh skill publish --dry-run` (or `skills-ref validate skills/<name>`) before opening a PR.
+
 ## Adding a New Skill
 
 1. Create `skills/<skill-name>/SKILL.md` with proper frontmatter
@@ -58,10 +60,12 @@ Skills should be validated against the Agent Skills specification at https://age
 
 ## Releasing / Versioning
 
-The only version that requires thought is **plugin** (`.claude-plugin/plugin.json#version`) — bump on every PR that changes `skills/`, `commands/`, `agents/`, `hooks/`, or `plugin.json` itself. This is what `claude plugin update apollo-skills@apollo-marketplace` checks; without a bump, `claude plugin update` reports users as already on the latest version and they will not pull your changes. Fresh installs are unaffected. CI's `version-check` job enforces it.
+Two versions matter.
 
-Use semver: patch for fixes/refactors, minor for added skills, major for breaking removals.
+`.claude-plugin/plugin.json#version` is what `claude plugin update` checks. Bump it whenever you touch `skills/`, `commands/`, `agents/`, `hooks/`, or `plugin.json` itself, otherwise existing users won't see the change. CI catches forgotten bumps. New installs always pull the latest content regardless.
 
-`marketplace.json#metadata.version` is intentionally pinned. This repo has a single plugin and no marketplace structure changes are anticipated; if that ever changes (a second plugin, a rename, moving sources), bump it manually then.
+The gh skill release tag is automatic. Pushes to `main` run a workflow that reads the plugin version and tags a matching `vX.Y.Z` if it doesn't exist yet. That's what `gh skill install apollographql/skills <name>@vX.Y.Z` pins to.
 
-`package.json#version` is npm metadata for a private package; ignore it.
+Use semver: patch for fixes, minor for new skills, major when you remove or rename one.
+
+You can ignore `marketplace.json#metadata.version` and `package.json#version`. The marketplace barely changes for a single-plugin repo, and `package.json` is npm metadata we don't publish.
