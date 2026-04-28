@@ -52,7 +52,11 @@ function RootComponent() {
 In your `router.tsx`, set up your Apollo Client instance and run `routerWithApolloClient`:
 
 ```typescript
-import { routerWithApolloClient, ApolloClient, InMemoryCache } from "@apollo/client-integration-tanstack-start";
+import {
+  routerWithApolloClient,
+  ApolloClient,
+  InMemoryCache,
+} from "@apollo/client-integration-tanstack-start";
 import { HttpLink } from "@apollo/client";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
@@ -133,7 +137,8 @@ function RouteComponent() {
 You can also use Apollo Client's suspenseful hooks directly in your component without a loader:
 
 ```typescript
-import { gql, useSuspenseQuery } from "@apollo/client/react";
+import { gql } from "@apollo/client";
+import { useSuspenseQuery } from "@apollo/client/react";
 import { createFileRoute } from "@tanstack/react-router";
 import type { TypedDocumentNode } from "@apollo/client";
 
@@ -249,6 +254,7 @@ function UserComponent({ queryRef }: { queryRef: QueryRef<GetUserQuery> }) {
 2. **Context Type:** Use `createRootRouteWithContext<ApolloClientIntegration.RouterContext>()` to provide proper TypeScript types for the `preloadQuery` function in loaders.
 
 3. **Loader vs Component Queries:**
+
    - Use `preloadQuery` in loaders when you want to start fetching data before the component renders
    - Use `useSuspenseQuery` directly in components for simpler cases or when data fetching can wait until render
 
@@ -265,7 +271,11 @@ function UserComponent({ queryRef }: { queryRef: QueryRef<GetUserQuery> }) {
 For authentication in TanStack Start with SSR support, you need to handle both server and client environments differently. Use `createIsomorphicFn` to provide environment-specific implementations:
 
 ```typescript
-import { ApolloClient, InMemoryCache, routerWithApolloClient } from "@apollo/client-integration-tanstack-start";
+import {
+  ApolloClient,
+  InMemoryCache,
+  routerWithApolloClient,
+} from "@apollo/client-integration-tanstack-start";
 import { ApolloLink, HttpLink } from "@apollo/client";
 import { SetContextLink } from "@apollo/client/link/context";
 import { createIsomorphicFn } from "@tanstack/react-start";
@@ -329,7 +339,10 @@ export function getRouter() {
 ### Custom Cache Configuration
 
 ```typescript
-import { ApolloClient, InMemoryCache } from "@apollo/client-integration-tanstack-start";
+import {
+  ApolloClient,
+  InMemoryCache,
+} from "@apollo/client-integration-tanstack-start";
 import { HttpLink } from "@apollo/client";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";

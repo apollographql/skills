@@ -11,7 +11,7 @@ For older Apollo Client 3.x error handling documentation, see [Apollo Client 3.x
 - [Identifying Error Types](#identifying-error-types)
 - [GraphQL Error Policies](#graphql-error-policies)
 - [Error Links](#error-links)
-- [Retry Logic](#retry-logic)
+- [Retry Link](#retry-link)
 - [Error Boundaries](#error-boundaries)
 
 ## Understanding Errors
@@ -283,7 +283,12 @@ const client = new ApolloClient({
 const retryLink = new RetryLink({
   attempts: (count, operation, error) => {
     // Don't retry mutations
-    if (operation.query.definitions.some((def) => def.kind === "OperationDefinition" && def.operation === "mutation")) {
+    if (
+      operation.query.definitions.some(
+        (def) =>
+          def.kind === "OperationDefinition" && def.operation === "mutation"
+      )
+    ) {
       return false;
     }
 
@@ -304,6 +309,12 @@ When using suspenseful hooks, you should use React Error Boundaries for graceful
 ### Non-suspense per-Component Error Handling
 
 ```tsx
+import {
+  CombinedGraphQLErrors,
+  ServerError,
+  ServerParseError,
+} from "@apollo/client/errors";
+
 function SafeUserList() {
   const { data, error, loading, refetch } = useQuery(GET_USERS, {
     errorPolicy: "all",
@@ -311,7 +322,7 @@ function SafeUserList() {
   });
 
   // Handle network errors
-  if (error?.networkError) {
+  if (ServerError.is(error) || ServerParseError.is(error)) {
     return (
       <Alert severity="error">
         <AlertTitle>Connection Error</AlertTitle>
@@ -324,8 +335,10 @@ function SafeUserList() {
   // Handle GraphQL errors but still show available data
   return (
     <div>
-      {error?.graphQLErrors && (
-        <Alert severity="warning">Some data may be incomplete: {error.graphQLErrors[0].message}</Alert>
+      {CombinedGraphQLErrors.is(error) && (
+        <Alert severity="warning">
+          Some data may be incomplete: {error.graphQLErrors[0].message}
+        </Alert>
       )}
 
       {loading && <LinearProgress />}

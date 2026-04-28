@@ -58,7 +58,8 @@ To enable data masking with GraphQL Code Generator, create a type declaration fi
 import { GraphQLCodegenDataMasking } from "@apollo/client/masking";
 
 declare module "@apollo/client" {
-  export interface TypeOverrides extends GraphQLCodegenDataMasking.TypeOverrides {}
+  export interface TypeOverrides
+    extends GraphQLCodegenDataMasking.TypeOverrides {}
 }
 ```
 
@@ -119,7 +120,9 @@ function UserProfile({ userId }: { userId: string }) {
     variables: { id: userId },
   });
 
-  return <div>{data.user.name}</div>;
+  // ... other logic ...
+
+  return <div>{data?.user.name}</div>;
 }
 ```
 
