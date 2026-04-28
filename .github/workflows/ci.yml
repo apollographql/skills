@@ -77,6 +77,44 @@ jobs:
           done
           echo "✅ All $count skills discoverable by Claude Code plugin"
 
+  version-check:
+    runs-on: ubuntu-latest
+    # Run only on pull requests so we can diff against the base branch
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Require plugin version bump when plugin content changes
+        run: |
+          base="origin/${{ github.base_ref }}"
+          changed=$(git diff --name-only "$base"...HEAD -- \
+            'skills/**' \
+            'commands/**' \
+            'agents/**' \
+            'hooks/**' \
+            '.claude-plugin/plugin.json')
+          if [ -z "$changed" ]; then
+            echo "✅ No plugin content changed; plugin version bump not required."
+            exit 0
+          fi
+          head_v=$(jq -r .version .claude-plugin/plugin.json)
+          base_v=$(git show "$base":.claude-plugin/plugin.json | jq -r .version)
+          if [[ ! "$head_v" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ plugin.json#version is not semver: '$head_v'"
+            exit 1
+          fi
+          if [ "$head_v" = "$base_v" ] || ! printf '%s\n%s\n' "$base_v" "$head_v" | sort -V -C; then
+            echo "❌ Plugin content changed but .claude-plugin/plugin.json#version did not strictly increase ($base_v → $head_v)."
+            echo "Bump it (drives /plugin update behavior). Changed paths:"
+            echo "$changed"
+            exit 1
+          fi
+          echo "✅ plugin.json version bumped: $base_v → $head_v"
+
   test-remote:
     runs-on: ubuntu-latest
     # Run only on push to main
