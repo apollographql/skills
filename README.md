@@ -1,7 +1,7 @@
 # Apollo GraphQL Agent Skills
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-10-green.svg)](#skills)
+[![Skills](https://img.shields.io/badge/skills-11-green.svg)](#skills)
 
 A collection of skills for AI coding agents working with Apollo GraphQL tools and technologies.
 
@@ -55,6 +55,7 @@ Once installed, skills are available as namespaced slash commands:
 |---|---|
 | `/apollo-skills:apollo-client` | Apollo Client 4.x for React — queries, mutations, caching, local state |
 | `/apollo-skills:apollo-connectors` | Apollo Connectors — integrate REST APIs into GraphQL |
+| `/apollo-skills:apollo-ios` | Apollo iOS — GraphQL client for Swift (iOS, macOS, tvOS, watchOS, visionOS) |
 | `/apollo-skills:apollo-kotlin` | Apollo Kotlin — GraphQL client for Android and Kotlin |
 | `/apollo-skills:apollo-mcp-server` | Apollo MCP Server — connect AI agents with GraphQL APIs |
 | `/apollo-skills:apollo-server` | Apollo Server 4.x — schemas, resolvers, auth, plugins |
@@ -318,6 +319,54 @@ npx skills add apollographql/skills@apollo-client
 [State Management](skills/apollo-client/references/state-management.md) ·
 [Error Handling](skills/apollo-client/references/error-handling.md) ·
 [Troubleshooting](skills/apollo-client/references/troubleshooting.md)
+
+---
+
+### apollo-ios
+
+Build Apple-platform applications with Apollo iOS, the strongly-typed GraphQL client for Swift (iOS, macOS, tvOS, watchOS, visionOS).
+
+**Install:**
+
+```bash
+npx skills add apollographql/skills@apollo-ios
+```
+
+**Use when:**
+
+- Adding Apollo iOS to a Swift Package Manager or Xcode project
+- Configuring `apollo-codegen-config.json` and running code generation
+- Configuring an `ApolloClient` with auth, interceptors, and caching
+- Writing queries, mutations, or subscriptions from SwiftUI views
+- Writing tests against generated operation mocks
+
+**Categories covered:**
+
+- SPM installation, product linking (`Apollo` vs `ApolloAPI`), and `apollo-ios-cli` setup
+- Code generation config (`apollo-codegen-config.json`) with the canonical `swiftPackage` + `relative` defaults
+- Custom scalars (default `String` typealias, when and how to replace it)
+- Queries, mutations, watchers, and cache policies with async/await
+- Normalized cache, `@typePolicy` cache keys, manual reads/writes
+- Interceptor architecture split across HTTP and GraphQL layers (auth token attachment + token refresh + retry)
+- Subscriptions over HTTP multipart and WebSocket, with scene-phase pause/resume
+- Testing with `ApolloTestSupport` and generated `Mock<Type>` fixtures (enabled lazily when tests need them)
+
+**Examples:**
+
+- "Set up Apollo iOS in a new SwiftUI app"
+- "Add an auth token to every GraphQL request"
+- "Subscribe to a GraphQL subscription from a SwiftUI view"
+
+**References:**
+[SKILL.md](skills/apollo-ios/SKILL.md) ·
+[Setup](skills/apollo-ios/references/setup.md) ·
+[Codegen](skills/apollo-ios/references/codegen.md) ·
+[Custom Scalars](skills/apollo-ios/references/custom-scalars.md) ·
+[Operations](skills/apollo-ios/references/operations.md) ·
+[Caching](skills/apollo-ios/references/caching.md) ·
+[Interceptors](skills/apollo-ios/references/interceptors.md) ·
+[Subscriptions](skills/apollo-ios/references/subscriptions.md) ·
+[Testing](skills/apollo-ios/references/testing.md)
 
 ---
 
@@ -597,6 +646,7 @@ Each skill contains:
 - [Apollo Connectors Documentation](https://www.apollographql.com/docs/graphos/schema-design/connectors/)
 - [Apollo Federation Documentation](https://www.apollographql.com/docs/graphos/schema-design/federated-schemas/)
 - [Apollo MCP Server](https://www.apollographql.com/docs/apollo-mcp-server/)
+- [Apollo iOS Documentation](https://www.apollographql.com/docs/ios/)
 - [Rover CLI Documentation](https://www.apollographql.com/docs/rover/)
 - [Rust Best Practices Handbook](https://github.com/apollographql/rust-best-practices)
 
