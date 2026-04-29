@@ -64,7 +64,7 @@ Two versions matter.
 
 `.claude-plugin/plugin.json#version` is what `claude plugin update` checks. Bump it whenever you touch `skills/`, `commands/`, `agents/`, `hooks/`, or `plugin.json` itself, otherwise existing users won't see the change. CI catches forgotten bumps. New installs always pull the latest content regardless.
 
-The gh skill release tag is automatic. Pushes to `main` run a workflow that reads the plugin version and tags a matching `vX.Y.Z` if it doesn't exist yet. That's what `gh skill install apollographql/skills <name>@vX.Y.Z` pins to.
+The gh skill release tag is automatic. Pushes to `main` run a workflow that reads the plugin version and tags a matching `vX.Y.Z` if it doesn't exist yet. That's what `gh skill install apollographql/skills <name> --pin vX.Y.Z` pins to.
 
 Use semver: patch for fixes, minor for new skills, major when you remove or rename one.
 
