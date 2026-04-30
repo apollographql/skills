@@ -70,7 +70,7 @@ Once installed, skills are available as namespaced slash commands:
 You can also install skills with the [GitHub CLI](https://cli.github.com/) using `gh skill` (preview):
 
 ```bash
-# Install one skill into the current project for Claude Code
+# Install skills into the current project for Claude Code
 gh skill install apollographql/skills --agent claude-code
 
 # Install at user scope (available everywhere)
@@ -79,7 +79,7 @@ gh skill install apollographql/skills --agent claude-code --scope user
 # Pin to a specific release (skipped during updates so it won't auto-upgrade)
 gh skill install apollographql/skills --pin v1.0.0 --agent claude-code
 
-# Preview a skill before installing
+# Preview skills before installing
 gh skill preview apollographql/skills
 ```
 
