@@ -367,7 +367,7 @@ type Query {
 ## @policy
 
 ```graphql
-directive @policy(policies: [[federation__Policy!]!]!) on | FIELD_DEFINITION | OBJECT | INTERFACE | SCALAR | ENUM
+directive @policy(policies: [[federation__Policy!]!]!) on FIELD_DEFINITION | OBJECT | INTERFACE | SCALAR | ENUM
 ```
 
 Indicates that access to the target element is restricted based on authorization
@@ -590,7 +590,7 @@ to a receiver of the context. The receiver must be a field annotated with the
 ## @fromContext
 
 ```graphql
-directive @fromContext(field: ContextFieldValue) on ARGUMENT_DEFINITION;
+directive @fromContext(field: ContextFieldValue) on ARGUMENT_DEFINITION
 ```
 
 Sets the context from which to receive the value of the annotated field. The 

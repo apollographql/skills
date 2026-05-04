@@ -81,7 +81,7 @@ type User {
 }
 ```
 
-### Implementation with graphql-query-complexity
+### Implementation with graphql-validation-complexity
 
 ```typescript
 import { createComplexityLimitRule } from 'graphql-validation-complexity';

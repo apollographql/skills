@@ -12,7 +12,7 @@ license: MIT
 compatibility: Works with any Federation 2.x compatible subgraph library (Apollo Server, GraphQL Yoga, etc.)
 metadata:
   author: apollographql
-  version: "1.0.0"
+  version: "1.0.1"
 allowed-tools: Bash(rover:*) Read Write Edit Glob Grep
 ---
 
