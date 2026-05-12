@@ -57,6 +57,7 @@ Once installed, skills are available as namespaced slash commands:
 | `/apollo-skills:apollo-connectors` | Apollo Connectors — integrate REST APIs into GraphQL |
 | `/apollo-skills:apollo-ios` | Apollo iOS — GraphQL client for Swift (iOS, macOS, tvOS, watchOS, visionOS) |
 | `/apollo-skills:apollo-kotlin` | Apollo Kotlin — GraphQL client for Android and Kotlin |
+| `/apollo-skills:apollo-kotlin-v5-migration` | Apollo Kotlin v4 → v5 migration — Gradle plugin, normalized cache, WebSockets, nullability |
 | `/apollo-skills:apollo-mcp-server` | Apollo MCP Server — connect AI agents with GraphQL APIs |
 | `/apollo-skills:apollo-server` | Apollo Server 4.x — schemas, resolvers, auth, plugins |
 | `/apollo-skills:graphql-operations` | GraphQL operations — queries, mutations, fragments |
@@ -439,6 +440,51 @@ npx skills add apollographql/skills@apollo-kotlin
 [Setup](skills/apollo-kotlin/references/setup.md) ·
 [Operations](skills/apollo-kotlin/references/operations.md) ·
 [Caching](skills/apollo-kotlin/references/caching.md) ·
+
+---
+
+### apollo-kotlin-v5-migration
+
+Migrate an Android, JVM, or Kotlin Multiplatform app from Apollo Kotlin v4 to v5.
+
+**Install:**
+
+```bash
+npx skills add apollographql/skills@apollo-kotlin-v5-migration
+```
+
+**Use when:**
+
+- Upgrading from Apollo Kotlin v4 to v5
+- Resolving compile errors after bumping to 5.0 (removed APIs around `webSocketEngine`, `ApolloStore`, `apollo-http-cache`, `@nonnull`, and others)
+- Adopting the new normalized cache library, rewritten WebSocket stack, `@semanticNonNull` + `@catch`, or `ApolloCompilerPlugin`
+
+**Categories covered:**
+
+- Gradle plugin coordinates and classloader isolation
+- Normalized cache move to `com.apollographql.cache`
+- WebSocket / subscription stack rewrite
+- HTTP cache via OkHttp + `enablePostCaching`
+- Nullability with `@semanticNonNull` + `@catch`
+- Data builder restructuring
+- Custom `ApolloCompilerPlugin` via `ServiceLoader`
+
+**Examples:**
+
+- "Upgrade my Android app from Apollo Kotlin 4 to 5"
+- "Fix the `ApolloStore` compile errors after bumping to 5.0"
+- "Replace `@nonnull` with `@semanticNonNull` across the schema"
+
+**References:**
+[SKILL.md](skills/apollo-kotlin-v5-migration/SKILL.md) ·
+[Gradle plugin](skills/apollo-kotlin-v5-migration/references/gradle-plugin.md) ·
+[Normalized cache](skills/apollo-kotlin-v5-migration/references/normalized-cache.md) ·
+[WebSockets](skills/apollo-kotlin-v5-migration/references/websockets.md) ·
+[HTTP cache](skills/apollo-kotlin-v5-migration/references/http-cache.md) ·
+[Nullability](skills/apollo-kotlin-v5-migration/references/nullability.md) ·
+[Data builders](skills/apollo-kotlin-v5-migration/references/data-builders.md) ·
+[Compiler plugin](skills/apollo-kotlin-v5-migration/references/compiler-plugin.md) ·
+[Removals](skills/apollo-kotlin-v5-migration/references/removals.md)
 
 ---
 
