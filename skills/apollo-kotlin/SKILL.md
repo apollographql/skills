@@ -34,6 +34,7 @@ Follow this process when adding or working with Apollo Kotlin:
 - [Setup](references/setup.md) - Gradle plugin, schema download, codegen config (including scalars), client configuration (auth, logging, interceptors)
 - [Operations](references/operations.md) - Queries, mutations, subscriptions, and how to execute them
 - [Caching](references/caching.md) - Setup and use the normalized cache
+- [Migration Guide](references/migrating-from-4.md) - Migrate from Apollo Kotlin 4
 
 ## Scripts
 
@@ -42,5 +43,5 @@ Follow this process when adding or working with Apollo Kotlin:
 
 ## Key Rules
 
-- Use Apollo Kotlin v4+, do not use v3 or older versions.
+- Prefer Apollo Kotlin v5+. Do not use v3 or older versions.
 - Keep schema and operations in source control to make builds reproducible.
