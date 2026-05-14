@@ -6,7 +6,7 @@ Confirm the user is on v4.
 
 If the user is on v3 or earlier (group `com.apollographql.apollo3` or `com.apollographql.apollo` at `3.x`/`2.x`), they must migrate to v4 first using the [v3 → v4 migration guide](https://www.apollographql.com/docs/kotlin/migration/4.0); this skill only covers the v4 → v5 step.
 
-Bump versions and plugin coordinates. Use the latest 5.x; run [scripts/list-apollo-kotlin-versions.sh](scripts/list-apollo-kotlin-versions.sh) to discover it.
+Bump versions and plugin coordinates. Use the latest 5.x; run [../scripts/list-apollo-kotlin-versions.sh](scripts/list-apollo-kotlin-versions.sh) to discover it.
 
 Build your project. If everything builds, the migration is over.
 

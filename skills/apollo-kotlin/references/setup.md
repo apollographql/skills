@@ -4,7 +4,7 @@ Use this guide to setup Apollo Kotlin and configure code generation and schema d
 
 ## Gradle
 
-- Always use Apollo Kotlin v4+, do not use v3 or older versions
+- Prefer Apollo Kotlin 5, do not use v3 or older versions
 - Always use the latest version
 - To determine the latest version, execute `scripts/list-apollo-kotlin-versions.sh` and pick the latest release
 
