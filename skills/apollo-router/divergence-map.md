@@ -28,6 +28,31 @@ See: [templates/v1/sections/cors.yaml](templates/v1/sections/cors.yaml) vs [temp
 
 See: [templates/v1/sections/auth.yaml](templates/v1/sections/auth.yaml) vs [templates/v2/sections/auth.yaml](templates/v2/sections/auth.yaml)
 
+## Authorization Directives (`@authenticated` / `@requiresScopes` / `@policy`)
+
+The enable key is the same in both versions — what diverges is availability and the claims context key read by coprocessors.
+
+| Aspect | v1 | v2 |
+|--------|----|----|
+| Enable key | `authorization.directives.enabled` (default `true`) | Same |
+| Minimum version | v1.29.1+ (GraphOS-connected) | All v2; Developer/Standard plans require v2.6.0+ |
+| Claims context key | `apollo_authentication::JWT::claims` | `apollo::authentication::jwt_claims` |
+
+> [!NOTE]
+> Directives are **on by default** — config only disables them. They live in subgraph schemas, not `router.yaml`.
+
+## Persisted Queries (Safelisting)
+
+Distinct from APQ. The config key changed across v1 preview → GA:
+
+| Aspect | v1.25.0–v1.32.0 (preview) | v1.32.0+ / all v2 (GA) |
+|--------|---------------------------|------------------------|
+| Config key | `preview_persisted_queries` | `persisted_queries` |
+| `local_manifests` key | `experimental_local_manifests` (v1.50.0–v1.54) | `local_manifests` (v1.55.0+) |
+
+> [!CAUTION]
+> Enabling `persisted_queries.safelist` requires `apq.enabled: false` — APQ and safelisting are mutually exclusive.
+
 ## Operation Limits
 
 | Aspect | v1 (early) | v1 (1.17+) / v2 |
@@ -85,6 +110,8 @@ Multiple context keys were renamed in v2. Only relevant if configuring coprocess
 | What's New in v2 | https://www.apollographql.com/docs/graphos/routing/about-v2 |
 | CORS (v2) | https://www.apollographql.com/docs/graphos/routing/security/cors |
 | JWT Auth | https://www.apollographql.com/docs/graphos/routing/security/jwt |
+| Authorization Directives | https://www.apollographql.com/docs/graphos/routing/security/authorization |
+| Persisted Query Safelisting | https://www.apollographql.com/docs/graphos/platform/security/persisted-queries |
 | Request Limits | https://www.apollographql.com/docs/graphos/routing/security/request-limits |
 | Traffic Shaping | https://www.apollographql.com/docs/graphos/routing/performance/traffic-shaping |
 | v1 EOL Announcement | https://www.apollographql.com/blog/end-of-support-for-router-v1-x-long-term-support-lts-policy-update |
