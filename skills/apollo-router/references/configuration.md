@@ -187,6 +187,45 @@ authorization:
   require_authentication: true
 ```
 
+## Authorization Directives (field-level)
+
+`authorization.require_authentication` above is an all-or-nothing gate on the whole request. For **field- and type-level** access control, use the declarative authorization directives — `@authenticated`, `@requiresScopes`, and `@policy` — applied in your **subgraph schemas**. The router filters out unauthorized fields before query planning and returns `UNAUTHORIZED_FIELD_OR_TYPE` errors for them.
+
+> **GraphOS feature.** Requires a router connected to GraphOS — Router v1.29.1+; on Developer/Standard plans, Router v2.6.0+. The directives need a **claims source**: configure JWT authentication (claims land at the `apollo::authentication::jwt_claims` context key) or inject claims with a coprocessor.
+
+> **Enabled by default.** The directives are on as soon as your router is GraphOS-connected and your schema uses them. Config only *disables* them:
+
+```yaml
+authorization:
+  directives:
+    enabled: false   # default is true — only set this to turn directives OFF
+```
+
+The directives themselves live in subgraph schemas, imported via `@link`:
+
+```graphql
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.6",
+        import: ["@authenticated", "@requiresScopes", "@policy"])
+
+type Query {
+  me: User @authenticated
+  users: [User!]! @requiresScopes(scopes: [["read:others"]])
+}
+
+type User {
+  id: ID!
+  email: String @requiresScopes(scopes: [["read:email"]])
+  creditCard: String @policy(policies: [["read_credit_card"]])
+}
+```
+
+- `@authenticated` — field requires any valid identity (claims present).
+- `@requiresScopes(scopes: [[...]])` — requires specific scopes. Inner array = **AND**, outer array = **OR**. Reads the `scope` key (space-separated string) from the claims object.
+- `@policy(policies: [[...]])` — custom authorization. Requires a **Supergraph plugin** (Rhai script or coprocessor): the router populates `apollo::authorization::required_policies` as a `policy -> null` map, and your plugin sets each to `true`/`false`. Unset (`null`) is treated as `false`.
+
+> **Context key differs by version** (relevant if a coprocessor reads claims): v2 uses `apollo::authentication::jwt_claims`; v1 used `apollo_authentication::JWT::claims`. See [divergence-map.md](../divergence-map.md).
+
 ## Response Caching (v2.6.0+)
 
 > Response caching uses the `response_cache` top-level key (not `supergraph.cache`).
@@ -204,7 +243,9 @@ response_cache:
         urls: ["redis://localhost:6379"]
 ```
 
-## Persisted Queries (APQ)
+## Automatic Persisted Queries (APQ)
+
+> **Performance only — not a security control.** APQ lets clients send the SHA-256 hash of an operation instead of the full string to save bandwidth. The router caches **any** operation it receives at runtime, so APQ does **not** restrict which operations can run. For an operation allowlist, use [Persisted Query Safelisting](#persisted-query-safelisting-pql) below — and note the two are mutually exclusive.
 
 ```yaml
 apq:
@@ -218,6 +259,57 @@ apq:
       #   urls:
       #     - redis://localhost:6379
 ```
+
+## Persisted Query Safelisting (PQL)
+
+> **Security control, distinct from APQ.** Clients register trusted operations to a GraphOS-managed **Persisted Query List (PQL)** at build time (via `rover persisted-queries publish` in their CI/CD). The router fetches the PQL on startup and can **reject any operation not on the list**. Requires a router connected to GraphOS (`APOLLO_KEY` + `APOLLO_GRAPH_REF`), or `local_manifests` for offline licenses.
+>
+> **Config key:** GA `persisted_queries` since v1.32.0 (was `preview_persisted_queries` in v1.25.0–v1.32.0); GA in all v2.
+
+Adopt incrementally — start in audit mode, then enforce once you confirm all clients are registered.
+
+**Audit mode** (logs unregistered operations, rejects nothing):
+
+```yaml
+persisted_queries:
+  enabled: true
+  log_unknown: true
+```
+
+**Safelisting** (rejects unregistered operations; registered IDs *and* full strings both accepted):
+
+```yaml
+persisted_queries:
+  enabled: true
+  safelist:
+    enabled: true
+apq:
+  enabled: false   # REQUIRED: APQ and safelisting are mutually exclusive
+```
+
+**Safelisting, IDs only** (also rejects freeform operation strings, even registered ones):
+
+```yaml
+persisted_queries:
+  enabled: true
+  safelist:
+    enabled: true
+    require_id: true
+apq:
+  enabled: false
+```
+
+**Offline / air-gapped** (use a local manifest instead of fetching from GraphOS Uplink):
+
+```yaml
+persisted_queries:
+  enabled: true
+  local_manifests:
+    - ./persisted-query-manifest.json
+  hot_reload: true   # optional: reload the manifest file on change (local_manifests only)
+```
+
+You can opt individual requests out of enforcement from a Rhai script or coprocessor by setting the `apollo_persisted_queries::safelist::skip_enforcement` context key to `true`.
 
 ## Limits and Security
 

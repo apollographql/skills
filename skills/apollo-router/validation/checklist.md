@@ -10,6 +10,11 @@ Run through this checklist after generating a `router.yaml` to catch common mist
 - [ ] **Subgraph errors hidden** (production): `include_subgraph_errors.all: false`
 - [ ] **No wildcard CORS** (production): explicit origins only (no `"*"` and no `allow_any_origin: true`)
 - [ ] **Authentication required** (if applicable): `authorization.require_authentication: true`
+- [ ] **Declarative authorization not silently disabled** (if using `@authenticated`/`@requiresScopes`/`@policy`): `authorization.directives.enabled` is absent or `true`, router is GraphOS-connected, and a claims source (JWT auth or coprocessor) is configured
+- [ ] **`@policy` evaluator wired** (if `@policy` used): a Rhai script or coprocessor evaluates `apollo::authorization::required_policies` at the Supergraph stage
+- [ ] **Safelisting vs APQ not confused**: if the goal is an operation allowlist, `persisted_queries.safelist.enabled: true` is set (NOT just `apq`)
+- [ ] **APQ disabled when safelisting** (if `persisted_queries.safelist.enabled: true`): `apq.enabled: false` (mutually exclusive)
+- [ ] **Persisted queries use GA key**: `persisted_queries` (not `preview_persisted_queries`)
 
 ## Version Correctness
 
@@ -32,6 +37,8 @@ Run through this checklist after generating a `router.yaml` to catch common mist
 - [ ] **All env vars documented**: Every `${env.VAR}` in the config has a corresponding entry in deployment docs
 - [ ] **APOLLO_KEY not hardcoded**: API key is via environment variable, never in config file or logs
 - [ ] **Secrets use env var expansion**: `${env.JWKS_URL}`, `${env.JWT_ISSUER}`, etc.
+- [ ] **Config is version-controlled**: `router.yaml` is committed to git (safe to share — no secrets) and changes go through review
+- [ ] **CI validates config**: `router config validate router.yaml` runs on every PR, pinned to the deployed Router version
 
 ## Telemetry
 
