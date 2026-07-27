@@ -30,7 +30,17 @@ extend schema
         import: ["@key", "@shareable", "@external", "@requires", "@provides"])
 ```
 
-Import only the directives your subgraph uses.
+Import only the directives your subgraph uses. The version shown (`v2.12`) is an
+example — check the [currently supported versions](references/composition.md#federation-versions-floor-vs-composition)
+before copying, rather than anchoring on whatever number appears here.
+
+> **A subgraph's `@link` version is a floor, not the composition version.** It
+> declares the *minimum* federation version required for the directives that
+> subgraph uses — not what version the graph is composed at. The composition
+> version is set separately (`federation_version` in `supergraph.yaml` locally,
+> or the variant's Build Pipeline setting in GraphOS) and only needs to be ≥
+> every subgraph's floor. A subgraph pinned below the composition version is
+> normal, not a bug. See [Federation versions](references/composition.md#federation-versions-floor-vs-composition).
 
 ## Core Directives Quick Reference
 

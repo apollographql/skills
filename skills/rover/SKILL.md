@@ -162,6 +162,12 @@ subgraphs:
       subgraph_url: http://localhost:4002/graphql
 ```
 
+`federation_version` here is the **composition version** — it only needs to be ≥
+each subgraph's `@link` floor, so subgraphs pinned to a lower version compose
+fine. If a subgraph server throws `UNKNOWN_FEDERATION_LINK_VERSION` at startup,
+that's a client-library lag, not a composition problem. See the apollo-federation
+skill's [Federation versions](../apollo-federation/references/composition.md#federation-versions-floor-vs-composition).
+
 Compose:
 ```bash
 rover supergraph compose --config supergraph.yaml > supergraph.graphql
