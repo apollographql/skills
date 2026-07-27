@@ -174,6 +174,8 @@ fn the_function_accepts_all_strings_with_a(#[case] input: &str) {
 > * It's harder for both IDEs and humans to run/locate specific tests.
 > * Expectation vs condition naming is now visually inverted (expectation first).
 
+> ❗ Share **setup**, not the test itself: keep each test's action and assertion inline, even when repetitive. Tests tolerate duplication better than production code -- see [Chapter 1, §1.8](./chapter_01.md#-test-code-readability-beats-dry).
+
 ## 5.2 Add Test Examples to your Docs
 
 We will deep dive into docs at a later stage, so in this section we will just briefly go over how to add tests to you docs. Rustdoc can turn examples into executable tests using `///` with a few advantages:
@@ -282,9 +284,15 @@ Rust comes with 2 macros to make assertions:
 
 ### 🚨 `assert!` reminders
 * Rust asserts support formatted strings, like the previous examples, those strings will be printed in case of failure, so it is a good practice to add what the actual state was and how it differs from the expected.
-* If you don't care about the exact pattern matching value, using `matches!` combined with `assert!` might be a good alternative.
+* If you don't care about the exact pattern matching value, using `matches!` combined with `assert!` might be a good alternative. Note the message string is an argument to `assert!`, not to `matches!`:
 ```rust
-assert!(matches!(error, MyError::BadInput(_), "Expected `BadInput`, found {error}"));
+assert!(matches!(error, MyError::BadInput(_)), "Expected `BadInput`, found {error}");
+```
+* Since Rust 1.96 prefer the stabilized [`assert_matches!`](https://doc.rust-lang.org/std/macro.assert_matches.html) (and [`debug_assert_matches!`](https://doc.rust-lang.org/std/macro.debug_assert_matches.html)) over `assert!(matches!(..))`. It prints the actual value on failure for free, so you don't have to write the message yourself:
+```rust
+use std::assert_matches::assert_matches;
+
+assert_matches!(error, MyError::BadInput(_));
 ```
 * Use `#[should_panic]` wisely. It should only be used when panic is the desired behavior, prefer result instead of panic.
 * There are some other that can enhance your testing experience like:
