@@ -12,7 +12,7 @@ license: MIT
 compatibility: Node.js v18+, Linux/macOS/Windows
 metadata:
   author: apollographql
-  version: "1.1.1"
+  version: "1.1.2"
 allowed-tools: Bash(rover:*) Bash(npm:*) Bash(npx:*) Read Write Edit Glob Grep
 ---
 
