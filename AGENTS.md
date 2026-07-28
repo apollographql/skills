@@ -60,9 +60,10 @@ Validate locally with `gh skill publish --dry-run` (or `skills-ref validate skil
 
 ## Releasing / Versioning
 
-Two versions matter.
+CI's `version-check` enforces **two independent bumps** — both must strictly increase or the check fails.
 
-`.claude-plugin/plugin.json#version` is what `claude plugin update` checks. Bump it whenever you touch `skills/`, `commands/`, `agents/`, `hooks/`, or `plugin.json` itself, otherwise existing users won't see the change. CI catches forgotten bumps. New installs always pull the latest content regardless.
+1. **Per-skill:** the `metadata.version` in every `skills/<name>/SKILL.md` whose content you changed. Each changed skill is checked separately, so if you touch two skills you must bump both. This is the one most often forgotten.
+2. **Plugin:** `.claude-plugin/plugin.json#version` is what `claude plugin update` checks. Bump it whenever you touch `skills/`, `commands/`, `agents/`, `hooks/`, or `plugin.json` itself, otherwise existing users won't see the change. New installs always pull the latest content regardless.
 
 The gh skill release tag is automatic. Pushes to `main` run a workflow that reads the plugin version and tags a matching `vX.Y.Z` if it doesn't exist yet. That's what `gh skill install apollographql/skills <name> --pin vX.Y.Z` pins to.
 
