@@ -2,6 +2,46 @@
 
 Rules for composing subgraph schemas into a supergraph, with error codes and fixes.
 
+## Federation Versions: Floor vs. Composition
+
+A subgraph's `@link(url: ".../federation/vX.Y")` version is the **minimum**
+version required for the directives that subgraph uses — **not** a declaration
+of what version the graph is composed at. Two versions are in play, and they are
+set independently:
+
+- **Subgraph floor** — the `@link` version in each subgraph's SDL. It just needs
+  to cover the directives that subgraph actually uses.
+- **Composition version** — set separately, once, for the whole build:
+  `federation_version` in `supergraph.yaml` for local composition, or the
+  variant's **Build Pipeline** setting in GraphOS.
+
+The only rule between them is: the composition version must be ≥ every
+subgraph's floor. A subgraph sitting below the composition version is **normal,
+not a bug** — you do not need to bump every subgraph's `@link` to match the
+composition version.
+
+> The version numbers used throughout this skill (e.g. `v2.12`, `=2.9.0`) are
+> illustrative. Check the [Federation changelog](https://www.apollographql.com/docs/graphos/schema-design/federated-schemas/reference/versions)
+> for currently supported versions before pinning one, rather than copying
+> whatever number appears in an example.
+
+### UNKNOWN_FEDERATION_LINK_VERSION at server startup
+
+If `buildSubgraphSchema()` throws `UNKNOWN_FEDERATION_LINK_VERSION` **at server
+startup** (not at `rover subgraph publish` / composition time), that's a
+client-library lag — **not** a sign that GraphOS doesn't support the version.
+
+Composition (Rust, in Rover/Router) and the JS schema-building library you build
+your subgraph with (`@apollo/subgraph`) have independent, separately-versioned
+understandings of which federation versions exist, and the JS side can trail
+behind. So a version can compose fine in GraphOS yet be rejected by your local
+subgraph server.
+
+**Fix:** lower that subgraph's `@link` to the highest version your library
+actually recognizes (upgrade `@apollo/subgraph` if you need a newer one). The
+composition version can still be pinned higher — remember the floor-vs-composition
+distinction above.
+
 ## Entity Validation
 
 Entities must have valid `@key` definitions that can be resolved across subgraphs.

@@ -12,7 +12,7 @@ license: MIT
 compatibility: Node.js v18+, Linux/macOS/Windows
 metadata:
   author: apollographql
-  version: "1.1.1"
+  version: "1.1.2"
 allowed-tools: Bash(rover:*) Bash(npm:*) Bash(npx:*) Read Write Edit Glob Grep
 ---
 
@@ -161,6 +161,12 @@ subgraphs:
     schema:
       subgraph_url: http://localhost:4002/graphql
 ```
+
+`federation_version` here is the **composition version** — it only needs to be ≥
+each subgraph's `@link` floor, so subgraphs pinned to a lower version compose
+fine. If a subgraph server throws `UNKNOWN_FEDERATION_LINK_VERSION` at startup,
+that's a client-library lag, not a composition problem. See the apollo-federation
+skill's [Federation versions](../apollo-federation/references/composition.md#federation-versions-floor-vs-composition).
 
 Compose:
 ```bash

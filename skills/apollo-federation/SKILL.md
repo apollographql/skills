@@ -12,7 +12,7 @@ license: MIT
 compatibility: Works with any Federation 2.x compatible subgraph library (Apollo Server, GraphQL Yoga, etc.)
 metadata:
   author: apollographql
-  version: "1.0.1"
+  version: "1.0.2"
 allowed-tools: Bash(rover:*) Read Write Edit Glob Grep
 ---
 
@@ -30,7 +30,13 @@ extend schema
         import: ["@key", "@shareable", "@external", "@requires", "@provides"])
 ```
 
-Import only the directives your subgraph uses.
+Import only the directives your subgraph uses. The version shown (`v2.12`) is
+illustrative — check the [Federation changelog](https://www.apollographql.com/docs/graphos/schema-design/federated-schemas/reference/versions)
+for currently supported versions before copying it verbatim.
+
+> A subgraph's `@link` version is a floor, not the composition version — see
+> [Federation versions](references/composition.md#federation-versions-floor-vs-composition)
+> for the full explanation.
 
 ## Core Directives Quick Reference
 
