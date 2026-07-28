@@ -21,8 +21,9 @@ not a bug** — you do not need to bump every subgraph's `@link` to match the
 composition version.
 
 > The version numbers used throughout this skill (e.g. `v2.12`, `=2.9.0`) are
-> illustrative. Check the currently supported federation versions before pinning
-> one, rather than copying whatever number appears in an example.
+> illustrative. Check the [Federation changelog](https://www.apollographql.com/docs/graphos/schema-design/federated-schemas/reference/versions)
+> for currently supported versions before pinning one, rather than copying
+> whatever number appears in an example.
 
 ### UNKNOWN_FEDERATION_LINK_VERSION at server startup
 
