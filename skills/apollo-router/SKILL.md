@@ -7,12 +7,14 @@ description: >
   (2) configuring routing, headers, or CORS,
   (3) implementing custom plugins (Rhai scripts or coprocessors),
   (4) configuring telemetry (tracing, metrics, logging),
-  (5) troubleshooting Router performance or connectivity issues.
+  (5) troubleshooting Router performance or connectivity issues,
+  (6) securing the graph with JWT, declarative field-level authorization directives, or persisted-query safelisting,
+  (7) managing router.yaml as version-controlled config with CI/CD validation.
 license: MIT
 compatibility: Linux/macOS/Windows. Requires a composed supergraph schema from Rover or GraphOS.
 metadata:
   author: apollographql
-  version: "2.4.0"
+  version: "2.5.0"
 allowed-tools: Bash(router:*) Bash(./router:*) Bash(rover:*) Bash(curl:*) Bash(docker:*) Read Write Edit Glob Grep
 ---
 
@@ -67,11 +69,13 @@ Load the appropriate base template from:
 Ask which features to include:
 
 - [ ] JWT Authentication
+- [ ] Declarative Authorization (field-level `@authenticated` / `@requiresScopes` / `@policy` directives — requires GraphOS + request claims)
 - [ ] CORS (almost always yes for browser clients)
 - [ ] Operation Limits
 - [ ] Traffic Shaping / Rate Limiting
 - [ ] Telemetry (Prometheus, OTLP tracing, JSON logging)
-- [ ] APQ (Automatic Persisted Queries)
+- [ ] APQ (Automatic Persisted Queries — performance/bandwidth only, NOT a security control)
+- [ ] Persisted Query Safelisting (GraphOS PQL operation allowlist — a security control; distinct from APQ)
 - [ ] Connectors (REST API integration — Router v2 only; GA key is `connectors`, early v2 preview key was `preview_connectors`)
 - [ ] Subscriptions
 - [ ] Header Propagation
@@ -92,6 +96,41 @@ For each selected feature, collect required values.
 ### JWT Authentication
 - JWKS URL
 - Issuer(s) — note: v1 uses singular `issuer`, v2 uses plural `issuers` array
+
+### Declarative Authorization (field-level)
+
+> Field- and type-level access control enforced **in the router**, via the `@authenticated`, `@requiresScopes`, and `@policy` directives applied in subgraph schemas. This is the layer that the global `authorization.require_authentication` gate cannot express. It is a **GraphOS feature** (Enterprise; Developer/Standard plans require Router v2.6.0+) and requires a router connected to GraphOS. Directives are **enabled by default** — config only turns them *off*.
+
+Confirm prerequisites before recommending these:
+
+- **Router connected to GraphOS** (Router v1.29.1+; Developer/Standard plans need v2.6.0+).
+- **A claims source.** Directives evaluate the claims at the `apollo::authentication::jwt_claims` context key. Populate it via JWT authentication (configure that feature too) **or** a coprocessor that injects claims.
+- **`@policy` additionally requires a Supergraph plugin** (Rhai script or coprocessor) to evaluate each policy — the router extracts required policies into `apollo::authorization::required_policies` but does not decide them itself.
+
+Ask:
+- **Which fields/types need protection, and at what level?** (`@authenticated` = any valid identity; `@requiresScopes` = specific scopes; `@policy` = custom logic.)
+- **Where do scopes/claims come from?** (JWT claims vs. coprocessor-injected.)
+
+The directives live in the **subgraph schemas**, not in `router.yaml`. The router config only enables/disables the feature and (for `@policy`) wires the evaluating plugin. See `references/configuration.md` → Authorization.
+
+### Persisted Query Safelisting (GraphOS PQL)
+
+> **Not the same as APQ.** APQ (`apq`) is a runtime bandwidth optimization that caches *any* operation a client sends — it provides **no** security. Safelisting uses a GraphOS-managed **Persisted Query List (PQL)** that clients register at build time; the router then **rejects operations not on the list**. This is the "persisted query safelisting" security control. It is a **GraphOS feature** requiring a router connected to GraphOS (`APOLLO_KEY` + `APOLLO_GRAPH_REF`).
+
+Pick a **security level** (increasing restrictiveness):
+
+| Level | Config | Behavior |
+|-------|--------|----------|
+| Audit (recommended first) | `persisted_queries.log_unknown: true` | Logs unregistered operations; rejects nothing. Use to confirm all clients are registered before enforcing. |
+| Safelist | `safelist.enabled: true` | Rejects operations not in the PQL. IDs *and* full strings both accepted if registered. |
+| Safelist, IDs only | `safelist.enabled: true` + `require_id: true` | Rejects unregistered operations **and** any freeform operation string, even if the string is registered. |
+
+Then gather:
+- **Is the router GraphOS-connected?** Safelisting needs the PQL fetched from GraphOS (or `local_manifests` for offline licenses).
+- **Have clients published their operations to the PQL** (via `rover persisted-queries publish` in their CI/CD)? If not, start in audit mode.
+- When enabling `safelist`, **APQ must be disabled** (`apq.enabled: false`) — they are mutually exclusive.
+
+Config key history: GA `persisted_queries` since v1.32.0 (was `preview_persisted_queries` in v1.25.0–v1.32.0); GA in all v2. See `references/configuration.md` → Persisted Query Safelisting.
 
 ### Connectors (v2 only)
 - Subgraph name and source name (used as `connectors.sources.<subgraph>.<source>`)
@@ -172,6 +211,23 @@ After generating or editing any `router.yaml`, you MUST:
 2. Run `router config validate <path-to-router.yaml>` if Router CLI is available.
 3. If Router CLI is unavailable, state that explicitly and still complete the checklist.
 4. Do not present the configuration as final until validation is completed.
+
+## Configuration as Code (git + CI/CD)
+
+`router.yaml` is the router's contract with every request — treat it like application code, not an ops afterthought. Whenever you generate or edit config, steer the user toward this workflow:
+
+- **Commit `router.yaml` to version control.** It should live in git alongside the service, with changes reviewed via pull request. This gives you history, blame, and rollback for the most safety-critical file in the API layer.
+- **Never commit secrets.** Keep `APOLLO_KEY`, JWKS URLs, Redis URLs, and invalidation keys out of the file — reference them with `${env.*}` expansion and inject at deploy time. The committed file should be safe to read by anyone with repo access.
+- **Validate in CI.** Run `router config validate router.yaml` on every PR so a malformed or version-mismatched config fails the build before it ships. Pin the Router version used in CI to the version you deploy.
+- **Pair config changes with schema checks.** Schema changes flow through `rover subgraph check` / `rover subgraph publish` (the `rover` skill); config changes flow through this validate-in-CI gate. Both gate the same deploy.
+- **Promote the same file across environments.** Differences between dev and prod should be expressed through env vars, not divergent committed files, so what you reviewed is what runs.
+
+A minimal CI step (provide actual commands only if asked):
+
+```yaml
+# Validate router config on every pull request
+- run: router config validate router.yaml
+```
 
 ## Step 7: Conditional Next Steps Handoff
 
@@ -282,3 +338,15 @@ Options:
 - ALWAYS configure `private_id` for subgraphs that serve user-specific data, and ensure those subgraphs return `Cache-Control: private` (via `@cacheControl(scope: PRIVATE)` in Apollo Server, or by setting the header directly in other frameworks)
 - NEVER generate response cache config without addressing private data — if the user says "no user-specific data", confirm explicitly before proceeding
 - ALWAYS bind the invalidation endpoint to `127.0.0.1`, NEVER `0.0.0.0` in production
+- NEVER conflate APQ with persisted-query safelisting — APQ (`apq`) is a bandwidth optimization with no security value; safelisting (`persisted_queries.safelist`) is the operation allowlist. If a user asks to "lock down which queries can run", point them to safelisting, not APQ
+- ALWAYS disable APQ (`apq.enabled: false`) when enabling `persisted_queries.safelist` — they are mutually exclusive
+- RECOMMEND starting persisted queries in audit mode (`log_unknown: true`) to confirm all clients are registered before turning on `safelist.enabled`
+- STATE that persisted-query safelisting requires a GraphOS-connected router (PQL fetched via `APOLLO_KEY` + `APOLLO_GRAPH_REF`, or `local_manifests` for offline licenses)
+- USE `persisted_queries` (GA, v1.32.0+ and all v2), NOT `preview_persisted_queries` (v1.25.0–v1.32.0)
+- TREAT global `authorization.require_authentication` and declarative directives as different layers: the former gates the whole request, the latter (`@authenticated` / `@requiresScopes` / `@policy`) does field- and type-level filtering
+- STATE that declarative authorization directives require a GraphOS-connected router (v1.29.1+; Developer/Standard plans need v2.6.0+) and a claims source (JWT auth or a coprocessor populating `apollo::authentication::jwt_claims`)
+- NOTE that authorization directives are ENABLED BY DEFAULT — `authorization.directives.enabled: false` only turns them off; never imply config is required to "turn them on"
+- STATE that `@policy` additionally requires a Rhai script or coprocessor at the Supergraph stage to evaluate `apollo::authorization::required_policies`
+- PLACE authorization directives in subgraph schemas, NEVER in `router.yaml` — router config only enables/disables the feature
+- RECOMMEND committing `router.yaml` to version control and running `router config validate` in CI on every PR, with all secrets referenced via `${env.*}` and injected at deploy time
+- NEVER commit secrets (`APOLLO_KEY`, JWKS/Redis URLs, invalidation keys) to the config file; the committed `router.yaml` must be safe to share with anyone holding repo access
