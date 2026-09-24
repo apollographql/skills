@@ -101,7 +101,7 @@ Confirm the current LTS before writing `@link` URLs or `federation_version`. Pre
 - **Federation:** read `/graphos/schema-design/federated-schemas/reference/versions` and use the highest version marked LTS. That version is the schema `@link` (`https://specs.apollo.dev/federation/vX.Y`). Set `federation_version` in `supergraph.yaml` to the latest patch of that same LTS line.
 - **Connectors:** read `/graphos/connectors/getting-started/version-requirements` and `/graphos/connectors/reference/changelog`. Use the latest Connectors spec that is generally available (not marked experimental) and compatible with that Federation LTS (`https://specs.apollo.dev/connect/vX.Y`).
 
-The template above uses the current LTS: Federation `v2.15` and Connectors `v0.3`. Composition for that Federation line is `federation_version: =2.15.2`. If the docs list a newer LTS, use the docs.
+The template above uses the current LTS: Federation `v2.15` and Connectors `v0.3`. If the docs list a newer LTS, use the docs.
 
 ## Reference Files
 
