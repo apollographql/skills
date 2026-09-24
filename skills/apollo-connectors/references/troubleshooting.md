@@ -293,14 +293,16 @@ Use `$` only when:
 Error: Incompatible federation and connect versions
 ```
 
-**Solution:** Use the correct version combination.
+**Solution:** Use the latest LTS Federation version together with the latest generally available Connectors spec that LTS supports. Use an experimental Connectors spec only when the user explicitly asks for it.
 
 ```graphql
-# CORRECT - Always use these versions together
+# CORRECT - current LTS; confirm against the docs before copying
 extend schema
-  @link(url: "https://specs.apollo.dev/federation/v2.12")
+  @link(url: "https://specs.apollo.dev/federation/v2.15")
   @link(url: "https://specs.apollo.dev/connect/v0.3", import: ["@source", "@connect"])
 ```
+
+See [Version requirements](../SKILL.md#version-requirements) for how to resolve the current LTS. Pin `federation_version` in `supergraph.yaml` to the latest patch of that Federation LTS (currently `=2.15.2`).
 
 ## Entity Without Endpoint
 
