@@ -16,8 +16,10 @@ rover supergraph compose --config ./supergraph.yaml
 
 ### supergraph.yaml Template
 
+`federation_version` must be the latest patch of the current Federation LTS. `=2.15.2` is that patch today; confirm it against the [version requirements](../SKILL.md#version-requirements) before composing.
+
 ```yaml
-federation_version: =2.12.0
+federation_version: =2.15.2
 subgraphs:
   my-connector:  # Unique name for this subgraph
     routing_url: http://localhost  # Placeholder, ignored but required
@@ -27,7 +29,7 @@ subgraphs:
 
 **Multiple subgraphs:**
 ```yaml
-federation_version: =2.12.0
+federation_version: =2.15.2
 subgraphs:
   users:
     routing_url: http://localhost
