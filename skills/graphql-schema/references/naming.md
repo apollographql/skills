@@ -239,8 +239,8 @@ type Mutation {
   createPost(input: CreatePostInput!): Post!
 
   # Update operations
-  updateUser(id: ID!, input: UpdateUserInput!): User!
-  updatePost(id: ID!, input: UpdatePostInput!): Post!
+  updateUser(input: UpdateUserInput!): User!
+  updatePost(input: UpdatePostInput!): Post!
 
   # Delete operations
   deleteUser(id: ID!): DeleteUserPayload!
@@ -285,6 +285,7 @@ input CreateUserInput {
 }
 
 input UpdateUserInput {
+  id: ID!
   email: String
   name: String
 }

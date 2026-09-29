@@ -3,15 +3,16 @@ name: graphql-schema
 description: >
   Guide for designing GraphQL schemas following industry best practices. Use this skill when:
   (1) designing a new GraphQL schema or API,
-  (2) reviewing existing schema for improvements,
-  (3) deciding on type structures or nullability,
-  (4) implementing pagination or error patterns,
-  (5) ensuring security in schema design.
+  (2) adding or changing types, fields, arguments, mutations, or descriptions in an existing schema,
+  (3) reviewing existing schema for improvements,
+  (4) deciding on type structures or nullability,
+  (5) implementing pagination or error patterns,
+  (6) ensuring security in schema design.
 license: MIT
 compatibility: Any GraphQL implementation (Apollo Server, graphql-js, Yoga, etc.)
 metadata:
   author: apollographql
-  version: "1.0.1"
+  version: "1.0.2"
 allowed-tools: Bash(npm:*) Bash(npx:*) Read Write Edit Glob Grep
 ---
 
@@ -38,6 +39,7 @@ This guide covers best practices for designing GraphQL schemas that are intuitiv
 - Plan for backwards compatibility
 - Use deprecation before removal
 - Avoid breaking changes
+- Give every new argument or input field a default value, or make it nullable. Existing clients don't send it, so a required field without a default makes their requests fail validation.
 
 ## Quick Reference
 
@@ -166,6 +168,7 @@ Detailed documentation for specific topics:
 - ALWAYS use **[Type!]!** pattern for lists
 - NEVER expose database internals in schema
 - NEVER break backwards compatibility without deprecation
+- NEVER add a required argument or input field without a default value
 - PREFER dedicated input types over many arguments
 - PREFER enums over arbitrary strings for fixed values
 - USE `ID` type for identifiers, not `String` or `Int`

@@ -319,6 +319,7 @@ input CreatePostInput {
 }
 
 input UpdatePostInput {
+  id: ID!
   title: String
   body: String
   tags: [String!]
@@ -326,7 +327,7 @@ input UpdatePostInput {
 
 type Mutation {
   createPost(input: CreatePostInput!): Post!
-  updatePost(id: ID!, input: UpdatePostInput!): Post!
+  updatePost(input: UpdatePostInput!): Post!
 }
 ```
 
@@ -336,6 +337,7 @@ Make update input fields nullable to allow partial updates:
 
 ```graphql
 input UpdateUserInput {
+  id: ID!            # Which user to update
   name: String       # Pass to change, omit to keep
   email: String      # Pass to change, omit to keep
   bio: String        # Pass to change, omit to keep

@@ -11,13 +11,21 @@ license: MIT
 compatibility: Any GraphQL client (Apollo Client, urql, Relay, etc.)
 metadata:
   author: apollographql
-  version: "1.0.0"
+  version: "1.0.1"
 allowed-tools: Bash(npm:*) Bash(npx:*) Read Write Edit Glob Grep
 ---
 
 # GraphQL Operations Guide
 
 This guide covers best practices for writing GraphQL operations (queries, mutations, subscriptions) as a client developer. Well-written operations are efficient, type-safe, and maintainable.
+
+## Start From the Schema
+
+Write every operation against the project's schema, not against the examples in this guide.
+
+1. Find the schema before you write anything. Check the `schema` entry in `codegen.ts`, `graphql.config.*`, or `apollo.config.*`, then look for `*.graphql` SDL files.
+2. Use only the fields, arguments, and enum values that the schema defines. Field names in this guide, such as `updatedAt` or `orderBy: { field: CREATED_AT, direction: DESC }`, are illustrations.
+3. Save the operation as a document next to the client's existing operations. Leave the server schema unchanged unless the user asks for a schema change.
 
 ## Operation Basics
 
@@ -232,6 +240,7 @@ Detailed documentation for specific topics:
 
 ## Ground Rules
 
+- ALWAYS read the project's schema first, and use only the fields, arguments, and enum values it defines
 - ALWAYS name your operations (no anonymous queries/mutations)
 - ALWAYS use variables for dynamic values
 - ALWAYS request only the fields you need
