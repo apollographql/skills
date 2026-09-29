@@ -1,7 +1,8 @@
 ---
 name: graphql-schema
 description: >
-  Guide for designing GraphQL schemas following industry best practices. Use this skill when:
+  Guide for designing and changing GraphQL schemas following industry best practices. Use this skill
+  whenever you create or edit GraphQL SDL, such as a `schema.graphql` file or `typeDefs`, including when:
   (1) designing a new GraphQL schema or API,
   (2) adding or changing types, fields, arguments, mutations, or descriptions in an existing schema,
   (3) reviewing existing schema for improvements,
@@ -166,6 +167,7 @@ Detailed documentation for specific topics:
 - ALWAYS add descriptions to types and fields
 - ALWAYS use non-null (**!**) for fields that cannot be null
 - ALWAYS use **[Type!]!** pattern for lists
+- ALWAYS paginate lists that can grow without limit, such as `Query.users` or `Post.comments`: return a connection and give `first` a default page size
 - NEVER expose database internals in schema
 - NEVER break backwards compatibility without deprecation
 - NEVER add a required argument or input field without a default value
