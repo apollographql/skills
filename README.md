@@ -54,11 +54,12 @@ Once installed, skills are available as namespaced slash commands:
 | Slash Command | Description |
 |---|---|
 | `/apollo-skills:apollo-client` | Apollo Client 4.x for React — queries, mutations, caching, local state |
-| `/apollo-skills:apollo-connectors` | **Deprecated** — use the [GraphOS Factory plugin](#graphos-factory-plugin) instead |
+| `/apollo-skills:apollo-connectors` | **Deprecated** — use [`/graphos-factory:graphos-factory`](#graphos-factory) instead |
 | `/apollo-skills:apollo-ios` | Apollo iOS — GraphQL client for Swift (iOS, macOS, tvOS, watchOS, visionOS) |
 | `/apollo-skills:apollo-kotlin` | Apollo Kotlin — GraphQL client for Android and Kotlin |
 | `/apollo-skills:apollo-mcp-server` | Apollo MCP Server — connect AI agents with GraphQL APIs |
 | `/apollo-skills:apollo-server` | Apollo Server 4.x — schemas, resolvers, auth, plugins |
+| `/graphos-factory:graphos-factory` | GraphOS Factory — build and iterate on an Apollo Connectors subgraph from a REST API (separate [plugin](#graphos-factory)) |
 | `/apollo-skills:graphql-operations` | GraphQL operations — queries, mutations, fragments |
 | `/apollo-skills:graphql-schema` | GraphQL schema design — types, naming, pagination, errors |
 | `/apollo-skills:rover` | Rover CLI — schema management and local supergraph development |
@@ -67,11 +68,7 @@ Once installed, skills are available as namespaced slash commands:
 
 ### GraphOS Factory plugin
 
-The marketplace also lists [GraphOS Factory](https://github.com/apollographql/graphos-factory), a separate plugin that builds and iterates on an Apollo Connectors subgraph for a GraphOS supergraph from a REST API, with or without an OpenAPI spec. It replaces the `apollo-connectors` skill.
-
-```bash
-/plugin install graphos-factory@apollo-marketplace
-```
+The marketplace also lists the GraphOS Factory plugin, which replaces the `apollo-connectors` skill. See [graphos-factory](#graphos-factory) for what it does and how to install it.
 
 ## GitHub CLI
 
@@ -108,47 +105,46 @@ If you need stability, pin via `gh skill install … --pin vX.Y.Z`. Pinned skill
 
 ## Available Skills
 
-### apollo-connectors
+### graphos-factory
 
-> **Deprecated.** Superseded by the [GraphOS Factory plugin](#graphos-factory-plugin) (`/plugin install graphos-factory@apollo-marketplace`). This skill will be removed in a future release.
-
-Write Apollo Connectors schemas to integrate REST APIs into GraphQL.
+Build and iterate on an Apollo Connectors subgraph for a GraphOS supergraph from a REST API, with or without an OpenAPI or Swagger spec. Distributed as a separate Claude Code plugin from [apollographql/graphos-factory](https://github.com/apollographql/graphos-factory); it replaces the `apollo-connectors` skill.
 
 **Install:**
 
 ```bash
-npx skills add apollographql/skills@apollo-connectors
+/plugin marketplace add apollographql/skills
+/plugin install graphos-factory@apollo-marketplace
 ```
 
 **Use when:**
 
-- Connecting REST APIs to a GraphQL supergraph
-- Writing `@source` and `@connect` directives
-- Implementing entity resolvers with batching
-- Validating connector schemas with `rover`
+- Wrapping a REST API as a GraphQL subgraph for your supergraph
+- Adding or removing operations or fields on an existing connector subgraph
+- Refreshing a connector subgraph against a new version of its spec
+- Recording live API traffic as test fixtures
 
 **Categories covered:**
 
-- Selection mapping grammar
-- HTTP methods and headers
-- Variable interpolation (`$args`, `$this`, `$config`)
-- Entity patterns and `@key` directives
-- Batch requests with `@listSize`
+- API discovery and spec intake (OpenAPI 3.x, Swagger 2.0, or no spec)
+- Operation and field selection, recorded in a dedicated git workspace
+- Connectors schema authoring, naming and mapping
+- Verification: composition, connector unit tests, mocked end-to-end and live runs
+- Design decisions and hand edits kept across regenerations
 
 **Examples:**
 
-- "Connect my REST API to my GraphQL schema"
-- "Write a connector for this OpenAPI spec"
-- "Add entity resolvers with batching for my users endpoint"
+- "Turn this REST API into a subgraph for my supergraph"
+- "Build a connector subgraph from this OpenAPI spec"
+- "Add the list-issues endpoint to my Gitea subgraph"
 
 **References:**
-[SKILL.md](skills/apollo-connectors/SKILL.md) ·
-[Grammar](skills/apollo-connectors/references/grammar.md) ·
-[Methods](skills/apollo-connectors/references/methods.md) ·
-[Variables](skills/apollo-connectors/references/variables.md) ·
-[Entities](skills/apollo-connectors/references/entities.md) ·
-[Validation](skills/apollo-connectors/references/validation.md) ·
-[Troubleshooting](skills/apollo-connectors/references/troubleshooting.md)
+[SKILL.md](https://github.com/apollographql/graphos-factory/blob/main/skills/graphos-factory/SKILL.md) ·
+[README](https://github.com/apollographql/graphos-factory/blob/main/README.md) ·
+[Connectors Language](https://github.com/apollographql/graphos-factory/blob/main/graphos-factory-core/references/connectors-language.md) ·
+[Mapping Language](https://github.com/apollographql/graphos-factory/blob/main/graphos-factory-core/references/mapping-language.md) ·
+[Schema Authoring](https://github.com/apollographql/graphos-factory/blob/main/graphos-factory-core/references/schema-authoring.md) ·
+[Testing](https://github.com/apollographql/graphos-factory/blob/main/graphos-factory-core/references/testing.md) ·
+[Verification](https://github.com/apollographql/graphos-factory/blob/main/skills/graphos-factory/references/verification.md)
 
 ---
 
@@ -659,6 +655,20 @@ npx skills add apollographql/skills@skill-creator
 **References:**
 [SKILL.md](skills/skill-creator/SKILL.md) ·
 [Apollo Skills](skills/skill-creator/references/apollo-skills.md)
+
+---
+
+### apollo-connectors
+
+> **Deprecated.** Superseded by [graphos-factory](#graphos-factory) (`/plugin install graphos-factory@apollo-marketplace`). This skill will be removed in a future release.
+
+Write Apollo Connectors schemas to integrate REST APIs into GraphQL.
+
+**Install:**
+
+```bash
+npx skills add apollographql/skills@apollo-connectors
+```
 
 ---
 
