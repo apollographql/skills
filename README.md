@@ -68,7 +68,7 @@ Once installed, skills are available as namespaced slash commands:
 
 ### GraphOS Factory plugin
 
-The marketplace also lists the GraphOS Factory plugin, which replaces the `apollo-connectors` skill. See [graphos-factory](#graphos-factory) for what it does and how to install it.
+The marketplace also lists the GraphOS Factory plugin, which replaces the `apollo-connectors` skill. It installs with `npx skills` and `gh skill` too; see [graphos-factory](#graphos-factory) for what it does and every way to install it.
 
 ## GitHub CLI
 
@@ -107,14 +107,28 @@ If you need stability, pin via `gh skill install … --pin vX.Y.Z`. Pinned skill
 
 ### graphos-factory
 
-Build and iterate on an Apollo Connectors subgraph for a GraphOS supergraph from a REST API, with or without an OpenAPI or Swagger spec. Distributed as a separate Claude Code plugin from [apollographql/graphos-factory](https://github.com/apollographql/graphos-factory); it replaces the `apollo-connectors` skill.
+Build and iterate on an Apollo Connectors subgraph for a GraphOS supergraph from a REST API, with or without an OpenAPI or Swagger spec. It lives in its own repository, [apollographql/graphos-factory](https://github.com/apollographql/graphos-factory), works with any agent that can run shell commands (Claude Code, Codex, Cursor, GitHub Copilot, Gemini CLI and others), and replaces the `apollo-connectors` skill.
 
 **Install:**
+
+```bash
+npx skills add apollographql/graphos-factory
+```
+
+Or with the GitHub CLI:
+
+```bash
+gh skill install apollographql/graphos-factory graphos-factory --agent claude-code   # or codex, cursor, github-copilot, ...
+```
+
+Or as a Claude Code plugin:
 
 ```bash
 /plugin marketplace add apollographql/skills
 /plugin install graphos-factory@apollo-marketplace
 ```
+
+The first time the agent uses it, the skill downloads its `graphos-factory` binary (about 3 MB) from the repository's releases.
 
 **Use when:**
 
@@ -660,7 +674,7 @@ npx skills add apollographql/skills@skill-creator
 
 ### apollo-connectors
 
-> **Deprecated.** Superseded by [graphos-factory](#graphos-factory) (`/plugin install graphos-factory@apollo-marketplace`). This skill will be removed in a future release.
+> **Deprecated.** Superseded by [graphos-factory](#graphos-factory) (`npx skills add apollographql/graphos-factory`). This skill will be removed in a future release.
 
 Write Apollo Connectors schemas to integrate REST APIs into GraphQL.
 

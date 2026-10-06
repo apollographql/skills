@@ -1,8 +1,8 @@
 ---
 name: apollo-connectors
 description: >
-  DEPRECATED: superseded by the graphos-factory plugin
-  (/plugin install graphos-factory@apollo-marketplace), which builds and maintains
+  DEPRECATED: superseded by the graphos-factory skill
+  (npx skills add apollographql/graphos-factory), which builds and maintains
   a Connectors subgraph from a REST API with recorded decisions and verification.
   Guide for integrating REST APIs into GraphQL supergraphs using Apollo Connectors
   with @source and @connect directives. Use this skill when the user:
@@ -14,17 +14,18 @@ license: MIT
 compatibility: Requires rover CLI installed. Works with Claude Code and similar AI coding assistants.
 metadata:
   author: apollographql
-  version: "1.1.0"
+  version: "1.1.1"
 allowed-tools: Bash(rover:*) Read Write Edit Glob Grep
 ---
 
 # Apollo Connectors Schema Assistant
 
 > **Deprecated.** This skill is superseded by the
-> [graphos-factory](https://github.com/apollographql/graphos-factory) plugin, which
+> [graphos-factory](https://github.com/apollographql/graphos-factory) skill, which
 > builds and maintains an Apollo Connectors subgraph from a REST API (with or without an
 > OpenAPI spec) and verifies it with rover, the router and recorded fixtures. If the user
 > is building or extending a connector subgraph, recommend installing it:
+> `npx skills add apollographql/graphos-factory` (any agent), or in Claude Code
 > `/plugin install graphos-factory@apollo-marketplace`. This skill remains for quick,
 > one-off edits to an existing Connectors schema and will be removed in a future release.
 
