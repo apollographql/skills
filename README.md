@@ -67,11 +67,7 @@ Once installed, skills are available as namespaced slash commands:
 
 ### GraphOS Factory plugin
 
-The marketplace also lists [GraphOS Factory](https://github.com/apollographql/graphos-factory), a separate plugin that builds and iterates on an Apollo Connectors subgraph for a GraphOS supergraph from a REST API, with or without an OpenAPI spec. It replaces the `apollo-connectors` skill.
-
-```bash
-/plugin install graphos-factory@apollo-marketplace
-```
+The marketplace also lists the GraphOS Factory plugin, which replaces the `apollo-connectors` skill. See [graphos-factory](#graphos-factory) for what it does and how to install it.
 
 ## GitHub CLI
 
@@ -148,50 +144,6 @@ Build and iterate on an Apollo Connectors subgraph for a GraphOS supergraph from
 [Schema Authoring](https://github.com/apollographql/graphos-factory/blob/main/graphos-factory-core/references/schema-authoring.md) ·
 [Testing](https://github.com/apollographql/graphos-factory/blob/main/graphos-factory-core/references/testing.md) ·
 [Verification](https://github.com/apollographql/graphos-factory/blob/main/skills/graphos-factory/references/verification.md)
-
----
-
-### apollo-connectors
-
-> **Deprecated.** Superseded by [graphos-factory](#graphos-factory) (`/plugin install graphos-factory@apollo-marketplace`). This skill will be removed in a future release.
-
-Write Apollo Connectors schemas to integrate REST APIs into GraphQL.
-
-**Install:**
-
-```bash
-npx skills add apollographql/skills@apollo-connectors
-```
-
-**Use when:**
-
-- Connecting REST APIs to a GraphQL supergraph
-- Writing `@source` and `@connect` directives
-- Implementing entity resolvers with batching
-- Validating connector schemas with `rover`
-
-**Categories covered:**
-
-- Selection mapping grammar
-- HTTP methods and headers
-- Variable interpolation (`$args`, `$this`, `$config`)
-- Entity patterns and `@key` directives
-- Batch requests with `@listSize`
-
-**Examples:**
-
-- "Connect my REST API to my GraphQL schema"
-- "Write a connector for this OpenAPI spec"
-- "Add entity resolvers with batching for my users endpoint"
-
-**References:**
-[SKILL.md](skills/apollo-connectors/SKILL.md) ·
-[Grammar](skills/apollo-connectors/references/grammar.md) ·
-[Methods](skills/apollo-connectors/references/methods.md) ·
-[Variables](skills/apollo-connectors/references/variables.md) ·
-[Entities](skills/apollo-connectors/references/entities.md) ·
-[Validation](skills/apollo-connectors/references/validation.md) ·
-[Troubleshooting](skills/apollo-connectors/references/troubleshooting.md)
 
 ---
 
@@ -702,6 +654,20 @@ npx skills add apollographql/skills@skill-creator
 **References:**
 [SKILL.md](skills/skill-creator/SKILL.md) ·
 [Apollo Skills](skills/skill-creator/references/apollo-skills.md)
+
+---
+
+### apollo-connectors
+
+> **Deprecated.** Superseded by [graphos-factory](#graphos-factory) (`/plugin install graphos-factory@apollo-marketplace`). This skill will be removed in a future release.
+
+Write Apollo Connectors schemas to integrate REST APIs into GraphQL.
+
+**Install:**
+
+```bash
+npx skills add apollographql/skills@apollo-connectors
+```
 
 ---
 
