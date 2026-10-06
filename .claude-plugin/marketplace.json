@@ -19,7 +19,7 @@
       "source": {
         "source": "github",
         "repo": "apollographql/graphos-factory",
-        "sha": "c6c674c19face4146fe734f6a660a7d3da475ff9"
+        "ref": "v0.10.1"
       },
       "homepage": "https://github.com/apollographql/graphos-factory",
       "license": "MIT"
