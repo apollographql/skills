@@ -12,6 +12,17 @@
     {
       "name": "apollo-skills",
       "source": "./"
+    },
+    {
+      "name": "graphos-factory",
+      "description": "Build and iterate on an Apollo Connectors subgraph for a GraphOS supergraph from a REST API, with or without an OpenAPI spec. Replaces the apollo-connectors skill.",
+      "source": {
+        "source": "github",
+        "repo": "apollographql/graphos-factory",
+        "ref": "v0.10.1"
+      },
+      "homepage": "https://github.com/apollographql/graphos-factory",
+      "license": "MIT"
     }
   ]
 }
