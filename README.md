@@ -54,12 +54,12 @@ Once installed, skills are available as namespaced slash commands:
 | Slash Command | Description |
 |---|---|
 | `/apollo-skills:apollo-client` | Apollo Client 4.x for React — queries, mutations, caching, local state |
-| `/apollo-skills:apollo-connectors` | **Deprecated** — use [`/graphos-factory:graphos-factory`](#graphos-factory) instead |
+| `/apollo-skills:apollo-connectors` | **Deprecated** — use [`/apollo-skills:graphos-factory`](#graphos-factory) instead |
 | `/apollo-skills:apollo-ios` | Apollo iOS — GraphQL client for Swift (iOS, macOS, tvOS, watchOS, visionOS) |
 | `/apollo-skills:apollo-kotlin` | Apollo Kotlin — GraphQL client for Android and Kotlin |
 | `/apollo-skills:apollo-mcp-server` | Apollo MCP Server — connect AI agents with GraphQL APIs |
 | `/apollo-skills:apollo-server` | Apollo Server 4.x — schemas, resolvers, auth, plugins |
-| `/graphos-factory:graphos-factory` | GraphOS Factory — build and iterate on an Apollo Connectors subgraph from a REST API (separate [plugin](#graphos-factory)) |
+| `/apollo-skills:graphos-factory` | GraphOS Factory — build and iterate on an Apollo Connectors subgraph from a REST API (also its own [plugin](#graphos-factory), `/graphos-factory:graphos-factory`) |
 | `/apollo-skills:graphql-operations` | GraphQL operations — queries, mutations, fragments |
 | `/apollo-skills:graphql-schema` | GraphQL schema design — types, naming, pagination, errors |
 | `/apollo-skills:rover` | Rover CLI — schema management and local supergraph development |
@@ -68,7 +68,7 @@ Once installed, skills are available as namespaced slash commands:
 
 ### GraphOS Factory plugin
 
-The marketplace also lists the GraphOS Factory plugin, which replaces the `apollo-connectors` skill. It installs with `npx skills` and `gh skill` too; see [graphos-factory](#graphos-factory) for what it does and every way to install it.
+The marketplace also lists GraphOS Factory as a plugin of its own, which adds a session-start hook that installs its binary. Its skill is part of `apollo-skills` as well, so install one or the other; see [graphos-factory](#graphos-factory).
 
 ## GitHub CLI
 
@@ -107,28 +107,29 @@ If you need stability, pin via `gh skill install … --pin vX.Y.Z`. Pinned skill
 
 ### graphos-factory
 
-Build and iterate on an Apollo Connectors subgraph for a GraphOS supergraph from a REST API, with or without an OpenAPI or Swagger spec. It lives in its own repository, [apollographql/graphos-factory](https://github.com/apollographql/graphos-factory), works with any agent that can run shell commands (Claude Code, Codex, Cursor, GitHub Copilot, Gemini CLI and others), and replaces the `apollo-connectors` skill.
+Build and iterate on an Apollo Connectors subgraph for a GraphOS supergraph from a REST API, with or without an OpenAPI or Swagger spec. It works with any agent that can run shell commands (Claude Code, Codex, Cursor, GitHub Copilot, Gemini CLI and others), and replaces the `apollo-connectors` skill. It is developed in [apollographql/graphos-factory](https://github.com/apollographql/graphos-factory); `skills/graphos-factory/` here is a read-only copy of its latest release, updated by that repository's release workflow.
 
 **Install:**
 
 ```bash
-npx skills add apollographql/graphos-factory
+npx skills add apollographql/skills@graphos-factory
 ```
 
-Or with the GitHub CLI:
+Or from its own repository, with either CLI:
 
 ```bash
+npx skills add apollographql/graphos-factory
 gh skill install apollographql/graphos-factory graphos-factory --agent claude-code   # or codex, cursor, github-copilot, ...
 ```
 
-Or as a Claude Code plugin:
+Or as its own Claude Code plugin, whose session-start hook installs the binary for you:
 
 ```bash
 /plugin marketplace add apollographql/skills
 /plugin install graphos-factory@apollo-marketplace
 ```
 
-The first time the agent uses it, the skill downloads its `graphos-factory` binary (about 3 MB) from the repository's releases.
+The `apollo-skills` plugin includes the skill too (`/apollo-skills:graphos-factory`); install one plugin or the other, not both, or Claude Code lists it twice. The first time the agent uses it, the skill downloads its `graphos-factory` binary (about 3 MB) from the release it ships with.
 
 **Use when:**
 
@@ -152,13 +153,13 @@ The first time the agent uses it, the skill downloads its `graphos-factory` bina
 - "Add the list-issues endpoint to my Gitea subgraph"
 
 **References:**
-[SKILL.md](https://github.com/apollographql/graphos-factory/blob/main/skills/graphos-factory/SKILL.md) ·
+[SKILL.md](skills/graphos-factory/SKILL.md) ·
 [README](https://github.com/apollographql/graphos-factory/blob/main/README.md) ·
-[Connectors Language](https://github.com/apollographql/graphos-factory/blob/main/graphos-factory-core/references/connectors-language.md) ·
-[Mapping Language](https://github.com/apollographql/graphos-factory/blob/main/graphos-factory-core/references/mapping-language.md) ·
-[Schema Authoring](https://github.com/apollographql/graphos-factory/blob/main/graphos-factory-core/references/schema-authoring.md) ·
-[Testing](https://github.com/apollographql/graphos-factory/blob/main/graphos-factory-core/references/testing.md) ·
-[Verification](https://github.com/apollographql/graphos-factory/blob/main/skills/graphos-factory/references/verification.md)
+[Connectors Language](skills/graphos-factory/graphos-factory-core/references/connectors-language.md) ·
+[Mapping Language](skills/graphos-factory/graphos-factory-core/references/mapping-language.md) ·
+[Schema Authoring](skills/graphos-factory/graphos-factory-core/references/schema-authoring.md) ·
+[Testing](skills/graphos-factory/graphos-factory-core/references/testing.md) ·
+[Verification](skills/graphos-factory/references/verification.md)
 
 ---
 
@@ -674,7 +675,7 @@ npx skills add apollographql/skills@skill-creator
 
 ### apollo-connectors
 
-> **Deprecated.** Superseded by [graphos-factory](#graphos-factory) (`npx skills add apollographql/graphos-factory`). This skill will be removed in a future release.
+> **Deprecated.** Superseded by [graphos-factory](#graphos-factory) (`npx skills add apollographql/skills@graphos-factory`). This skill will be removed in a future release.
 
 Write Apollo Connectors schemas to integrate REST APIs into GraphQL.
 

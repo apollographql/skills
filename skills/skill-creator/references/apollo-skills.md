@@ -10,6 +10,7 @@ Apollo skills live in the `skills/` directory:
 skills/
 ├── apollo-client/
 ├── apollo-connectors/
+├── graphos-factory/        # read-only copy, synced from apollographql/graphos-factory releases
 ├── apollo-server/
 ├── graphql-schema/
 └── your-new-skill/
@@ -23,7 +24,8 @@ Skills for specific Apollo products:
 
 - `apollo-client` - Apollo Client for React/web applications
 - `apollo-server` - Apollo Server setup and configuration
-- `apollo-connectors` - REST API integration with Connectors
+- `apollo-connectors` - REST API integration with Connectors (deprecated)
+- `graphos-factory` - Build a Connectors subgraph from a REST API (synced from apollographql/graphos-factory; do not edit here)
 - `apollo-mcp-server` - MCP Server for AI agents
 - `rover` - Rover CLI for graph management
 
