@@ -54,11 +54,12 @@ Once installed, skills are available as namespaced slash commands:
 | Slash Command | Description |
 |---|---|
 | `/apollo-skills:apollo-client` | Apollo Client 4.x for React — queries, mutations, caching, local state |
-| `/apollo-skills:apollo-connectors` | **Deprecated** — use the [GraphOS Factory plugin](#graphos-factory-plugin) instead |
+| `/apollo-skills:apollo-connectors` | **Deprecated** — use [`/graphos-factory:graphos-factory`](#graphos-factory) instead |
 | `/apollo-skills:apollo-ios` | Apollo iOS — GraphQL client for Swift (iOS, macOS, tvOS, watchOS, visionOS) |
 | `/apollo-skills:apollo-kotlin` | Apollo Kotlin — GraphQL client for Android and Kotlin |
 | `/apollo-skills:apollo-mcp-server` | Apollo MCP Server — connect AI agents with GraphQL APIs |
 | `/apollo-skills:apollo-server` | Apollo Server 4.x — schemas, resolvers, auth, plugins |
+| `/graphos-factory:graphos-factory` | GraphOS Factory — build and iterate on an Apollo Connectors subgraph from a REST API (separate [plugin](#graphos-factory)) |
 | `/apollo-skills:graphql-operations` | GraphQL operations — queries, mutations, fragments |
 | `/apollo-skills:graphql-schema` | GraphQL schema design — types, naming, pagination, errors |
 | `/apollo-skills:rover` | Rover CLI — schema management and local supergraph development |
