@@ -108,9 +108,52 @@ If you need stability, pin via `gh skill install … --pin vX.Y.Z`. Pinned skill
 
 ## Available Skills
 
+### graphos-factory
+
+Build and iterate on an Apollo Connectors subgraph for a GraphOS supergraph from a REST API, with or without an OpenAPI or Swagger spec. Distributed as a separate Claude Code plugin from [apollographql/graphos-factory](https://github.com/apollographql/graphos-factory); it replaces the `apollo-connectors` skill.
+
+**Install:**
+
+```bash
+/plugin marketplace add apollographql/skills
+/plugin install graphos-factory@apollo-marketplace
+```
+
+**Use when:**
+
+- Wrapping a REST API as a GraphQL subgraph for your supergraph
+- Adding or removing operations or fields on an existing connector subgraph
+- Refreshing a connector subgraph against a new version of its spec
+- Recording live API traffic as test fixtures
+
+**Categories covered:**
+
+- API discovery and spec intake (OpenAPI 3.x, Swagger 2.0, or no spec)
+- Operation and field selection, recorded in a dedicated git workspace
+- Connectors schema authoring, naming and mapping
+- Verification: composition, connector unit tests, mocked end-to-end and live runs
+- Design decisions and hand edits kept across regenerations
+
+**Examples:**
+
+- "Turn this REST API into a subgraph for my supergraph"
+- "Build a connector subgraph from this OpenAPI spec"
+- "Add the list-issues endpoint to my Gitea subgraph"
+
+**References:**
+[SKILL.md](https://github.com/apollographql/graphos-factory/blob/main/skills/graphos-factory/SKILL.md) ·
+[README](https://github.com/apollographql/graphos-factory/blob/main/README.md) ·
+[Connectors Language](https://github.com/apollographql/graphos-factory/blob/main/graphos-factory-core/references/connectors-language.md) ·
+[Mapping Language](https://github.com/apollographql/graphos-factory/blob/main/graphos-factory-core/references/mapping-language.md) ·
+[Schema Authoring](https://github.com/apollographql/graphos-factory/blob/main/graphos-factory-core/references/schema-authoring.md) ·
+[Testing](https://github.com/apollographql/graphos-factory/blob/main/graphos-factory-core/references/testing.md) ·
+[Verification](https://github.com/apollographql/graphos-factory/blob/main/skills/graphos-factory/references/verification.md)
+
+---
+
 ### apollo-connectors
 
-> **Deprecated.** Superseded by the [GraphOS Factory plugin](#graphos-factory-plugin) (`/plugin install graphos-factory@apollo-marketplace`). This skill will be removed in a future release.
+> **Deprecated.** Superseded by [graphos-factory](#graphos-factory) (`/plugin install graphos-factory@apollo-marketplace`). This skill will be removed in a future release.
 
 Write Apollo Connectors schemas to integrate REST APIs into GraphQL.
 
