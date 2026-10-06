@@ -54,7 +54,7 @@ Once installed, skills are available as namespaced slash commands:
 | Slash Command | Description |
 |---|---|
 | `/apollo-skills:apollo-client` | Apollo Client 4.x for React — queries, mutations, caching, local state |
-| `/apollo-skills:apollo-connectors` | Apollo Connectors — integrate REST APIs into GraphQL |
+| `/apollo-skills:apollo-connectors` | **Deprecated** — use the [GraphOS Factory plugin](#graphos-factory-plugin) instead |
 | `/apollo-skills:apollo-ios` | Apollo iOS — GraphQL client for Swift (iOS, macOS, tvOS, watchOS, visionOS) |
 | `/apollo-skills:apollo-kotlin` | Apollo Kotlin — GraphQL client for Android and Kotlin |
 | `/apollo-skills:apollo-mcp-server` | Apollo MCP Server — connect AI agents with GraphQL APIs |
@@ -64,6 +64,14 @@ Once installed, skills are available as namespaced slash commands:
 | `/apollo-skills:rover` | Rover CLI — schema management and local supergraph development |
 | `/apollo-skills:rust-best-practices` | Rust best practices — idiomatic Rust following Apollo conventions |
 | `/apollo-skills:skill-creator` | Skill creator — guide for creating new Apollo skills |
+
+### GraphOS Factory plugin
+
+The marketplace also lists [GraphOS Factory](https://github.com/apollographql/graphos-factory), a separate plugin that builds and iterates on an Apollo Connectors subgraph for a GraphOS supergraph from a REST API, with or without an OpenAPI spec. It replaces the `apollo-connectors` skill.
+
+```bash
+/plugin install graphos-factory@apollo-marketplace
+```
 
 ## GitHub CLI
 
@@ -101,6 +109,8 @@ If you need stability, pin via `gh skill install … --pin vX.Y.Z`. Pinned skill
 ## Available Skills
 
 ### apollo-connectors
+
+> **Deprecated.** Superseded by the [GraphOS Factory plugin](#graphos-factory-plugin) (`/plugin install graphos-factory@apollo-marketplace`). This skill will be removed in a future release.
 
 Write Apollo Connectors schemas to integrate REST APIs into GraphQL.
 
