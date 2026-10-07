@@ -59,16 +59,12 @@ Once installed, skills are available as namespaced slash commands:
 | `/apollo-skills:apollo-kotlin` | Apollo Kotlin — GraphQL client for Android and Kotlin |
 | `/apollo-skills:apollo-mcp-server` | Apollo MCP Server — connect AI agents with GraphQL APIs |
 | `/apollo-skills:apollo-server` | Apollo Server 4.x — schemas, resolvers, auth, plugins |
-| `/apollo-skills:graphos-factory` | GraphOS Factory — build and iterate on an Apollo Connectors subgraph from a REST API (also its own [plugin](#graphos-factory), `/graphos-factory:graphos-factory`) |
+| `/apollo-skills:graphos-factory` | GraphOS Factory — build and iterate on an Apollo Connectors subgraph from a REST API |
 | `/apollo-skills:graphql-operations` | GraphQL operations — queries, mutations, fragments |
 | `/apollo-skills:graphql-schema` | GraphQL schema design — types, naming, pagination, errors |
 | `/apollo-skills:rover` | Rover CLI — schema management and local supergraph development |
 | `/apollo-skills:rust-best-practices` | Rust best practices — idiomatic Rust following Apollo conventions |
 | `/apollo-skills:skill-creator` | Skill creator — guide for creating new Apollo skills |
-
-### GraphOS Factory plugin
-
-The marketplace also lists GraphOS Factory as a plugin of its own, which adds a session-start hook that installs its binary. Its skill is part of `apollo-skills` as well, so install one or the other; see [graphos-factory](#graphos-factory).
 
 ## GitHub CLI
 
@@ -122,14 +118,7 @@ npx skills add apollographql/graphos-factory
 gh skill install apollographql/graphos-factory graphos-factory --agent claude-code   # or codex, cursor, github-copilot, ...
 ```
 
-Or as its own Claude Code plugin, whose session-start hook installs the binary for you:
-
-```bash
-/plugin marketplace add apollographql/skills
-/plugin install graphos-factory@apollo-marketplace
-```
-
-The `apollo-skills` plugin includes the skill too (`/apollo-skills:graphos-factory`); install one plugin or the other, not both, or Claude Code lists it twice. The first time the agent uses it, the skill downloads its `graphos-factory` binary (about 3 MB) from the release it ships with.
+In Claude Code it is also part of the [`apollo-skills` plugin](#claude-code-plugin), as `/apollo-skills:graphos-factory`. The first time the agent uses it, the skill downloads its `graphos-factory` binary (about 3 MB) from the release it ships with.
 
 **Use when:**
 
