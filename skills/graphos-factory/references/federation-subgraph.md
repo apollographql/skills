@@ -120,8 +120,8 @@ features not available for your license").
   change they make in their own graph, outside what this skill validated.
 - **`@tag`**: see § `@tag` and contracts.
 - **`@key`** and the entity form are in connectors-language.md § Entities.
-  `@requires` with `@external`, and `@provides`, only mean something across
-  subgraphs, which this target does not build yet (§ Open).
+  `@requires` with `@external` on a type another subgraph owns: § Entities
+  another subgraph owns. `@provides` is still open (§ Open).
 
 ### Never
 
@@ -152,25 +152,177 @@ choice is recorded in `selection.yaml` as the operation's `tags:` list,
 and `reconcile` checks that list against the field's `@tag(name:)`
 directives, so the two change together.
 
+## Entities another subgraph owns
+
+The most common reason to build a subgraph for a supergraph that already
+runs: the user's other subgraphs own an entity (`Product`, `Account`), and
+this REST source holds data about it, keyed by the same identifier. Apollo
+documents the pattern
+([entities across subgraphs](https://www.apollographql.com/docs/graphos/connectors/entities/across-subgraphs)):
+declare the owner's type with its **exact name** and its `@key`, and either
+reference it or add fields to it. Under this target's prefix rule the
+owner's name is a `type-prefix` error until a decision says the type is
+another subgraph's. Lint never decides that for you, and neither do you.
+
+**The decision comes first.** Ask the user which subgraph owns the type,
+its exact name, and the owner's key: its fields and their types, as the
+owner's schema declares them (the user reads it from their graph, for
+example with `rover subgraph fetch`). Never infer the key from the REST
+source. Then record their answer:
+
+```bash
+graphos-factory-core decisions add . --title "Account is owned by the accounts subgraph" \
+  --question "Which subgraph owns Account, and by which key?" \
+  --choice "the accounts subgraph, by login (String!)" --choice "this subgraph" \
+  --foreign-type Account --resolved --chosen 1 --by user
+```
+
+Only a resolved record counts. An open one lifts nothing, and lint keeps
+the prefix and entity errors until it is resolved.
+
+**Two forms.** Pick the one the user's join needs, and write either by
+hand (`links apply` does not print them; see below).
+
+1. **A reference stub.** This subgraph's own type points at the owner's
+   entity, and the owner resolves every other field:
+
+   ```graphql
+   type Account @key(fields: "login", resolvable: false) {
+     login: String!
+   }
+
+   type Gitea_Issue {
+     "The account that opened the issue, resolved by the accounts subgraph."
+     author: Account
+     # ...
+   }
+   ```
+
+   Every connector that returns the host type builds the key in its
+   selection (`author: user { login }`, or `author: { login: $.user.login }`).
+   A connector that returns the host and leaves the reference out cannot
+   serve a query that selects it.
+2. **An extension of the owner's entity.** This subgraph adds fields to
+   the owner's type. The `@key` is the owner's, resolvable, and each added
+   field has its own field-level `@connect` that reads `$this.<key field>`.
+   There is no type-level `@connect` and no root lookup:
+
+   ```graphql
+   type Account @key(fields: "login") {
+     login: String!
+     "The Gitea user with this login, fetched through get:/users/{username}, one request per Account that selects it."
+     giteaUser: Gitea_User
+       @connect(
+         source: "gitea"
+         http: { GET: "/users/{$this.login}" }
+         selection: """
+         id
+         login
+         # ...every field of Gitea_User, as gitea_user's own selection maps it
+         """
+       )
+   }
+   ```
+
+   The field's selection maps every field of the type it returns: copy the
+   by-id root field's selection verbatim. Measured: with a four-field
+   selection the subgraph composed alone, and composed beside the owner it
+   failed with `SATISFIABILITY_ERROR` ("cannot find field
+   Gitea_User.loginName"). Name each added field so it cannot collide with
+   one the owner already has (`giteaUser`, not `user`). The fields are not
+   `@shareable`, so a shared name fails composition with the owner.
+
+   To read an owner's field that is not part of the key, declare it on the
+   type with `@external` and name it in `@requires`. The connector then
+   reads it through `$this`. Import both directives in the federation
+   `@link`:
+
+   ```graphql
+   type Product @key(fields: "id") {
+     id: ID!
+     weight: Int @external
+     shippingCost(zip: String!): Int
+       @requires(fields: "weight")
+       @connect(source: "ship", http: { GET: "/rates?zip={$args.zip}&weight={$this.weight}" }, selection: "$.cost")
+   }
+   ```
+
+**What lint checks on a declared type.**
+
+- `type-prefix` does not fire on it. Root fields keep `field-prefix`.
+- `entity-without-lookup` does not fire when every connector on the type
+  is field-level and reads `$this`. A type-level `@connect`, or a field
+  connector that reads only `$args`, brings the lookup rule back.
+- `entity-without-consumer` holds only a stub: a resolvable key's consumer
+  is the owner.
+- `entity-field-unresolved` skips its key fields, which the
+  representation carries, and its `@external` fields, which the owner
+  resolves.
+- `entity-key-not-embedded` is unchanged: an embedding that lacks the key
+  cannot become a reference, whoever owns the type.
+- This target adds four rules. `foreign-type-without-key` (error): a
+  declared type with no `@key`. `foreign-type-key-field-missing` (error): a
+  `@key` field the type does not declare. `requires-on-foreign-type`
+  (warning): a `@requires` naming a field the type does not declare.
+  `foreign-type-not-object` (error): the declared name is an enum, input,
+  interface, union or scalar here. Only an object type can be an entity,
+  so the declaration lifts nothing on it and `type-prefix` still holds it.
+
+An undeclared unprefixed object type keeps the `type-prefix` error, and its
+message names the `--foreign-type` decision.
+
+**Testing.** An added field is a relationship field to the layers. Write
+its unit entry by hand, with `target: "Account.giteaUser"` and
+`variables: { $this: { login: <sample> } }` (testing.md). An extension
+field has no e2e case in this subgraph alone: no root field here returns
+the owner's type, and the router does not serve `_entities` to clients. So
+`link-untested` and `link-live-unaccounted` keep warning on it. Report the
+field as validated at the connector only, never end to end. A stub's host
+field is tested like any other field: the e2e case selects
+`author { login }` through the host's root field.
+
+**`links:` entries.** `links apply --dry-run` does not know about foreign
+types and prints only same-subgraph relationship fields. For a link whose
+target is the owner's entity, write the stub and the host field's
+selection by hand, as in form 1.
+
+**Moving a field from a resolver subgraph into this one.** `@override`
+moves a field in one direction only: from a subgraph with resolvers to this
+connector subgraph, never back (§ Never). No pilot has run this recipe
+yet, so tell the user it is Apollo's documented path and not one the layers
+have measured. Do it in this order, with each step recorded as a decision:
+
+1. Declare the type foreign, and add the field to the extension with its
+   `$this`-keyed connector and `@override(from: "<the resolver subgraph's
+   name>")`. Import `@override` in the federation `@link`. Compose is the
+   check: `federation-drift` does not cover `@override`.
+2. To move traffic gradually, use
+   `@override(from: "<name>", label: "percent(5)")` and raise the
+   percentage step by step. Progressive override is a licensed router
+   feature: the user should check their plan. The layers' unlicensed
+   router cannot run it, so the label stays out of the workspace's own
+   checks. Say so.
+3. At 100%, remove the label. Once every router serves the new schema, the
+   user removes the field from the resolver subgraph.
+
+**Still unverified** until the user's `supergraph_check` has run against
+their graph (verification.md). The other layers compose this subgraph
+alone, where a declared type composes with whatever key you wrote. Whether
+that key is the owner's (same name, same fields, same types) is checked
+only when it is composed against their graph. It is what they told you; say that it came from them.
+Measured on the gitea pilot with a stand-in owner subgraph (`Account
+@key(fields: "login")`, federation 2.15.2): the extension and the stub
+each composed alone and beside the owner.
+
 ## Open
 
 These are not answered yet. Do not promise them to the user and do not fake
 them.
 
-- **Cross-subgraph entities: not supported yet.** Apollo documents adding
-  fields to another subgraph's entity by declaring the owner's type, with
-  its exact name and `@key`, and a field-level `@connect` keyed by `$this`
-  ([entities across subgraphs](https://www.apollographql.com/docs/graphos/connectors/entities/across-subgraphs)).
-  In this skill that fails lint: `type-prefix` is an error on the
-  unprefixed type, and its resolvable `@key` fails `entity-without-lookup`,
-  which wants a by-id lookup this subgraph does not have. So types this subgraph does not own
-  cannot be extended, and a `resolvable: false` stub must carry this
-  subgraph's prefix today. A cross-subgraph join is done from the other
-  subgraph's side, or deferred. The same holds for `@requires`/`@external`,
-  `@provides` and `@interfaceObject` (which connectors support from
-  `connect/v0.4` only), and for an `@override` migration of a field from a
-  resolver subgraph into this one. A `links:` entry whose target type lives
-  in another subgraph is open for the same reason.
+- **`@provides` and `@interfaceObject`** (which connectors support from
+  `connect/v0.4` only) on another subgraph's entities: not modelled.
+  Entities another subgraph owns are covered above (§ Entities another
+  subgraph owns); `links apply` does not print them yet.
 - **Which operations become entities by default**: every GET-by-id the
   inventory finds, only those the user selects, or only those another
   selected type refers to. The `entity-*` lint rules assume this subgraph
