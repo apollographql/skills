@@ -1,12 +1,13 @@
 # shellcheck shell=bash
 # env.sh — put graphos-factory, its graphos-factory-core link and rover on
-# PATH, and point GRAPHOS_FACTORY_CORE_SCRIPTS at the wrapper scripts, for
+# PATH, point GRAPHOS_FACTORY_CORE_SCRIPTS at the wrapper scripts and
+# GRAPHOS_FACTORY_TARGET_SCRIPTS at this directory (supergraph-check.sh), for
 # the shell that sources it.
 #
 #   . path/to/skills/graphos-factory/scripts/env.sh
 #
 # For any agent or terminal without the Claude Code plugin's SessionStart
-# hook, which writes the same two lines into the session's environment. A
+# hook, which writes the same lines into the session's environment. A
 # shell that keeps no state between commands sources it at the start of each
 # one. It installs nothing: run scripts/bootstrap.sh once first. It finds
 # the core the way bootstrap.sh does: inside this skill, else at the root of
@@ -24,6 +25,7 @@ else
   # shellcheck disable=SC2016 # expanded by the inner bash
   _gf_bin="$(bash -c '. "$1/scripts/cache.sh" && printf "%s" "$GRAPHOS_FACTORY_CORE_CACHE_DIR/bin"' env.sh "$_gf_core")"
   export GRAPHOS_FACTORY_CORE_SCRIPTS="$_gf_core/scripts"
+  export GRAPHOS_FACTORY_TARGET_SCRIPTS="$_gf_here"
   export PATH="$HOME/.rover/bin:$_gf_bin:$PATH"
   if ! [ -x "$_gf_bin/graphos-factory" ]; then
     echo "env.sh: graphos-factory is not installed yet; run: bash \"$_gf_here/bootstrap.sh\"" >&2
