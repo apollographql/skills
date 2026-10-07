@@ -3,15 +3,17 @@
 The subgraph reaches the user's graph in two steps. `graphos-factory export`
 renders the validated schema with its production values and prints a
 hand-off. The user then runs rover with their own GraphOS credentials. The
-binary never contacts GraphOS and never reads a key, and neither do you.
+binary never contacts GraphOS and never reads a key, and neither do you:
+the one rover call the skill makes, `supergraph_check`, runs from a script
+with the key the user exported (verification.md).
 
 ## When to export
 
 Export only after `validate`, when `.factory/evidence/latest.json` is
-current: commit the workspace, run `evidence` on the clean tree, then
-export. Evidence recorded on uncommitted changes is refused, because what
-it ran against is in no commit. Export again whenever the schema changes and a new `evidence` run
-passes, and whenever the production host changes. An exported file is a
+current: run `evidence` on the workspace as it is, change none of the files
+its layers read, then export. Git is not required. Export again whenever
+the schema changes and a new `evidence` run passes, and whenever the
+production host changes. An exported file is a
 build output, not part of the workspace: the workspace keeps
 `{{BASE_URL}}` and `{{AUTH_EXPR}}`, and `template.yaml` keeps their local
 test values for the layers.
@@ -59,14 +61,23 @@ terms `evidence` uses. There is no override.
 
 - No `.factory/evidence/latest.json`.
 - Evidence that is not for the workspace as it is now. `latest.json`
-  records the commit `evidence` ran at (`git rev-parse --short HEAD`), with
-  `-dirty` when the workspace had uncommitted changes outside
-  `.factory/evidence`. Export refuses a recorded `-dirty`, a workspace with
-  uncommitted changes now, and a recorded commit the workspace's files
-  differ from (outside `.factory/evidence`), with `evidence was recorded at
-  <commit>, the workspace is at <commit>: re-run evidence`. A commit that
-  adds only the evidence keeps it current. A workspace outside git is
-  refused, because nothing records what the evidence ran against.
+  records `inputs`: the SHA-256 of every file the layers read (the schema,
+  `template.yaml`, `supergraph.yaml`, everything under `tests/`, and the
+  `.factory` workspace, selection, inventory, context, sources lock and the
+  documents it names, and the decision and finding logs), hashed before
+  they ran. Export hashes the same files again and refuses each one that
+  differs, by name: `<path> changed since evidence ran: re-run evidence`,
+  or `added` or `removed`. A `README.md` or `memory.md` edit does not count;
+  the layers never read either. No git is needed, so a workspace that is
+  not a repository exports. Evidence written before `inputs` existed is
+  checked against git instead, and the refusal says the evidence predates
+  input hashing: a recorded `-dirty`, uncommitted changes now, or a recorded
+  commit the workspace's files differ from is refused, and so is a
+  workspace outside git. Re-running `evidence` records `inputs`. When
+  `evidence` could not hash a file (a link under `tests/` that resolves
+  outside the workspace), it records why instead, and export refuses with
+  `evidence could not hash its inputs (<why>): fix that, then re-run
+  evidence`: fix the file first, or the next run fails the same way.
 - `compose`, `connector_unit`, `wiremock_e2e`, `conformance` or `lint` not
   `pass`. A `not_run` `connector_unit` is allowed: it is the zero-case run
   whose suites cite their decisions. It is then listed as not verified.
@@ -76,6 +87,15 @@ terms `evidence` uses. There is no override.
 - A selected operation that an offline layer left `fail`, `unchecked` or
   `skipped`, or that has no executed evidence (no unit, e2e or live
   `pass`: conformance executes nothing).
+- `supergraph_check` ran against the user's graph and failed: the
+  subgraph does not compose with their variant, or a check rover ran
+  failed. The refusal names the reason and each build error or failing
+  change. Fix it (verification.md § Reading the result) and run `evidence`
+  again. A `not_run` or `skipped` check is not a refusal; it is listed as
+  not verified. Export reads the recorded result only: it does not compare
+  the `graph_ref` the check ran against with the graph the user means to
+  publish to now, so name the recorded graph ref when you hand off, and
+  re-run `evidence` with the right one when they differ.
 - A lint error on the files as they are now, which includes a selected
   operation with no entry in the evidence. An `auth-test-default` error is
   named by rule and file, with the value replaced by `<redacted>`: it may
@@ -83,6 +103,11 @@ terms `evidence` uses. There is no override.
 
 `write_body_proof` and `json_accounting` do not gate, as in `evidence`. Each
 is listed as not verified when it is not `pass`.
+
+When the gate passes, the hand-off's `gate:` line ends `evidence inputs
+<digest> (N files) unchanged since it ran`, the first twelve hex digits of
+`inputs.digest` (`--json`: `evidence_digest`, `evidence_files`, and
+`evidence_checked: inputs`, or `commit` for older evidence).
 
 When the gate refuses, fix what it names and run `evidence` again. Never
 edit `latest.json`, and never render the schema another way to get around a
@@ -100,12 +125,18 @@ rover subgraph publish <GRAPH_REF> --name <directory> --schema DIR/<directory>.g
 ```
 
 `rover subgraph check` composes the subgraph with the variant's other
-subgraphs and checks it against recorded operations. That is the composition
-this skill's `supergraph_check` layer does not run, so recommend it before
-every publish. A first publish needs a routing URL. A subgraph whose fields
-are all connectors is never called at it, so `http://localhost` is a
-placeholder. Never run either command yourself, and never ask for or print
-the user's GraphOS key: rover reads the user's own credentials.
+subgraphs and checks it against recorded operations. It is what the
+`supergraph_check` layer runs when `APOLLO_KEY` is in the user's
+environment and a graph ref was given for the run (verification.md § What
+it needs); when that layer passed, the check is already in the evidence
+(`details.graph_ref` and `details.mode` say against what, and how it was
+chosen), and the user should run it again before a publish, since the
+variant moves. When it did not run, recommend it before every publish. A first
+publish needs a routing URL. A subgraph whose fields are all connectors is
+never called at it, so `http://localhost` is a placeholder. Never run
+either command by hand (the check runs only as the layer), and never ask
+for or print the user's GraphOS key: rover reads the user's own
+credentials.
 
 ## The router
 
@@ -133,7 +164,9 @@ connectors:
 The hand-off lists each item. Report every one of them as not verified,
 never as a pass.
 
-- `supergraph_check`: composition with the user's other subgraphs.
+- `supergraph_check`, when it did not pass: composition with the user's
+  other subgraphs, with the layer's reason (no graph ref for the run, no
+  key, rover could not run the check, rover not installed). A `pass` is not listed.
   `rover subgraph check` is that check.
 - `live`, when it did not run: the subgraph was never called against the
   real API.
