@@ -1,0 +1,52 @@
+name: Protect graphos-factory skill from direct edits
+
+# skills/graphos-factory/ is a read-only copy of a release of
+# apollographql/graphos-factory: its release workflow opens the pull request
+# that updates it. This check passes only when the folder is byte for byte
+# the skill of the release its SKILL.md names (metadata.version vX.Y.Z), so a
+# hand edit fails whatever branch it comes from.
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'skills/graphos-factory/**'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: The folder is a graphos-factory release, unedited
+        id: compare
+        run: |
+          version="$(sed -n 's/^  version: "\([0-9][0-9.]*\)"$/\1/p' skills/graphos-factory/SKILL.md | head -1)"
+          if [ -z "$version" ]; then
+            echo "::error::skills/graphos-factory/SKILL.md names no metadata.version"; exit 1
+          fi
+          git -c advice.detachedHead=false clone -q --depth 1 --branch "v$version" https://github.com/apollographql/graphos-factory "$RUNNER_TEMP/release"
+          if diff -r "$RUNNER_TEMP/release/skills/graphos-factory" skills/graphos-factory; then
+            echo "skills/graphos-factory/ is exactly the v$version release"
+          else
+            echo "::error::skills/graphos-factory/ differs from the v$version release of apollographql/graphos-factory (diff above)"; exit 1
+          fi
+      - name: Explain the failure on the pull request
+        if: failure() && steps.compare.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --body "$(cat <<'MSG'
+          ## ⚠️ Direct edits to the \`graphos-factory\` skill are not allowed
+
+          This PR changes files under \`skills/graphos-factory/\`, which must be an exact copy of a release of [apollographql/graphos-factory](https://github.com/apollographql/graphos-factory) (the version its \`SKILL.md\` names).
+
+          Make the change there instead. Each graphos-factory release opens a PR here that copies the released skill and moves the marketplace entry to the new tag.
+
+          MSG
+          )"
