@@ -5,21 +5,24 @@
 #   session-start.sh        # what Claude Code runs; by hand it does the same
 #
 # Other agents have no SessionStart hook: they run scripts/bootstrap.sh once
-# and source scripts/env.sh, which sets the same two variables.
+# and source scripts/env.sh, which sets the same variables.
 #
 # 1. Puts the graphos-factory binary (and the graphos-factory-core link) in
 #    the bootstrap cache: no network when a binary at least as new as this
 #    checkout's pin is already there, else scripts/bootstrap.sh downloads the
 #    release (never --build: a plugin user has no reason to need cargo).
-# 2. Appends PATH (the cache's bin/ and ~/.rover/bin) and
-#    GRAPHOS_FACTORY_CORE_SCRIPTS to $CLAUDE_ENV_FILE, so the agent runs
-#    `graphos-factory` and the wrappers bare for the rest of the session.
+# 2. Appends PATH (the cache's bin/ and ~/.rover/bin),
+#    GRAPHOS_FACTORY_CORE_SCRIPTS and GRAPHOS_FACTORY_TARGET_SCRIPTS (this
+#    directory, where `evidence` finds supergraph-check.sh) to
+#    $CLAUDE_ENV_FILE, so the agent runs `graphos-factory` and the wrappers
+#    bare for the rest of the session.
 # 3. Runs toolchain.sh --check and never toolchain.sh itself: that install
 #    downloads about 100 MB, its rover installer edits shell profiles and it
 #    needs the user's own ELv2 acceptance (APOLLO_ELV2_LICENSE=accept), so it is a step the user sees.
 # 4. Prints a few lines for the agent's context (SessionStart stdout is
-#    context): the version, the scripts path, and either "toolchain ready" or
-#    the command to run.
+#    context): the version, the scripts paths, what supergraph_check needs
+#    (the user's APOLLO_KEY and a graph ref given for the run), and either
+#    "toolchain ready" or the command to run.
 #
 # The hook is synchronous on purpose: the first run downloads about 3 MB, and
 # every later one makes no network call, while an async hook's env file is
@@ -66,6 +69,7 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
     # shellcheck disable=SC2016
     printf 'export PATH="$HOME/.rover/bin":%q:"$PATH"\n' "$BIN_DIR"
     printf 'export GRAPHOS_FACTORY_CORE_SCRIPTS=%q\n' "$SCRIPTS"
+    printf 'export GRAPHOS_FACTORY_TARGET_SCRIPTS=%q\n' "$HERE"
   } >> "$CLAUDE_ENV_FILE" || echo "$NAME: could not write $CLAUDE_ENV_FILE"
 fi
 
@@ -129,7 +133,8 @@ fi
 if current; then
   echo "Installed: $("$BIN" version 2>/dev/null | head -1) at $BIN_DIR, on PATH for this session with its graphos-factory-core link."
 fi
-echo "Wrapper scripts: GRAPHOS_FACTORY_CORE_SCRIPTS=$SCRIPTS"
+echo "Wrapper scripts: GRAPHOS_FACTORY_CORE_SCRIPTS=$SCRIPTS (supergraph-check.sh: GRAPHOS_FACTORY_TARGET_SCRIPTS=$HERE)"
+echo "supergraph_check runs rover subgraph check only with the user's APOLLO_KEY in the environment and a graph ref: ask once which <graph>@<variant>, then set GRAPHOS_FACTORY_GRAPH_REF on your commands (their GRAPHOS_FACTORY_SUPERGRAPH_CHECK=auto uses \$APOLLO_GRAPH_REF; never set it). Never ask for, set or print the key."
 if missing="$(bash "$SCRIPTS/toolchain.sh" --check 2>&1 >/dev/null)"; then
   echo "Toolchain: ready (rover, supergraph plugin, Apollo Router, WireMock)."
 else

@@ -242,6 +242,15 @@ read through the selection, so `pet { id: pet_id }` carries `id`.
 Only make a type an entity when a decision records why in `decisions.json`
 (`graphos-factory-core decisions`); entities widen the supergraph's contract.
 
+These rules assume this subgraph owns the entity. A type another subgraph
+owns is declared under its owner's exact name only when a resolved decision
+records it (`decisions add --foreign-type NAME`), and only a target that
+allows it reads that record. There, the declared type is exempt from the
+prefix rule, and from the lookup rule when every connector on it is
+field-level and reads `$this`; the target's own reference says what it
+checks instead. Under a target that does not read the record, every type
+keeps the prefix and every rule above.
+
 ### At v0.4, a `Query` connector can hijack entity resolution
 
 Suppose an entity has a type-level `@connect` that resolves it from `$this`
