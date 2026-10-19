@@ -248,6 +248,8 @@ introspection:
 graphos:
   apollo_key: ${env.APOLLO_KEY}
   apollo_graph_ref: my-graph@production
+schema:
+  source: uplink # federated graphs; use graphos for non-federated graphs
 ```
 
 ### Local Development
@@ -288,6 +290,8 @@ operations:
 graphos:
   apollo_key: ${env.APOLLO_KEY}
   apollo_graph_ref: ${env.APOLLO_GRAPH_REF}
+schema:
+  source: uplink # federated graphs; use graphos for non-federated graphs
 health_check:
   enabled: true
 telemetry:
@@ -313,6 +317,8 @@ endpoint: ${env.GRAPHQL_ENDPOINT}
 graphos:
   apollo_key: ${env.APOLLO_KEY}
   apollo_graph_ref: ${env.APOLLO_GRAPH_REF}
+schema:
+  source: uplink # federated graphs; use graphos for non-federated graphs
 health_check:
   enabled: true
 ```

@@ -85,7 +85,9 @@ fn on_execute_graphql_operation(ctx) {
 }
 ```
 
-### Reject Unauthorized Requests
+### Require an Authorization Header
+
+This only checks that the header is present. It does not validate the token. Use `transport.auth` (see auth.md) for real authentication.
 
 ```rhai
 fn on_execute_graphql_operation(ctx) {

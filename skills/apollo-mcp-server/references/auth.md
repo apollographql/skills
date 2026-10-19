@@ -38,7 +38,7 @@ transport:
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `servers` | `List<URL>` | | Upstream OAuth servers (must support RFC 8414 or OIDC discovery) |
+| `servers` | `List<URL>` | | Issuer URLs of upstream OAuth servers, not discovery-document URLs (must support RFC 8414 or OIDC discovery) |
 | `audiences` | `List<string>` | `[]` | Accepted JWT audience values |
 | `issuers` | `List<string>` | `[]` | Allowlist for token issuers. When set, `iss` must match this list and discovery metadata |
 | `allow_any_audience` | `bool` | `false` | Skip audience validation entirely |

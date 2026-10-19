@@ -139,7 +139,7 @@ Disabled by default. Streamable HTTP only.
 | `enabled` | `false` | Enable CORS |
 | `origins` | `[]` | Allowed origins (exact match) |
 | `match_origins` | `[]` | Regex patterns for origins |
-| `allow_any_origin` | `false` | Allow any origin |
+| `allow_any_origin` | `false` | Allow any origin. Can't be combined with `allow_credentials`; use `origins` or `match_origins` instead |
 | `allow_credentials` | `false` | Allow credentials |
 | `allow_methods` | `["GET", "POST", "DELETE"]` | Allowed HTTP methods |
 | `allow_headers` | `["content-type", "mcp-protocol-version", "mcp-session-id", "traceparent", "tracestate", "baggage"]` | Allowed request headers |
