@@ -12,7 +12,7 @@ license: MIT
 compatibility: Works with Claude Code, Claude Desktop, Cursor.
 metadata:
   author: apollographql
-  version: "2.0.0"
+  version: "1.2.0"
 allowed-tools: Bash(rover:*) Bash(npx:*) Read Write Edit Glob Grep
 ---
 
