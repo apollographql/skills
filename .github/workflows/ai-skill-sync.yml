@@ -178,6 +178,14 @@ jobs:
           ref: ${{ needs.resolve-inputs.outputs.version }}
           path: product-repo
 
+      # Minted before the AI step so a missing key fails fast. The token lasts an hour.
+      - name: Create GitHub App token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        id: app-token
+        with:
+          app-id: 819772
+          private-key: ${{ secrets.APOLLO_GITHUB_ACTIONS_BOT_PRIVATE_KEY }}
+
       - name: Install Claude Code
         run: curl -fsSL https://claude.ai/install.sh | bash
 
@@ -231,28 +239,25 @@ jobs:
           PRODUCT: ${{ needs.resolve-inputs.outputs.product }}
         shell: python
         run: |
-          import os, re, subprocess
+          import os, re, subprocess, sys
+          from pathlib import Path
 
-          def bump(path, prefix, part):
-              pattern = re.compile(rf'^({re.escape(prefix)}")(\d+)\.(\d+)\.(\d+)(")', re.M)
+          skill_dir = f"skills/{os.environ['PRODUCT']}"
+          if not subprocess.check_output(["git", "status", "--porcelain", skill_dir]):
+              print("No skill changes, skipping version bump")
+              sys.exit()
+
+          def bump(path, prefix, minor):
               base = subprocess.check_output(["git", "show", f"HEAD:{path}"], text=True)
-              major, minor, patch = map(int, pattern.search(base).groups()[1:4])
-              new = f"{major}.{minor + 1}.0" if part == "minor" else f"{major}.{minor}.{patch + 1}"
-              with open(path) as f:
-                  content = f.read()
-              with open(path, "w") as f:
-                  f.write(pattern.sub(rf"\g<1>{new}\g<5>", content, count=1))
-              print(f"{path}: {new}")
+              old = re.search(rf'^{prefix}"([\d.]+)"', base, re.M)[1]
+              x, y, z = map(int, old.split("."))
+              new = f"{x}.{y + 1}.0" if minor else f"{x}.{y}.{z + 1}"
+              file = Path(path)
+              file.write_text(re.sub(rf'^({prefix}")[\d.]+', rf"\g<1>{new}", file.read_text(), count=1, flags=re.M))
+              print(f"{path}: {old} -> {new}")
 
-          bump(f"skills/{os.environ['PRODUCT']}/SKILL.md", "  version: ", "minor")
-          bump(".claude-plugin/plugin.json", '  "version": ', "patch")
-
-      - name: Create GitHub App token
-        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
-        id: app-token
-        with:
-          app-id: 819772
-          private-key: ${{ secrets.APOLLO_GITHUB_ACTIONS_BOT_PRIVATE_KEY }}
+          bump(f"{skill_dir}/SKILL.md", "  version: ", minor=True)
+          bump(".claude-plugin/plugin.json", '  "version": ', minor=False)
 
       # Open the PR as the app, since PRs opened with GITHUB_TOKEN don't trigger CI.
       - name: Create pull request
