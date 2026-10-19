@@ -208,8 +208,8 @@ jobs:
           reference file (e.g. references/feature-name.md). Also update
           existing files that are inaccurate or outdated.
 
-          Step 5: Update SKILL.md to link to any new reference files and
-          update the version in frontmatter.
+          Step 5: Update SKILL.md to link to any new reference files. Do not
+          change any version numbers; a later step bumps them.
 
           Rules:
           - Every major product feature should have coverage in the skill
@@ -225,10 +225,43 @@ jobs:
             --max-turns 50 \
             < /tmp/update-prompt.txt
 
+      # version-check requires both bumps: minor for the skill, patch for the plugin.
+      - name: Bump skill and plugin versions
+        env:
+          PRODUCT: ${{ needs.resolve-inputs.outputs.product }}
+        shell: python
+        run: |
+          import os, re, subprocess
+
+          def bump(path, prefix, part):
+              pattern = re.compile(rf'^({re.escape(prefix)}")(\d+)\.(\d+)\.(\d+)(")', re.M)
+              base = subprocess.check_output(["git", "show", f"HEAD:{path}"], text=True)
+              major, minor, patch = map(int, pattern.search(base).groups()[1:4])
+              new = f"{major}.{minor + 1}.0" if part == "minor" else f"{major}.{minor}.{patch + 1}"
+              with open(path) as f:
+                  content = f.read()
+              with open(path, "w") as f:
+                  f.write(pattern.sub(rf"\g<1>{new}\g<5>", content, count=1))
+              print(f"{path}: {new}")
+
+          bump(f"skills/{os.environ['PRODUCT']}/SKILL.md", "  version: ", "minor")
+          bump(".claude-plugin/plugin.json", '  "version": ', "patch")
+
+      - name: Create GitHub App token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        id: app-token
+        with:
+          app-id: 819772
+          private-key: ${{ secrets.APOLLO_GITHUB_ACTIONS_BOT_PRIVATE_KEY }}
+
+      # Open the PR as the app, since PRs opened with GITHUB_TOKEN don't trigger CI.
       - name: Create pull request
         uses: peter-evans/create-pull-request@v8
         with:
-          add-paths: skills/
+          token: ${{ steps.app-token.outputs.token }}
+          add-paths: |
+            skills/
+            .claude-plugin/plugin.json
           title: "[${{ needs.resolve-inputs.outputs.product }}] AI-generated skill update"
           body: |
             AI-generated skill update based on product release.
