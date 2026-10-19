@@ -1,22 +1,10 @@
 # Apollo MCP Server Tools Reference
 
-## Table of Contents
-
-- [Introspection Tools](#introspection-tools)
-  - [introspect](#introspect)
-  - [search](#search)
-  - [validate](#validate)
-  - [execute](#execute)
-- [Minify Notation](#minify-notation)
-- [Custom Tools](#custom-tools)
-
----
-
 ## Introspection Tools
 
-Apollo MCP Server provides four built-in tools for schema exploration and operation execution. All tools are disabled by default and must be enabled in configuration.
+Apollo MCP Server provides four introspection tools and one explorer tool. All are disabled by default and must be enabled in configuration.
 
-Each introspection tool supports an optional `hint` config option for providing custom instructions to the AI agent about when and how to use the tool.
+Each introspection tool supports an optional `hint` config option for providing custom instructions to the AI agent.
 
 ### introspect
 
@@ -30,41 +18,28 @@ Explore schema types in detail with configurable depth.
 | `depth` | Int | 1 | Recursion depth for related types |
 | `minify` | Boolean | false | Use compact notation |
 
-**Examples:**
+**Depth behavior:**
 
-```
-# Basic type introspection
-introspect(type: "User")
+- `depth: 1` — Only the requested type
+- `depth: 2` — Requested type + directly referenced types
+- `depth: 3` — Two levels of related types
 
-# Deep introspection with related types
-introspect(type: "User", depth: 3)
+**Example output (normal):**
 
-# Minified output for token efficiency
-introspect(type: "User", minify: true)
-```
-
-**Output (normal):**
 ```graphql
 type User {
   id: ID!
   name: String!
   email: String
   posts: [Post!]!
-  createdAt: DateTime!
 }
 ```
 
-**Output (minified):**
-```
-T User { id:d! name:s! email:s posts:[Post!]! createdAt:DateTime! }
-```
+**Example output (minified):**
 
-**Depth Behavior:**
-
-- `depth: 1` - Only the requested type
-- `depth: 2` - Requested type + directly referenced types
-- `depth: 3` - Two levels of related types
-- Maximum recommended: 5
+```
+T User { id:d! name:s! email:s posts:[Post!]! }
+```
 
 ### search
 
@@ -78,135 +53,59 @@ Find types in the schema matching a query.
 | `leafDepth` | Int | 1 | Depth for leaf type expansion |
 | `minify` | Boolean | false | Use compact notation |
 
-**Config Options:**
+**Config options:**
 
 | Option | Default | Description |
 |--------|---------|-------------|
 | `index_memory_bytes` | `50000000` | Memory budget for the search index |
 | `leaf_depth` | `1` | Default leaf type expansion depth |
 
-**Behavior:**
-
-- Returns maximum 5 matching results
-- Searches type names, field names, and descriptions
-- Case-insensitive matching
-
-**Examples:**
-
-```
-# Find user-related types
-search(query: "user")
-
-# Search with expanded leaf types
-search(query: "product", leafDepth: 2)
-```
-
-**Output:**
-```
-Found 3 types matching "user":
-- User (type)
-- UserInput (input)
-- UserConnection (type)
-```
-
 ### validate
 
-Check if a GraphQL operation is valid against the schema.
+Check if a GraphQL operation is valid against the schema. Validates syntax, schema conformance, variable definitions, and fragment validity. Does not execute the operation.
 
 **Parameters:**
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `operation` | String | required | GraphQL operation to validate |
-
-**Validates:**
-
-- Syntax correctness
-- Schema compliance (fields exist, types match)
-- Variable definitions
-- Fragment validity
-
-**Examples:**
-
-```
-validate(operation: """
-  query GetUser($id: ID!) {
-    user(id: $id) {
-      id
-      name
-      nonExistentField
-    }
-  }
-""")
-```
-
-**Output (error):**
-```
-Validation failed:
-- Field "nonExistentField" not found on type "User"
-```
-
-**Output (success):**
-```
-Operation is valid.
-Variables required: { id: ID! }
-```
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `operation` | String | GraphQL operation to validate |
 
 ### execute
 
-Run ad-hoc GraphQL operations against the endpoint.
+Run ad-hoc GraphQL operations against the endpoint. Parses the operation, applies mutation mode restrictions, and forwards to the GraphQL endpoint.
 
 **Parameters:**
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `operation` | String | required | GraphQL operation |
-| `variables` | Object | {} | Operation variables |
+| `variables` | Object | `{}` | Operation variables |
 
-**Mutation Mode:**
+**Mutation mode behavior:**
 
-Behavior depends on `overrides.mutation_mode` configuration:
+| Mode | Queries | Mutations |
+|------|---------|-----------|
+| `all` | Allowed | Allowed |
+| `explicit` | Allowed | Rejected |
+| `none` | Allowed | Rejected |
 
-| Mode | Query | Mutation |
-|------|-------|----------|
-| `all` | Execute | Execute |
-| `explicit` | Execute | Require confirmation |
-| `none` | Execute | Block |
+Both `explicit` and `none` reject ad-hoc mutations through `execute`. The difference is that `explicit` exposes predefined mutation tools from operation sources, while `none` skips them.
 
-**Examples:**
+> **Security:** `execute` accepts the GraphQL document from each tool call. It checks syntax, rejects subscriptions, and applies `mutation_mode`, but does not validate fields or types against the schema. The upstream GraphQL endpoint performs validation during execution.
 
-```
-# Query execution
-execute(
-  operation: "query { users { id name } }"
-)
+### explorer
 
-# With variables
-execute(
-  operation: """
-    query GetUser($id: ID!) {
-      user(id: $id) { id name }
-    }
-  """,
-  variables: { id: "123" }
-)
+Returns a URL that opens a GraphQL operation in Apollo Explorer. Does not read the schema or call the GraphQL endpoint — it compresses the document, variables, and headers into the link.
 
-# Mutation (requires appropriate mutation_mode)
-execute(
-  operation: """
-    mutation CreateUser($input: CreateUserInput!) {
-      createUser(input: $input) { id }
-    }
-  """,
-  variables: { input: { name: "Alice", email: "alice@example.com" } }
-)
-```
+Enable with `overrides.enable_explorer: true` (requires a GraphOS graph reference).
+
+Annotations on the `explorer` tool are not configurable via `overrides.annotations`.
 
 ---
 
 ## Minify Notation
 
-Compact notation reduces token usage by 40-60%. Enable globally or per-request.
+Compact notation reduces token usage. Enable globally via config or per-request.
 
 ### Type Abbreviations
 
@@ -232,71 +131,43 @@ Compact notation reduces token usage by 40-60%. Enable globally or per-request.
 
 | Symbol | Meaning |
 |--------|---------|
-| **!** | Non-null (required) |
-| **[]** | List |
-| **[!]** | List of non-null |
-| **[]!** | Non-null list |
-| **[!]!** | Non-null list of non-null |
+| `!` | Non-null (required) |
+| `[]` | List |
 | `@D` | Deprecated |
 | `<>` | Implements |
-
-### Examples
-
-**Normal:**
-```graphql
-type Product {
-  id: ID!
-  name: String!
-  price: Float!
-  description: String
-  tags: [String!]!
-  variants: [ProductVariant!]
-}
-```
-
-**Minified:**
-```
-T Product { id:d! name:s! price:f! description:s tags:[s!]! variants:[ProductVariant!] }
-```
 
 ---
 
 ## Custom Tools
 
-Each GraphQL operation becomes an MCP tool with:
+Each GraphQL operation becomes an MCP tool:
 
 - **Tool name**: Operation name (e.g., `GetUser`, `CreateProduct`)
 - **Parameters**: Operation variables become tool parameters
-- **Description**: Generated from operation or custom via directive
+- **Description**: From config-level overrides, operation descriptions, `#` comments, or schema (in that precedence order)
 
-### Tool Naming
+### Description Precedence
 
-```graphql
-# Tool name: GetUserById
-query GetUserById($id: ID!) {
-  user(id: $id) { id name }
-}
+1. Config-level `overrides.descriptions`
+2. Operation descriptions (GraphQL September 2025 spec `"""..."""` syntax)
+3. `#` comments above the operation definition
+4. Auto-generated from schema
 
-# Tool name: CreateProduct
-mutation CreateProduct($input: ProductInput!) {
-  createProduct(input: $input) { id }
-}
-```
+Variable descriptions follow the same order except config-level descriptions do not apply to them.
 
-### Adding Descriptions
+### Tool Annotations
 
-Use comments for tool descriptions:
+Auto-detected defaults:
 
-```graphql
-# Fetches a user by their unique identifier.
-# Returns user profile including name and email.
-query GetUser($id: ID!) {
-  user(id: $id) {
-    id
-    name
-    email
-  }
-}
-```
+- **Queries**: `read_only_hint: true`, `destructive_hint: false`, `idempotent_hint: true`, `open_world_hint: true`
+- **Mutations**: `read_only_hint: false`, `destructive_hint: true`, `open_world_hint: true`
 
-The comment becomes the MCP tool description, helping AI agents understand when to use each tool.
+Customize via `overrides.annotations` in config.
+
+### Output Schema
+
+With `overrides.enable_output_schema: true`, tools include an `outputSchema` describing the GraphQL response envelope (`data`, `errors`, `extensions`).
+
+### Tool Ordering
+
+Predefined operation tools appear first in `tools/list`, alphabetically by operation name. Built-in and app tools follow. Deterministic ordering supports client-side caching and LLM prompt cache reuse.
