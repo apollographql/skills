@@ -4,13 +4,15 @@ description: >
   Guide for using Apollo MCP Server to connect AI agents with GraphQL APIs.
   Use this skill when: (1) setting up or configuring Apollo MCP Server,
   (2) defining MCP tools from GraphQL operations, (3) using introspection
-  tools (introspect, search, validate, execute), (4) troubleshooting
-  MCP server connectivity or tool execution issues.
+  tools (introspect, search, validate, execute, explorer), (4) configuring
+  authentication, CORS, health checks, or telemetry, (5) writing Rhai
+  scripts for request lifecycle hooks, (6) defining MCP prompts,
+  (7) troubleshooting MCP server connectivity or tool execution issues.
 license: MIT
 compatibility: Works with Claude Code, Claude Desktop, Cursor.
 metadata:
   author: apollographql
-  version: "1.1.1"
+  version: "1.2.0"
 allowed-tools: Bash(rover:*) Bash(npx:*) Read Write Edit Glob Grep
 ---
 
@@ -35,7 +37,6 @@ iwr 'https://mcp.apollo.dev/download/win/latest' | iex
 Create `config.yaml` in your project root:
 
 ```yaml
-# config.yaml
 transport:
   type: streamable_http
 schema:
@@ -57,11 +58,14 @@ introspection:
 ```
 
 Start the server:
+
 ```bash
 apollo-mcp-server ./config.yaml
 ```
 
 The MCP endpoint is available at `http://127.0.0.1:8000/mcp` (streamable_http defaults: address `127.0.0.1`, port `8000`). The GraphQL endpoint defaults to `http://localhost:4000/` — override with the `endpoint` key if your API runs elsewhere.
+
+The server watches the config file for changes and automatically restarts with updated configuration.
 
 ### Step 3: Connect
 
@@ -70,6 +74,7 @@ Add to your MCP client configuration:
 **Streamable HTTP (recommended):**
 
 Claude Desktop (`claude_desktop_config.json`):
+
 ```json
 {
   "mcpServers": {
@@ -82,13 +87,13 @@ Claude Desktop (`claude_desktop_config.json`):
 ```
 
 Claude Code:
+
 ```bash
 claude mcp add graphql-api -- npx mcp-remote http://127.0.0.1:8000/mcp
 ```
 
 **Stdio (client launches the server directly):**
 
-Claude Desktop (`claude_desktop_config.json`) or Claude Code (`.mcp.json`):
 ```json
 {
   "mcpServers": {
@@ -102,18 +107,17 @@ Claude Desktop (`claude_desktop_config.json`) or Claude Code (`.mcp.json`):
 
 ## Built-in Tools
 
-Apollo MCP Server provides four introspection tools:
-
 | Tool | Purpose | When to Use |
 |------|---------|-------------|
 | `introspect` | Explore schema types in detail | Need type definitions, fields, relationships |
 | `search` | Find types in schema | Looking for specific types or fields |
 | `validate` | Check operation validity | Before executing operations |
 | `execute` | Run ad-hoc GraphQL operations | Testing or one-off queries |
+| `explorer` | Open operation in Apollo Explorer | Generate Explorer URLs (requires GraphOS graph ref) |
 
 ## Defining Custom Tools
 
-MCP tools are created from GraphQL operations. Three methods:
+MCP tools are created from GraphQL operations:
 
 ### 1. Operation Files (Recommended)
 
@@ -124,29 +128,6 @@ operations:
     - ./operations/
 ```
 
-Each file must contain exactly one operation. Each named operation becomes an MCP tool.
-
-```graphql
-# operations/GetUser.graphql
-query GetUser($id: ID!) {
-  user(id: $id) {
-    id
-    name
-    email
-  }
-}
-```
-
-```graphql
-# operations/CreateUser.graphql
-mutation CreateUser($input: CreateUserInput!) {
-  createUser(input: $input) {
-    id
-    name
-  }
-}
-```
-
 ### 2. Operation Collections
 
 ```yaml
@@ -154,8 +135,6 @@ operations:
   source: collection
   id: your-collection-id
 ```
-
-Use GraphOS Studio to manage operations collaboratively.
 
 ### 3. Persisted Queries
 
@@ -165,24 +144,38 @@ operations:
   path: ./persisted-query-manifest.json
 ```
 
-For production environments with pre-approved operations.
+### 4. Schema Introspection
+
+```yaml
+operations:
+  source: introspect
+```
+
+### 5. GraphOS Uplink
+
+```yaml
+operations:
+  source: uplink
+```
 
 ## Reference Files
 
-Detailed documentation for specific topics:
-
-- [Tools](references/tools.md) - Introspection tools and minify notation
+- [Tools](references/tools.md) - Introspection tools, explorer, minify notation, tool annotations
 - [Configuration](references/configuration.md) - All configuration options
+- [Authentication](references/auth.md) - OAuth 2.1, scopes, token validation, per-operation scopes
+- [Rhai Scripting](references/rhai-scripting.md) - Lifecycle hooks and built-in functions
+- [MCP Prompts](references/prompts.md) - Reusable prompt templates
+- [Telemetry](references/telemetry.md) - OpenTelemetry metrics, traces, and dashboards
 - [Troubleshooting](references/troubleshooting.md) - Common issues and solutions
 
 ## Key Rules
 
 ### Security
 
-- **Never expose sensitive operations** without authentication
-- Use `headers` configuration for API keys and tokens
+> **Security: Sensitive operations.** Configure authentication before exposing to AI agents. Use `headers` for API keys, OAuth for user-scoped access.
+
 - Disable introspection tools in production (they are disabled by default)
-- Set `overrides.mutation_mode: explicit` to require confirmation for mutations
+- Use `overrides.mutation_mode` to control mutation exposure
 
 ### Authentication
 
@@ -193,17 +186,47 @@ headers:
 
 # Dynamic header forwarding
 forward_headers:
-  - x-forwarded-token
+  - x-tenant-id
 
 # OAuth (streamable_http transport)
 transport:
   type: streamable_http
   auth:
     servers:
-      - https://auth.example.com/.well-known/openid-configuration
+      - https://auth.example.com
     audiences:
       - https://api.example.com
+    scopes:
+      - read
+    scope_mode: require_all
 ```
+
+### Schema Sources
+
+```yaml
+# Local file
+schema:
+  source: local
+  path: ./schema.graphql
+
+# Federated graphs (uplink)
+schema:
+  source: uplink
+
+# Non-federated graphs (graphos)
+schema:
+  source: graphos
+```
+
+### Mutations
+
+Control mutation behavior via `overrides.mutation_mode`:
+
+| Mode | Predefined mutations | Ad hoc mutations (`execute`) |
+|------|---------------------|------------------------------|
+| `none` | Skipped | Rejected |
+| `explicit` | Exposed | Rejected |
+| `all` | Exposed | Allowed |
 
 ### Token Optimization
 
@@ -217,31 +240,16 @@ introspection:
     minify: true
 ```
 
-Minified output uses compact notation:
-- **T** = type, **I** = input, **E** = enum
-- **s** = String, **i** = Int, **b** = Boolean, **f** = Float, **d** = ID
-- **!** = required, **[]** = list
-
-### Mutations
-
-Control mutation behavior via the `overrides` section:
-
-```yaml
-overrides:
-  mutation_mode: all       # Execute mutations directly
-  # mutation_mode: explicit  # Require explicit confirmation
-  # mutation_mode: none      # Block all mutations (default)
-```
-
 ## Common Patterns
 
 ### GraphOS Cloud Schema
 
 ```yaml
-# schema.source defaults to uplink — can be omitted when graphos is configured
 graphos:
   apollo_key: ${env.APOLLO_KEY}
   apollo_graph_ref: my-graph@production
+schema:
+  source: uplink # federated graphs; use graphos for non-federated graphs
 ```
 
 ### Local Development
@@ -270,6 +278,11 @@ overrides:
 ```yaml
 transport:
   type: streamable_http
+  auth:
+    servers:
+      - https://auth.example.com
+    audiences:
+      - https://api.example.com
 endpoint: https://api.production.com/graphql
 operations:
   source: manifest
@@ -277,10 +290,20 @@ operations:
 graphos:
   apollo_key: ${env.APOLLO_KEY}
   apollo_graph_ref: ${env.APOLLO_GRAPH_REF}
-headers:
-  Authorization: "Bearer ${env.API_TOKEN}"
+schema:
+  source: uplink # federated graphs; use graphos for non-federated graphs
 health_check:
   enabled: true
+telemetry:
+  exporters:
+    metrics:
+      otlp:
+        endpoint: https://your-metrics-endpoint
+        protocol: http/protobuf
+    tracing:
+      otlp:
+        endpoint: https://your-traces-endpoint
+        protocol: http/protobuf
 ```
 
 ### Docker
@@ -294,6 +317,8 @@ endpoint: ${env.GRAPHQL_ENDPOINT}
 graphos:
   apollo_key: ${env.APOLLO_KEY}
   apollo_graph_ref: ${env.APOLLO_GRAPH_REF}
+schema:
+  source: uplink # federated graphs; use graphos for non-federated graphs
 health_check:
   enabled: true
 ```
@@ -303,7 +328,9 @@ health_check:
 - ALWAYS configure authentication before exposing to AI agents
 - ALWAYS use `mutation_mode: explicit` or `mutation_mode: none` in shared environments
 - NEVER expose introspection tools with write access to production data
+- NEVER place `auth` at the top level — it must be nested under `transport`
 - PREFER operation files over ad-hoc execute for predictable behavior
 - PREFER streamable_http transport for remote and multi-client deployments
+- USE `schema.source: graphos` for non-federated graphs (uplink only serves federated graphs)
 - USE stdio only when the MCP client launches the server process directly
 - USE GraphOS Studio collections for team collaboration

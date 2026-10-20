@@ -1,485 +1,184 @@
 # Apollo MCP Server Configuration Reference
 
-## Table of Contents
+Apollo MCP Server uses YAML configuration. The server watches the config file and auto-restarts on changes (in-place for `streamable_http`; exit code 75 for `stdio`). Changes to `logging` and `telemetry` require a full process restart.
 
-- [Configuration File](#configuration-file)
-- [Core Settings](#core-settings)
-  - [endpoint](#endpoint)
-  - [schema](#schema)
-  - [operations](#operations)
-- [Transport](#transport)
-- [Headers](#headers)
-- [Introspection](#introspection)
-- [Overrides](#overrides)
-- [GraphOS Integration](#graphos-integration)
-- [Advanced Settings](#advanced-settings)
-- [Environment Variables](#environment-variables)
-- [Configuration Examples](#configuration-examples)
+## Top-Level Options
 
----
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `endpoint` | `URL` | `http://localhost:4000/` | Target GraphQL endpoint |
+| `schema` | `SchemaSource` | | Schema source config |
+| `operations` | `OperationSource` | | Operations config |
+| `transport` | `Transport` | | Transport config |
+| `headers` | `Map<string, string>` | `{}` | Static headers for all GraphQL requests |
+| `forward_headers` | `List<string>` | `[]` | Headers to forward from MCP clients |
+| `introspection` | `Introspection` | | Introspection tool config |
+| `overrides` | `Overrides` | | Mutation mode, descriptions, annotations, scopes |
+| `graphos` | `GraphOS` | | GraphOS credentials (`apollo_key`, `apollo_graph_ref`) |
+| `cors` | `Cors` | | CORS config |
+| `health_check` | `HealthCheck` | | Health check config |
+| `logging` | `Logging` | | Logging config |
+| `telemetry` | `Telemetry` | | OTLP metrics/traces export |
+| `custom_scalars` | `FilePath` | | Path to custom scalar map |
+| `server_info` | `ServerInfo` | | Server metadata for MCP `initialize` response |
+| `instructions` | `string` | | MCP `initialize` instructions text |
+| `rhai` | `Rhai` | | Rhai scripting config (`scripts` directory, default `rhai`) |
+| `caching` | `Caching` | | `ttl_ms` for MCP response cache hints (default `300000`, protocol `2026-07-28`+) |
 
-## Configuration File
+## Schema
 
-Apollo MCP Server uses YAML configuration. Pass the config file path as an argument:
+| Source | Config | Description |
+|--------|--------|-------------|
+| Local | `source: local`, `path: ./schema.graphql` | Load from local file |
+| Uplink | `source: uplink` (default) | Fetch from uplink (federated graphs, requires GraphOS creds) |
+| GraphOS | `source: graphos` | Fetch from Platform API (non-federated graphs, requires GraphOS creds) |
 
-```bash
-apollo-mcp-server ./path/to/config.yaml
-```
+## Operations
 
----
+| Source | Config | Description |
+|--------|--------|-------------|
+| `infer` | `source: infer` (default) | Auto-discover from other config |
+| `local` | `source: local`, `paths: [...]` | Load from `.graphql` files/directories |
+| `collection` | `source: collection`, `id: ...` | Load from GraphOS operation collection |
+| `manifest` | `source: manifest`, `path: ...` | Load from persisted query manifest |
+| `uplink` | `source: uplink` | Load from GraphOS persisted queries |
+| `introspect` | `source: introspect` | Derive from schema introspection |
 
-## Core Settings
-
-### endpoint
-
-The GraphQL API endpoint URL. Defaults to `http://localhost:4000/`.
-
-```yaml
-endpoint: https://api.example.com/graphql
-```
-
-### schema
-
-Schema source configuration. Two options available:
-
-#### Local File
-
-```yaml
-schema:
-  source: local
-  path: ./schema.graphql
-```
-
-#### GraphOS Uplink (Default)
-
-`uplink` is the default schema source. When using uplink, you can omit the `schema` section entirely if `graphos` credentials are configured.
-
-```yaml
-schema:
-  source: uplink
-graphos:
-  apollo_key: ${env.APOLLO_KEY}
-  apollo_graph_ref: my-graph@production
-```
-
-### operations
-
-Define which GraphQL operations become MCP tools. Defaults to `infer` (auto-discovers from schema).
-
-#### Infer (Default)
-
-```yaml
-operations:
-  source: infer
-```
-
-#### Local Files
-
-```yaml
-operations:
-  source: local
-  paths:
-    - ./operations/**/*.graphql
-```
-
-#### GraphOS Collection
-
-```yaml
-operations:
-  source: collection
-  id: abc123-collection-id
-```
-
-#### Persisted Query Manifest
-
-```yaml
-operations:
-  source: manifest
-  path: ./persisted-query-manifest.json
-```
-
-#### GraphOS Uplink
-
-```yaml
-operations:
-  source: uplink
-```
-
----
+For `collection` and `uplink`, the server polls for changes (up to 60s delay). Collection polling supports up to 100 operations.
 
 ## Transport
 
-Configure how the MCP server communicates.
-
-### Streamable HTTP
-
-HTTP server for network access and multi-client deployments:
-
-```yaml
-transport:
-  type: streamable_http
-```
-
-Defaults: `address: 127.0.0.1`, `port: 8000`. The MCP endpoint is served at `http://127.0.0.1:8000/mcp`.
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `address` | `127.0.0.1` | Bind address |
-| `port` | `8000` | Listen port |
-| `stateful_mode` | - | Session handling mode |
-
-#### Host Validation
-
-Controls which `Host` header values are accepted (streamable_http only):
-
-```yaml
-transport:
-  type: streamable_http
-  host_validation:
-    enabled: true
-    allowed_hosts:
-      - "example.com"
-      - "*.example.com"
-```
-
-#### Auth
-
-OAuth-based authentication for streamable_http transport:
-
-```yaml
-transport:
-  type: streamable_http
-  auth:
-    servers:
-      - https://auth.example.com/.well-known/openid-configuration
-    audiences:
-      - https://api.example.com
-    scopes:
-      - read
-      - write
-    scope_mode: any  # any | all
-```
-
 ### Stdio (Default)
-
-Standard input/output for direct CLI integration. This is the default transport when no `transport` section is specified:
 
 ```yaml
 transport:
   type: stdio
 ```
 
-> **Note:** SSE transport was removed in v1.5.0. Use `streamable_http` instead.
-
----
-
-## Headers
-
-Configure HTTP headers for GraphQL requests.
-
-### Static Headers
-
-```yaml
-headers:
-  Authorization: "Bearer ${env.API_TOKEN}"
-  X-API-Key: ${env.API_KEY}
-```
-
-### Dynamic Header Forwarding
-
-Forward headers from MCP client requests to the upstream GraphQL API:
-
-```yaml
-forward_headers:
-  - x-forwarded-user-token
-  - x-request-id
-```
-
-### Combined
-
-```yaml
-headers:
-  Authorization: "Bearer ${env.API_TOKEN}"
-forward_headers:
-  - x-user-context
-  - x-request-id
-```
-
----
-
-## Introspection
-
-Control built-in introspection tools. All tools are disabled by default.
-
-```yaml
-introspection:
-  introspect:
-    enabled: true
-    minify: true
-  search:
-    enabled: true
-    minify: true
-  validate:
-    enabled: true
-  execute:
-    enabled: true
-```
-
----
-
-## Overrides
-
-Control mutation behavior and other global settings.
-
-```yaml
-overrides:
-  mutation_mode: explicit  # all | explicit | none
-```
-
-### Mutation Modes
-
-| Mode | Description |
-|------|-------------|
-| `all` | Execute mutations directly |
-| `explicit` | Require user confirmation |
-| `none` | Block all mutations (default) |
-
----
-
-## GraphOS Integration
-
-Connect to Apollo GraphOS for managed schemas and operations.
-
-```yaml
-graphos:
-  apollo_key: ${env.APOLLO_KEY}
-  apollo_graph_ref: my-graph@production
-```
-
-### With Uplink Schema
-
-```yaml
-graphos:
-  apollo_key: ${env.APOLLO_KEY}
-  apollo_graph_ref: ${env.APOLLO_GRAPH_REF}
-```
-
----
-
-## Advanced Settings
-
-### Custom Scalars
-
-Define how custom scalars are described to AI agents via an external JSON file:
-
-```yaml
-custom_scalars: ./scalars.json
-```
-
-```json
-// scalars.json
-{
-  "DateTime": "ISO 8601 date-time string (e.g. 2024-01-15T10:30:00Z)",
-  "JSON": "Arbitrary JSON object",
-  "UUID": "UUID v4 string (e.g. 550e8400-e29b-41d4-a716-446655440000)"
-}
-```
-
-### CORS (Streamable HTTP Transport)
-
-```yaml
-cors:
-  enabled: true
-  origins:
-    - http://localhost:3000
-    - https://app.example.com
-  # OR use match_origins for regex pattern matching:
-  # match_origins:
-  #   - "^https://([a-z0-9]+[.])*example.com$"
-  # OR allow all origins (cannot be used with allow_credentials):
-  # allow_any_origin: true
-  allow_credentials: true
-  allow_methods:
-    - GET
-    - POST
-  allow_headers:
-    - accept
-    - content-type
-    - mcp-protocol-version
-    - mcp-session-id
-  expose_headers:
-    - mcp-session-id
-  max_age: 7200
-```
-
-### Health Check
-
-Health check is disabled by default. Applies to streamable_http transport only.
-
-```yaml
-health_check:
-  enabled: true
-  path: /health  # default
-```
+### Streamable HTTP
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `enabled` | `false` | Enable health endpoint |
-| `path` | `/health` | Health check path |
+| `address` | `127.0.0.1` | Bind address |
+| `port` | `8000` | Listen port |
+| `stateful_mode` | `true` | Enable sessions for pre-`2026-07-28` clients |
 
-Endpoints:
-- `GET /health` - Overall health: `{"status": "UP"}`
-- `GET /health?live` - Liveness probe
-- `GET /health?ready` - Readiness probe
+SSE transport was removed in v1.5.0.
 
-### Logging
+### Host Validation
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `enabled` | `true` | Enable Host/Origin validation |
+| `allowed_hosts` | `[]` | Additional hostnames (loopback always allowed) |
+| `allowed_origins` | `[]` | Allowed browser origins (opt-in; empty = disabled) |
+
+### Auth
+
+OAuth 2.1 for streamable_http only. Nested under `transport.auth`. See [auth reference](auth.md).
+
+## Introspection
+
+All tools disabled by default. Each supports `enabled`, `minify` (where applicable), and `hint` (appends instructions to tool description).
 
 ```yaml
-logging:
-  level: info  # debug | info | warn | error
-  path: ./logs/mcp-server.log
-  rotation: daily
+introspection:
+  introspect:
+    enabled: true
+    minify: true
+  search:
+    enabled: true
+    index_memory_bytes: 50000000
+    leaf_depth: 1
+  validate:
+    enabled: true
+  execute:
+    enabled: true
 ```
 
-### Telemetry
+## Overrides
 
-```yaml
-telemetry:
-  exporters:
-    metrics:
-      otlp:
-        endpoint: http://localhost:4317
-    tracing:
-      otlp:
-        endpoint: http://localhost:4317
-  service_name: graphql-mcp-server
-```
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `mutation_mode` | `string` | `none` | `none`, `explicit`, or `all` |
+| `disable_type_description` | `bool` | `false` | Omit type descriptions |
+| `disable_schema_description` | `bool` | `false` | Omit schema descriptions |
+| `enable_output_schema` | `bool` | `false` | Generate output schema for tools |
+| `enable_explorer` | `bool` | `false` | Expose `explorer` tool (requires GraphOS graph ref) |
+| `descriptions` | `Map<String, String>` | `{}` | Tool descriptions by operation name |
+| `annotations` | `Map<String, Object>` | `{}` | Tool annotation hints (`title`, `read_only_hint`, `destructive_hint`, `idempotent_hint`, `open_world_hint`) |
+| `required_scopes` | `Map<String, List>` | `{}` | Per-operation OAuth scope requirements |
 
----
+### Mutation Modes
+
+| Mode | Predefined mutations | Ad hoc mutations (`execute`) |
+|------|---------------------|------------------------------|
+| `none` | Skipped | Rejected |
+| `explicit` | Exposed | Rejected |
+| `all` | Exposed | Allowed |
+
+`explicit` exposes predefined mutations from operation sources but still rejects ad-hoc mutations through `execute`. It is a configuration gate, not a per-invocation approval.
+
+## Server Info
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `name` | `"Apollo MCP Server"` | Technical identifier |
+| `version` | crate version | Implementation version |
+| `title` | `"Apollo MCP Server"` | Human-readable title |
+| `website_url` | Apollo docs URL | Website link |
+| `description` | default text | Brief description |
+| `icons` | none | Icons for client UIs (`src`, `mime_type`, `sizes`, `theme`) |
+
+## CORS
+
+Disabled by default. Streamable HTTP only.
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `enabled` | `false` | Enable CORS |
+| `origins` | `[]` | Allowed origins (exact match) |
+| `match_origins` | `[]` | Regex patterns for origins |
+| `allow_any_origin` | `false` | Allow any origin. Can't be combined with `allow_credentials`; use `origins` or `match_origins` instead |
+| `allow_credentials` | `false` | Allow credentials |
+| `allow_methods` | `["GET", "POST", "DELETE"]` | Allowed HTTP methods |
+| `allow_headers` | `["content-type", "mcp-protocol-version", "mcp-session-id", "traceparent", "tracestate", "baggage"]` | Allowed request headers |
+| `expose_headers` | `["mcp-session-id", "traceparent", "tracestate"]` | Exposed response headers |
+| `max_age` | `7200` | Preflight cache seconds |
+
+Setting `allow_methods`, `allow_headers`, or `expose_headers` **replaces** defaults — repeat entries you need.
+
+## Health Check
+
+Disabled by default. Streamable HTTP only.
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `enabled` | `false` | Enable health endpoints |
+| `path` | `/health` | Endpoint path |
+| `listen` | | Separate address/port (e.g., `0.0.0.0:8088`) |
+| `readiness.allowed` | `100` | Max rejections before unready |
+| `readiness.interval.sampling` | `5s` | Rejection check interval |
+| `readiness.interval.unready` | `10s` | Recovery wait (default: 2 * sampling) |
+
+Endpoints: `GET /health`, `GET /health?live`, `GET /health?ready`.
+
+## Logging
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `level` | `info` | `trace`, `debug`, `info`, `warn`, `error` |
+| `path` | | Directory for rolling log files |
+| `rotation` | `hourly` | `minutely`, `hourly`, `daily`, `never` |
 
 ## Environment Variables
 
-### Config File Expansion
+### Config Expansion
 
-Use `${env.VAR_NAME}` syntax inside YAML config files to reference environment variables:
+Use `${env.VAR_NAME}` in YAML. Supports defaults: `${env.VAR:-fallback}`.
 
-```yaml
-endpoint: ${env.GRAPHQL_ENDPOINT}
-headers:
-  Authorization: "Bearer ${env.API_TOKEN}"
-graphos:
-  apollo_key: ${env.APOLLO_KEY}
-```
+### Overrides
 
-### Environment Variable Overrides
+`APOLLO_MCP_` prefix with `__` nesting: `APOLLO_MCP_TRANSPORT__TYPE=streamable_http`.
 
-Any config option can be overridden via environment variables using the `APOLLO_MCP_` prefix with `__` (double underscore) as the nesting separator:
-
-```bash
-# Override transport type
-export APOLLO_MCP_TRANSPORT__TYPE=streamable_http
-
-# Override transport port
-export APOLLO_MCP_TRANSPORT__PORT=9000
-
-# Override logging level
-export APOLLO_MCP_LOGGING__LEVEL=debug
-```
-
-### GraphOS Variables
-
-| Variable | Description |
-|----------|-------------|
-| `APOLLO_KEY` | GraphOS API key |
-| `APOLLO_GRAPH_REF` | Graph reference (graph@variant) |
-
----
-
-## Configuration Examples
-
-### Minimal Local Development
-
-```yaml
-schema:
-  source: local
-  path: ./schema.graphql
-introspection:
-  introspect:
-    enabled: true
-  search:
-    enabled: true
-  validate:
-    enabled: true
-  execute:
-    enabled: true
-overrides:
-  mutation_mode: all
-```
-
-### Production with GraphOS
-
-```yaml
-transport:
-  type: streamable_http
-endpoint: ${env.GRAPHQL_ENDPOINT}
-operations:
-  source: manifest
-  path: ./persisted-query-manifest.json
-graphos:
-  apollo_key: ${env.APOLLO_KEY}
-  apollo_graph_ref: ${env.APOLLO_GRAPH_REF}
-headers:
-  Authorization: "Bearer ${env.API_TOKEN}"
-health_check:
-  enabled: true
-```
-
-### Team Development
-
-```yaml
-transport:
-  type: streamable_http
-endpoint: https://dev-api.example.com/graphql
-schema:
-  source: local
-  path: ./schema.graphql
-operations:
-  source: local
-  paths:
-    - ./operations/**/*.graphql
-headers:
-  Authorization: "Bearer ${env.DEV_API_TOKEN}"
-introspection:
-  introspect:
-    enabled: true
-    minify: true
-  search:
-    enabled: true
-    minify: true
-  validate:
-    enabled: true
-  execute:
-    enabled: true
-overrides:
-  mutation_mode: explicit
-```
-
-### Read-Only Analytics
-
-```yaml
-endpoint: https://analytics.example.com/graphql
-schema:
-  source: local
-  path: ./analytics-schema.graphql
-operations:
-  source: local
-  paths:
-    - ./queries/**/*.graphql
-introspection:
-  introspect:
-    enabled: true
-  search:
-    enabled: true
-  validate:
-    enabled: true
-```
+`APOLLO_MCP_*` overrides take precedence over `${env.*}` expansion.

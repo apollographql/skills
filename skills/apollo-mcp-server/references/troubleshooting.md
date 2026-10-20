@@ -149,7 +149,7 @@ transport:
   type: streamable_http
   auth:
     servers:
-      - https://auth.example.com/.well-known/openid-configuration
+      - https://auth.example.com
     audiences:
       - https://api.example.com
     scopes:
@@ -233,7 +233,7 @@ validate(operation: "query { user { id name } }")
 Check mutation mode in config:
 ```yaml
 overrides:
-  mutation_mode: all  # Or 'explicit' for confirmation
+  mutation_mode: all  # Or 'explicit' for predefined mutations only
 ```
 
 ### Variable Type Mismatch
@@ -284,26 +284,11 @@ curl http://localhost:8000/health?ready
 
 ### Common Health Issues
 
-**Schema check failing:**
-- Schema file missing or invalid
-- GraphOS uplink unreachable
-
-**Endpoint check failing:**
-- GraphQL endpoint unreachable
-- Network/firewall issues
-- Authentication problems
-
----
+- Schema file missing/invalid or GraphOS uplink unreachable
+- GraphQL endpoint unreachable or authentication problems
 
 ## Getting Help
 
-If issues persist:
-
-1. Enable debug logging:
-```bash
-APOLLO_MCP_LOGGING__LEVEL=debug apollo-mcp-server ./config.yaml
-```
-
-2. Check Apollo documentation: https://apollographql.com/docs
-
+1. Enable debug logging: `APOLLO_MCP_LOGGING__LEVEL=debug apollo-mcp-server ./config.yaml`
+2. Apollo docs: https://apollographql.com/docs
 3. Report issues: https://github.com/apollographql/apollo-mcp-server/issues
