@@ -159,7 +159,7 @@ if grep -Eq 'baseURL:[[:space:]]*"[A-Za-z][A-Za-z0-9+.-]*://[^/"]*@' "$RENDERED_
   echo "supergraph_check:   GraphOS keeps the schemas it checks; send the credential through AUTH_EXPR, not the URL"
   exit 3
 fi
-if grep -Eiq 'baseURL:[[:space:]]*"[^"]*[?&][^"=&]*(token|key|secret|passw|auth|sig|credential)[^"=&]*=' "$RENDERED_SCHEMA"; then
+if grep -Eiq 'baseURL:[[:space:]]*"[^"]*[?&]([^"=&]*(token|key|secret|passw|pwd|auth|sig|cred|jwt|bearer|session)[^"=&]*|([^"=&]*[^A-Za-z"=&])?pw([^A-Za-z"=&][^"=&]*)?)=' "$RENDERED_SCHEMA"; then
   echo "supergraph_check: the base URL carries a query parameter named like a credential, so the schema was not sent to GraphOS — not checked against your supergraph (not_run)"
   echo "supergraph_check:   GraphOS keeps the schemas it checks; send the credential through AUTH_EXPR, not the URL"
   exit 3
@@ -178,7 +178,13 @@ NO_COLOR=1 rover subgraph check "$GRAPH_REF" --name "$DIRECTORY" --schema "$REND
 # (env.APOLLO_KEY), never from its command line, so `ps` never shows it.
 # Output that is not JSON is never copied out.
 : > "$JSON"
-jq 'if (env.APOLLO_KEY // "") == "" then . else walk(if type == "string" then (split(env.APOLLO_KEY) | join("<redacted>")) else . end) end' \
+# No walk/1: jq 1.5 (Amazon Linux 2, CentOS 7) lacks it, and its error here
+# would empty the file and turn rover's real verdict into not_run.
+jq 'def redact: if type == "string" then split(env.APOLLO_KEY) | join("<redacted>")
+       elif type == "object" then map_values(redact)
+       elif type == "array" then map(redact)
+       else . end;
+    if (env.APOLLO_KEY // "") == "" then . else redact end' \
   "$OUT/raw.json" > "$JSON" 2>/dev/null || : > "$JSON"
 echo "SUPERGRAPH_CHECK_JSON=$JSON"
 
