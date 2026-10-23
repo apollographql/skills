@@ -135,10 +135,11 @@ federation_version: 2
 ```
 
 **Supported versions:**
-- `2.9.x` - Latest with `@cost` directive
+- `2.9.x` and later - Latest with `@cost` directive
 - `2.8.x` - Stable with `@context`
 - `2.7.x` - `@authenticated`, `@requiresScopes`
-- `1.x` - Legacy (not recommended)
+
+Federation 1 is no longer supported. Rover refuses composition, installation, and builds against Federation 1 (`federation_version: 1`, `latest-0`, `latest-1`, or `=0.x`).
 
 ### Complete Example
 

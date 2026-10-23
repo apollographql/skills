@@ -199,6 +199,18 @@ rover subgraph introspect http://localhost:4001/graphql \
   --header "Authorization: Bearer $AUTH_TOKEN"
 ```
 
+## subgraph preview
+
+Preview the composed schema with hypothetical subgraph changes before publishing. Test how adding, modifying, or removing subgraphs would affect the supergraph.
+
+```bash
+# Preview with a YAML file describing changes
+rover subgraph preview my-graph@production \
+  --subgraph-changes changes.yaml
+```
+
+The changes file describes subgraph additions, modifications, or removals.
+
 ## Combining Commands
 
 ### Publish from running server

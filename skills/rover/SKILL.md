@@ -7,12 +7,15 @@ description: >
   (3) running local supergraph development with rover dev,
   (4) validating schemas with check and lint commands,
   (5) configuring Rover authentication and environment,
-  (6) exploring or searching a graph's schema for agent-driven discovery (rover schema describe / rover schema search).
+  (6) exploring or searching a graph's schema for agent-driven discovery (rover schema describe / rover schema search),
+  (7) initializing a new graph or MCP server project with rover init,
+  (8) validating client operations or extracting GraphQL from source files,
+  (9) working with Apollo Connectors, contracts, persisted queries, or API keys.
 license: MIT
 compatibility: Node.js v18+, Linux/macOS/Windows
 metadata:
   author: apollographql
-  version: "1.1.2"
+  version: "1.2.0"
 allowed-tools: Bash(rover:*) Bash(npm:*) Bash(npx:*) Read Write Edit Glob Grep
 ---
 
@@ -38,18 +41,21 @@ iwr 'https://rover.apollo.dev/win/latest' | iex
 ### Step 2: Authenticate
 
 ```bash
-# Interactive authentication (opens browser)
-rover config auth
+# OAuth login (recommended for local development)
+rover auth login
 
-# Or set environment variable
+# Or set environment variable (recommended for CI/CD)
 export APOLLO_KEY=your-api-key
+
+# Or store an API key on a profile interactively
+rover config auth
 ```
 
 ### Step 3: Verify Installation
 
 ```bash
 rover --version
-rover config whoami
+rover auth whoami
 ```
 
 ## Explore a Graph's Schema (start here for schema questions)
@@ -79,14 +85,21 @@ Full reference, ranking rules, and the save-once pattern: [Schema Exploration](#
 
 | Command | Description | Use Case |
 |---------|-------------|----------|
+| `rover init` | Initialize a new graph or MCP server | Project setup |
+| `rover dev` | Local supergraph development | Development workflow |
 | `rover subgraph publish` | Publish subgraph schema to GraphOS | CI/CD, schema updates |
 | `rover subgraph check` | Validate schema changes | PR checks, pre-deploy |
 | `rover subgraph fetch` | Download subgraph schema | Local development |
 | `rover supergraph compose` | Compose supergraph locally | Local testing |
-| `rover dev` | Local supergraph development | Development workflow |
 | `rover graph publish` | Publish monograph schema | Non-federated graphs |
 | `rover schema describe` | Explore a schema by coordinate; **takes SDL via stdin/file, not a graph ref** — pipe from `rover graph fetch` | Agent schema discovery |
 | `rover schema search` | Search a schema by keyword; **takes SDL via stdin/file, not a graph ref** — pipe from `rover graph fetch` | Agent schema discovery |
+| `rover client check` | Validate client operations against a schema | Client CI/CD |
+| `rover client extract` | Extract GraphQL from source files | Operation extraction |
+| `rover connector test` | Test Apollo Connectors | Connector development |
+| `rover contract publish` | Publish contract configuration | Contract management |
+| `rover persisted-queries publish` | Publish persisted query manifest | PQL management |
+| `rover api-key create` | Create API keys | Key management |
 
 ## Graph Reference Format
 
@@ -243,12 +256,19 @@ This enables a closed-loop workflow — search → describe → write a query �
 
 Detailed documentation for specific topics:
 
-- [Subgraphs](references/subgraphs.md) - fetch, publish, check, lint, introspect, delete
+- [Init](references/init.md) - initialize a new graph or MCP server project
+- [Subgraphs](references/subgraphs.md) - fetch, publish, check, lint, introspect, delete, preview
 - [Graphs](references/graphs.md) - monograph commands (non-federated)
 - [Supergraphs](references/supergraphs.md) - compose, fetch, config format
 - [Dev](references/dev.md) - rover dev for local development
 - [Schema Exploration](references/schema.md) - describe, search, agent schema discovery workflows
-- [Configuration](references/configuration.md) - install, auth, env vars, profiles
+- [Client](references/client.md) - validate operations, extract GraphQL from source files
+- [Connectors](references/connectors.md) - run, test, list, analyze, generate connectors
+- [Contracts](references/contracts.md) - publish, describe, preview contract variants
+- [Persisted Queries](references/persisted-queries.md) - generate and publish PQ manifests
+- [API Keys](references/api-keys.md) - create, list, delete, rename, rotate keys
+- [Additional Commands](references/additional-commands.md) - templates, READMEs, licenses, graph artifacts, plugins, shell completion
+- [Configuration](references/configuration.md) - install, auth, env vars, profiles, rover.yaml
 
 ## Common Patterns
 
@@ -274,7 +294,15 @@ rover subgraph publish $APOLLO_GRAPH_REF \
 rover subgraph lint --name products ./schema.graphql
 
 # Lint monograph
-rover graph lint my-graph@production ./schema.graphql
+rover graph lint my-graph@production --schema ./schema.graphql
+```
+
+### Client Operation Validation
+
+```bash
+# Validate client operations against the schema
+rover client check my-graph@production \
+  --include "src/**/*.graphql"
 ```
 
 ### Output Formats
@@ -289,13 +317,16 @@ rover subgraph fetch my-graph@production --name products --format plain
 
 ## Ground Rules
 
-- ALWAYS authenticate before using GraphOS commands (`rover config auth` or `APOLLO_KEY`)
+- ALWAYS authenticate before using GraphOS commands (`rover auth login`, `rover config auth`, or `APOLLO_KEY`)
 - ALWAYS use the correct graph reference format: `graph@variant`
+- PREFER `rover auth login` for local development, `APOLLO_KEY` or client credentials for CI/CD
 - PREFER `rover subgraph check` before `rover subgraph publish` in CI/CD
+- USE `rover init` to scaffold a new graph project instead of manual setup
 - USE `rover dev` for local supergraph development instead of running Router manually
-- NEVER commit `APOLLO_KEY` to version control; use environment variables
+- NEVER commit `APOLLO_KEY`, `APOLLO_CLIENT_ID`, or `APOLLO_CLIENT_SECRET` to version control
 - USE `--format json` when parsing output programmatically
-- SPECIFY `federation_version` explicitly in supergraph.yaml for reproducibility
+- SPECIFY `federation_version` explicitly in supergraph.yaml for reproducibility (Federation 1 is no longer supported)
 - USE `rover subgraph introspect` to extract schemas from running services
 - USE `rover schema search` / `rover schema describe` (piped from a `fetch`) to explore large schemas instead of loading the full SDL into context
 - NEVER fetch a full schema into context just to explore it — pipe `rover graph fetch`/`introspect` into `rover schema describe`/`search` (a bare `fetch` is only for when the user wants the SDL file itself)
+- USE `rover client check` in CI to validate client operations against the schema before deploy
