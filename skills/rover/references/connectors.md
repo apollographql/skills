@@ -48,7 +48,7 @@ rover connector run \
 rover connector run \
   --schema ./schema.graphql \
   --connector-id "Product" \
-  --variables '{"id": "456"}'
+  --variables '{"$this": {"id": "456"}}'
 
 # When multiple connectors exist on the same element, use an index
 rover connector run \
@@ -62,7 +62,7 @@ rover connector run \
 |--------|-------------|
 | `--schema <PATH>` | Path to the schema file. Optional if `supergraph.yaml` has one subgraph. |
 | `-c, --connector-id <ID>` | Connector ID (required). Use `connector list` to find IDs. |
-| `-v, --variables <JSON>` | JSON variables for the connector (required). |
+| `-v, --variables <JSON>` | JSON variables for the connector (required). Every top-level key must be `$args`, `$this`, `$batch` or `$config`. |
 
 **Connector ID forms:**
 

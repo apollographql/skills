@@ -21,7 +21,7 @@ rover init --path ./my-project
 
 When run without flags, `rover init` walks through these steps:
 
-1. **Authentication** — verifies your GraphOS credentials (via `rover config auth` or `APOLLO_KEY`).
+1. **Authentication** — verifies your GraphOS credentials (via `rover auth login`, `rover config auth` or `APOLLO_KEY`).
 2. **Project type** — choose to create a new graph or add a subgraph to an existing one.
 3. **Organization** — select which GraphOS organization owns the graph.
 4. **Use case** — pick a starting template based on your data source.
@@ -150,7 +150,7 @@ docker run --env-file .env -p5050:5050 my-project-mcp
 ## Prerequisites
 
 - Rover installed and on your `PATH`.
-- GraphOS authentication configured (`rover config auth` or `APOLLO_KEY` environment variable).
+- GraphOS authentication configured (`rover auth login`, `rover config auth` or `APOLLO_KEY` environment variable).
 - An empty directory for new projects (non-MCP flow checks that the directory is empty).
 
 ## Troubleshooting
@@ -165,7 +165,7 @@ Run `rover init` from an empty directory, or use `--path` to specify one.
 
 ### Authentication Failure
 
-If the wizard fails at the authentication step, run `rover config auth` or `rover auth login` first, then retry.
+If the wizard fails at the authentication step, run `rover auth login`, `rover config auth` or set `APOLLO_KEY` first, then retry.
 
 ### Graph ID Already Taken
 

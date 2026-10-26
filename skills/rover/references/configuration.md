@@ -94,7 +94,7 @@ rover auth whoami --profile staging
 ### API Key Authentication
 
 ```bash
-# Interactive API key entry (recommended for local dev)
+# Interactive API key entry
 rover config auth
 
 # Set via environment variable (recommended for CI/CD)
