@@ -1,0 +1,43 @@
+name: Skill Sync Sweep
+
+# Monthly safety net for product repos that don't send a `product-update` event on release.
+# apollo-mcp-server sends one, and apollo-client has its own sync workflow, so both are left out.
+on:
+  schedule:
+    - cron: "0 9 1 * *"
+  workflow_dispatch:
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Dispatch AI Skill Sync for products released in the last month
+        run: |
+          since=$(date -u -d '1 month ago' +%Y-%m-%dT%H:%M:%SZ)
+          # skill  repository  stable tag prefix
+          while read -r product repo prefix; do
+            tag=$(gh api "repos/$repo/releases?per_page=100" \
+              | jq -r --arg prefix "$prefix" --arg since "$since" '
+                  [.[] | select(.draft == false and .prerelease == false and .published_at >= $since)
+                    | .tag_name | select(startswith($prefix))
+                    | select(ltrimstr($prefix) | test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))]
+                  | sort_by(ltrimstr($prefix) | split(".") | map(tonumber)) | last // empty')
+            if [ -z "$tag" ]; then
+              echo "$product: no stable release since $since"
+              continue
+            fi
+            echo "$product: dispatching $repo $tag"
+            gh workflow run ai-skill-sync.yml -R "$GITHUB_REPOSITORY" \
+              -f product="$product" -f repository="$repo" -f version="$tag"
+          done <<'EOF'
+          rover apollographql/rover v
+          apollo-router apollographql/router v
+          apollo-kotlin apollographql/apollo-kotlin v
+          apollo-ios apollographql/apollo-ios
+          apollo-server apollographql/apollo-server @apollo/server@
+          apollo-federation apollographql/federation @apollo/composition@
+          EOF
