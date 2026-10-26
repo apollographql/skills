@@ -91,7 +91,7 @@ telemetry:
 | `apollo.mcp.operation.count` | Counter | Each downstream GraphQL operation | `operation.id`, `operation.type`, `success` |
 | `apollo.mcp.operation.duration` | Histogram | GraphQL operation round-trip (ms) | `operation.id`, `operation.type`, `success` |
 
-Standard HTTP server metrics (`http.server.request.duration`, `http.server.active_requests`, `http.server.request.body.size`, `http.server.response.body.size`) are also emitted.
+Standard HTTP server metrics are also emitted: `http.server.request.duration` (histogram), `http.server.active_requests` (gauge), `http.server.request.body.size` (histogram), and `http.server.response.body.size` (histogram).
 
 ## Emitted Traces
 
@@ -112,6 +112,10 @@ Spans are generated for:
 | `apollo.mcp.request_id` | MCP request ID |
 | `apollo.mcp.tool_arguments` | Tool input (JSON) |
 | `apollo.mcp.tool_result` | Tool output (JSON) |
+
+### HTTP server span
+
+The span wrapping each request to the MCP endpoint is a `SERVER` span named `{method} {route}` (e.g., `POST /mcp`). Key attributes: `http.request.method`, `url.path`, `http.response.status_code` (integer), `apollo.mcp.session_id`, `server.address`, `server.port`.
 
 GraphQL `execute` span:
 

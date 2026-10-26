@@ -6,6 +6,17 @@ Apollo MCP Server supports MCP prompts — reusable prompt templates that AI cli
 
 No configuration is required. The server automatically detects a `prompts/` directory in the working directory and advertises prompt support to MCP clients.
 
+## Configuration
+
+Configure the prompts directory in your config file:
+
+```yaml
+prompts:
+  path: /config/prompts
+```
+
+The path can be absolute or relative to the process working directory. Defaults to `prompts`. Set via `APOLLO_MCP_PROMPTS__PATH` environment variable.
+
 ## Defining Prompts
 
 Store `.md` files in a `prompts/` directory:

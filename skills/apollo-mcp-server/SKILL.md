@@ -7,12 +7,14 @@ description: >
   tools (introspect, search, validate, execute, explorer), (4) configuring
   authentication, CORS, health checks, or telemetry, (5) writing Rhai
   scripts for request lifecycle hooks, (6) defining MCP prompts,
-  (7) troubleshooting MCP server connectivity or tool execution issues.
+  (7) troubleshooting MCP server connectivity or tool execution issues,
+  (8) building MCP Apps for interactive UI experiences,
+  (9) deploying Apollo MCP Server to production.
 license: MIT
 compatibility: Works with Claude Code, Claude Desktop, Cursor.
 metadata:
   author: apollographql
-  version: "1.2.0"
+  version: "1.3.0"
 allowed-tools: Bash(rover:*) Bash(npx:*) Read Write Edit Glob Grep
 ---
 
@@ -161,10 +163,14 @@ operations:
 ## Reference Files
 
 - [Tools](references/tools.md) - Introspection tools, explorer, minify notation, tool annotations
-- [Configuration](references/configuration.md) - All configuration options
-- [Authentication](references/auth.md) - OAuth 2.1, scopes, token validation, per-operation scopes
+- [Configuration](references/configuration.md) - All configuration options including tasks and caching
+- [Authentication](references/auth.md) - OAuth 2.1, scopes, token validation, rate limiting, per-operation scopes
 - [Rhai Scripting](references/rhai-scripting.md) - Lifecycle hooks and built-in functions
 - [MCP Prompts](references/prompts.md) - Reusable prompt templates
+- [MCP Apps](references/mcp-apps.md) - Interactive mini-applications for MCP-compatible hosts
+- [Deployment](references/deploy.md) - Docker, Kubernetes, Apollo Runtime Container, scaling
+- [Error Handling](references/error-handling.md) - Protocol errors, tool errors, GraphQL error mapping
+- [Best Practices](references/best-practices.md) - Security guidance, mutation gating, tool poisoning, token passthrough
 - [Telemetry](references/telemetry.md) - OpenTelemetry metrics, traces, and dashboards
 - [Troubleshooting](references/troubleshooting.md) - Common issues and solutions
 
@@ -227,6 +233,25 @@ Control mutation behavior via `overrides.mutation_mode`:
 | `none` | Skipped | Rejected |
 | `explicit` | Exposed | Rejected |
 | `all` | Exposed | Allowed |
+
+### MCP Apps
+
+Build interactive UI experiences inside MCP Apps-compatible hosts (e.g., ChatGPT). Define tools with `@tool` and `@prefetch` directives on GraphQL operations. Configure the apps directory:
+
+```yaml
+apps:
+  path: ./apps
+```
+
+### MCP Tasks
+
+Return async task handles for slow GraphQL calls. Clients poll `tasks/get` for results:
+
+```yaml
+tasks:
+  enabled: true
+  detach_after_ms: 1000
+```
 
 ### Token Optimization
 
@@ -327,10 +352,14 @@ health_check:
 
 - ALWAYS configure authentication before exposing to AI agents
 - ALWAYS use `mutation_mode: explicit` or `mutation_mode: none` in shared environments
+- ALWAYS review `overrides.required_scopes` keys after tool changes
 - NEVER expose introspection tools with write access to production data
 - NEVER place `auth` at the top level — it must be nested under `transport`
+- NEVER assume `mutation_mode` provides per-invocation approval (it is a configuration gate)
 - PREFER operation files over ad-hoc execute for predictable behavior
 - PREFER streamable_http transport for remote and multi-client deployments
+- PREFER contract variants when using persisted queries or introspection with GraphOS
 - USE `schema.source: graphos` for non-federated graphs (uplink only serves federated graphs)
 - USE stdio only when the MCP client launches the server process directly
 - USE GraphOS Studio collections for team collaboration
+- USE `disable_auth_token_passthrough: true` when your API does not need the caller's token
