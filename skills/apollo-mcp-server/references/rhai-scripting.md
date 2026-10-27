@@ -166,4 +166,8 @@ fn on_execute_graphql_operation(ctx) {
 
 ## Global Variables
 
-Top-level variables are available to every hook but are copied per invocation. Hooks cannot carry state between requests.
+Top-level variables are available to every hook but are copied per invocation. Each hook gets its own copy. A value a hook writes to a variable is discarded when the hook returns. Hooks cannot carry state between requests.
+
+Variables that a top-level closure captured are also copied per invocation, so concurrent calls never read each other's values.
+
+Hooks for concurrent requests run in parallel. Do not write hooks that assume they run to completion before the next request's hook starts.

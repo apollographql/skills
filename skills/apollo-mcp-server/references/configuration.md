@@ -15,6 +15,10 @@ Apollo MCP Server uses YAML configuration. The server watches the config file an
 | `introspection` | `Introspection` | | Introspection tool config |
 | `overrides` | `Overrides` | | Mutation mode, descriptions, annotations, scopes |
 | `graphos` | `GraphOS` | | GraphOS credentials (`apollo_key`, `apollo_graph_ref`) |
+| `apps` | `Apps` | | MCP Apps configuration (`path` defaults to `apps`) |
+| `prompts` | `Prompts` | | MCP prompts configuration (`path` defaults to `prompts`) |
+| `tasks` | `Tasks` | | MCP Tasks configuration |
+| `caching` | `Caching` | | Cache hints for MCP list and read responses |
 | `cors` | `Cors` | | CORS config |
 | `health_check` | `HealthCheck` | | Health check config |
 | `logging` | `Logging` | | Logging config |
@@ -23,7 +27,6 @@ Apollo MCP Server uses YAML configuration. The server watches the config file an
 | `server_info` | `ServerInfo` | | Server metadata for MCP `initialize` response |
 | `instructions` | `string` | | MCP `initialize` instructions text |
 | `rhai` | `Rhai` | | Rhai scripting config (`scripts` directory, default `rhai`) |
-| `caching` | `Caching` | | `ttl_ms` for MCP response cache hints (default `300000`, protocol `2026-07-28`+) |
 
 ## Schema
 
@@ -61,7 +64,7 @@ transport:
 |--------|---------|-------------|
 | `address` | `127.0.0.1` | Bind address |
 | `port` | `8000` | Listen port |
-| `stateful_mode` | `true` | Enable sessions for pre-`2026-07-28` clients |
+| `stateful_mode` | `true` | Enable sessions for pre-`2026-07-28` clients. Clients on `2026-07-28` or later are always sessionless regardless of this setting |
 
 SSE transport was removed in v1.5.0.
 
@@ -75,7 +78,7 @@ SSE transport was removed in v1.5.0.
 
 ### Auth
 
-OAuth 2.1 for streamable_http only. Nested under `transport.auth`. See [auth reference](auth.md).
+OAuth 2.1 for streamable_http only. Nested under `transport.auth`. Includes `rate_limit` for failing bearer credentials (enabled by default, 10 req/s sustained, 50 burst). See [auth reference](auth.md).
 
 ## Introspection
 
@@ -108,6 +111,7 @@ introspection:
 | `descriptions` | `Map<String, String>` | `{}` | Tool descriptions by operation name |
 | `annotations` | `Map<String, Object>` | `{}` | Tool annotation hints (`title`, `read_only_hint`, `destructive_hint`, `idempotent_hint`, `open_world_hint`) |
 | `required_scopes` | `Map<String, List>` | `{}` | Per-operation OAuth scope requirements |
+| `param_headers` | `Map<String, Map<String, String>>` | `{}` | Header names for operation variables (SEP-2243 `Mcp-Param-*` headers) |
 
 ### Mutation Modes
 
@@ -141,10 +145,10 @@ Disabled by default. Streamable HTTP only.
 | `match_origins` | `[]` | Regex patterns for origins |
 | `allow_any_origin` | `false` | Allow any origin. Can't be combined with `allow_credentials`; use `origins` or `match_origins` instead |
 | `allow_credentials` | `false` | Allow credentials |
-| `allow_methods` | `["GET", "POST", "DELETE"]` | Allowed HTTP methods |
+| `allow_methods` | `["GET", "POST", "OPTIONS"]` | Allowed HTTP methods |
 | `allow_headers` | `["content-type", "mcp-protocol-version", "mcp-session-id", "traceparent", "tracestate", "baggage"]` | Allowed request headers |
 | `expose_headers` | `["mcp-session-id", "traceparent", "tracestate"]` | Exposed response headers |
-| `max_age` | `7200` | Preflight cache seconds |
+| `max_age` | `86400` | Preflight cache seconds |
 
 Setting `allow_methods`, `allow_headers`, or `expose_headers` **replaces** defaults — repeat entries you need.
 
@@ -170,6 +174,26 @@ Endpoints: `GET /health`, `GET /health?live`, `GET /health?ready`.
 | `level` | `info` | `trace`, `debug`, `info`, `warn`, `error` |
 | `path` | | Directory for rolling log files |
 | `rotation` | `hourly` | `minutely`, `hourly`, `daily`, `never` |
+| `ansi` | `auto` | ANSI styling mode: `auto`, `always`, or `never` |
+
+## Tasks
+
+Disabled by default. Applies to operation tools, app tools, and `execute`. Utility tools (`introspect`, `search`, `validate`) always respond synchronously.
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `enabled` | `false` | Return MCP Tasks handles for slow GraphQL tool calls |
+| `detach_after_ms` | `1000` | Milliseconds before a call returns a task handle instead of its result |
+| `ttl_ms` | `300000` | Task lifetime in milliseconds. Unfinished work fails when it expires |
+| `max_tasks` | `1000` | Maximum running and retained tasks. At the limit, new calls run synchronously |
+
+Tasks are held in server memory and do not survive restarts. Each `tasks/*` request must reach the instance that created the task.
+
+## Caching
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `ttl_ms` | `300000` | Freshness lifetime in milliseconds for cache hints on list and read responses. Cache scope is always `private`. Applies to protocol `2026-07-28` and later |
 
 ## Environment Variables
 

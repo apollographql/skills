@@ -44,7 +44,7 @@ transport:
 | `allow_any_audience` | `bool` | `false` | Skip audience validation entirely |
 | `resource` | `string` | | Externally available URL of this MCP server |
 | `resource_documentation` | `string` | | Link to documentation for this MCP server |
-| `scopes` | `List<string>` | `[]` | Global OAuth scopes. Advertised and enforced per `scope_mode` |
+| `scopes` | `List<string>` | `[]` | Global OAuth scopes. Advertised and enforced per `scope_mode`. Omitting defaults to an empty list (no global scope requirement) |
 | `scope_mode` | `string` | `require_all` | `require_all`, `require_any`, or `disabled` |
 | `disable_auth_token_passthrough` | `bool` | `false` | Disable automatic propagation of validated token to downstream API |
 | `discovery_timeout` | `Duration` | `5s` | Timeout for metadata discovery requests |
@@ -116,6 +116,30 @@ transport:
 > **Security:** A request with a listed header skips token validation for all methods and tools. Ensure something downstream validates the header value. Also list the header in `forward_headers` so it reaches your API.
 
 A request that carries an `Authorization` header is always validated, even if it matches a skip rule. An expired token on a public tool returns `401`, while no token succeeds.
+
+## Rate Limiting
+
+Rate limiting protects against brute-force authentication attempts. Enabled by default.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `rate_limit.enabled` | `bool` | `true` | Rate limit bearer credentials that fail authentication |
+| `rate_limit.requests_per_second` | `number` | `10` | Sustained requests per second for each failing credential |
+| `rate_limit.burst` | `number` | `50` | Burst requests before sustained rate applies |
+
+```yaml
+transport:
+  type: streamable_http
+  auth:
+    servers:
+      - https://auth.example.com
+    rate_limit:
+      enabled: true
+      requests_per_second: 10
+      burst: 50
+```
+
+Set `enabled: false` when requests are already rate limited before reaching the server.
 
 ## HTTP Error Responses
 
