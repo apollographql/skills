@@ -156,9 +156,13 @@ jobs:
         run: |
           cat /tmp/triage-result.json
           NEEDS_UPDATE=$(jq -r '.structured_output.needs_update' /tmp/triage-result.json)
-          REASON=$(jq -r '.structured_output.reason // empty' /tmp/triage-result.json | head -1)
           echo "needs_update=$NEEDS_UPDATE" >> "$GITHUB_OUTPUT"
-          echo "reason=$REASON" >> "$GITHUB_OUTPUT"
+          DELIM="EOF_$(openssl rand -hex 16)"
+          {
+            echo "reason<<$DELIM"
+            jq -r '.structured_output.reason // empty' /tmp/triage-result.json
+            echo "$DELIM"
+          } >> "$GITHUB_OUTPUT"
 
   update-skill:
     needs: [resolve-inputs, triage]
@@ -192,12 +196,12 @@ jobs:
       - name: Generate skill updates with AI
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TRIAGE_REASON: ${{ needs.triage.outputs.reason }}
         run: |
           cat <<'PROMPT' > /tmp/update-prompt.txt
           The ${{ needs.resolve-inputs.outputs.product }} product is at version
           ${{ needs.resolve-inputs.outputs.version }}.
           Repository: ${{ needs.resolve-inputs.outputs.repository }}
-          Triage reason: ${{ needs.triage.outputs.reason }}
 
           The product source code at this version is in product-repo/.
           The current skill content is in skills/${{ needs.resolve-inputs.outputs.product }}/.
@@ -225,6 +229,7 @@ jobs:
           - Correct content that is inaccurate or outdated
           - Follow skill-creator conventions for file structure and style
           PROMPT
+          printf '\nTriage reason:\n%s\n' "$TRIAGE_REASON" >> /tmp/update-prompt.txt
 
           ~/.local/bin/claude \
             --print \
