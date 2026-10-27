@@ -157,10 +157,11 @@ jobs:
           cat /tmp/triage-result.json
           NEEDS_UPDATE=$(jq -r '.structured_output.needs_update' /tmp/triage-result.json)
           echo "needs_update=$NEEDS_UPDATE" >> "$GITHUB_OUTPUT"
+          DELIM="EOF_$(openssl rand -hex 16)"
           {
-            echo "reason<<EOF_REASON"
+            echo "reason<<$DELIM"
             jq -r '.structured_output.reason // empty' /tmp/triage-result.json
-            echo "EOF_REASON"
+            echo "$DELIM"
           } >> "$GITHUB_OUTPUT"
 
   update-skill:
