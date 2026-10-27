@@ -61,7 +61,7 @@ When the upstream GraphQL response includes a non-null `errors` field, Apollo MC
 
 ### With structured content
 
-When `enable_output_schema: true` is configured and the client supports structured content, the server returns the GraphQL response in `structuredContent`:
+When `overrides.enable_output_schema: true` is configured and the client supports structured content, the server returns the GraphQL response in `structuredContent`:
 
 ```json
 {
