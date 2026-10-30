@@ -4,7 +4,7 @@ description: Build and iterate on an Apollo Connectors subgraph for a GraphOS su
 license: MIT
 compatibility: macOS or Linux (WSL on Windows) with bash, curl, git and jq; Java 17+ for the end-to-end and live layers. Any Agent Skills host (Claude Code, Codex, Cursor, GitHub Copilot, Gemini CLI and others) that can run shell commands.
 metadata:
-  version: "0.12.2"
+  version: "0.12.3"
 ---
 
 # graphos-factory
