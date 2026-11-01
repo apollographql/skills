@@ -9,12 +9,13 @@ description: >
   (4) configuring telemetry (tracing, metrics, logging),
   (5) troubleshooting Router performance or connectivity issues,
   (6) securing the graph with JWT, declarative field-level authorization directives, or persisted-query safelisting,
-  (7) managing router.yaml as version-controlled config with CI/CD validation.
+  (7) managing router.yaml as version-controlled config with CI/CD validation,
+  (8) configuring demand control (cost-based query protection with @cost/@listSize directives).
 license: MIT
 compatibility: Linux/macOS/Windows. Requires a composed supergraph schema from Rover or GraphOS.
 metadata:
   author: apollographql
-  version: "2.5.0"
+  version: "2.6.0"
 allowed-tools: Bash(router:*) Bash(./router:*) Bash(rover:*) Bash(curl:*) Bash(docker:*) Read Write Edit Glob Grep
 ---
 
@@ -80,6 +81,7 @@ Ask which features to include:
 - [ ] Subscriptions
 - [ ] Header Propagation
 - [ ] Response Caching (entity + root field caching with Redis — Router v2 only, v2.6.0+)
+- [ ] Demand Control (cost-based query protection with `@cost`/`@listSize` directives — measure or enforce modes)
 
 ## Step 4: Gather Parameters
 
@@ -183,6 +185,14 @@ The same principle applies to `max_height`, `max_aliases`, and `max_root_fields`
 - Use section template: `templates/v2/sections/response-caching.yaml`
 - For security requirements, schema directives, and advanced config: `references/response-caching.md` (start with the Security section)
 
+### Demand Control
+
+- Mode: `measure` (observe only) or `enforce` (reject over-budget operations)
+- Global `max` cost threshold
+- Global `list_size` estimate for undecorated list fields
+- Per-subgraph overrides (v2.12.0+)
+- For directive reference and telemetry integration: `references/demand-control.md`
+
 ## Step 5: Generate Config
 
 1. Load the correct version template from `templates/{version}/`
@@ -273,10 +283,19 @@ If the user asks for executable shell commands, provide them on request. Otherwi
 |----------|-------------|
 | `APOLLO_KEY` | API key for GraphOS |
 | `APOLLO_GRAPH_REF` | Graph reference (`graph-id@variant`) |
+| `APOLLO_KEY_PATH` | Path to file containing API key |
 | `APOLLO_ROUTER_CONFIG_PATH` | Path to `router.yaml` |
 | `APOLLO_ROUTER_SUPERGRAPH_PATH` | Path to supergraph schema |
+| `APOLLO_ROUTER_SUPERGRAPH_URLS` | Comma-separated URLs for supergraph schema |
+| `APOLLO_ROUTER_HOT_RELOAD` | Enable hot reload for config/schema changes |
 | `APOLLO_ROUTER_LOG` | Log level (off, error, warn, info, debug, trace) |
 | `APOLLO_ROUTER_LISTEN_ADDRESS` | Override listen address |
+| `APOLLO_ROUTER_LICENSE_PATH` | Path to offline Enterprise license file |
+| `APOLLO_ROUTER_LICENSE` | Offline Enterprise license content (string) |
+| `APOLLO_GRAPH_ARTIFACT_REFERENCE` | OCI reference to graph artifact |
+| `APOLLO_UPLINK_ENDPOINTS` | Custom Uplink URL(s) |
+| `APOLLO_UPLINK_TIMEOUT` | Uplink poll timeout (default 30s) |
+| `APOLLO_TELEMETRY_DISABLED` | Disable anonymous usage telemetry |
 
 ## Reference Files
 
@@ -286,6 +305,7 @@ If the user asks for executable shell commands, provide them on request. Otherwi
 - [Telemetry](references/telemetry.md) — Tracing, metrics, and logging
 - [Connectors](references/connectors.md) — Router v2 connectors configuration
 - [Response Caching](references/response-caching.md) — Entity/root-field caching, invalidation, and observability (v2 only)
+- [Demand Control](references/demand-control.md) — Cost-based query protection with `@cost`/`@listSize` directives
 - [Troubleshooting](references/troubleshooting.md) — Common issues and solutions
 - [Divergence Map](divergence-map.md) — v1 ↔ v2 config differences
 - [Validation Checklist](validation/checklist.md) — Post-generation checks
@@ -296,14 +316,25 @@ If the user asks for executable shell commands, provide them on request. Otherwi
 router [OPTIONS]
 
 Options:
-  -s, --supergraph <PATH>    Path to supergraph schema file
-  -c, --config <PATH>        Path to router.yaml configuration
-      --dev                  Enable development mode
-      --hot-reload           Watch for schema changes
-      --log <LEVEL>          Log level (default: info)
-      --listen <ADDRESS>     Override listen address
-  -V, --version              Print version
-  -h, --help                 Print help
+  -s, --supergraph <PATH>              Path to supergraph schema file (or URLs)
+  -c, --config <PATH>                  Path to router.yaml configuration
+      --dev                            Enable development mode
+      --hr, --hot-reload               Watch for config/schema changes
+      --log <LEVEL>                    Log level (default: info)
+      --listen <ADDRESS>               Override listen address
+      --license <PATH>                 Path to offline Enterprise license
+      --apollo-key-path <PATH>         Path to file containing API key
+      --graph-artifact-reference <REF> OCI reference to graph artifact
+      --apollo-uplink-endpoints <URLs> Custom Uplink URL(s)
+      --apollo-uplink-timeout <SECS>   Uplink poll timeout (default: 30s)
+      --anonymous-telemetry-disabled   Disable anonymous usage telemetry
+  -V, --version                        Print version
+  -h, --help                           Print help
+
+Subcommands:
+  router config schema     Print the JSON schema for router.yaml
+  router config upgrade    Upgrade v1 config to v2 (use --diff for preview)
+  router config validate   Validate a router.yaml file
 ```
 
 ## Ground Rules
@@ -350,3 +381,8 @@ Options:
 - PLACE authorization directives in subgraph schemas, NEVER in `router.yaml` — router config only enables/disables the feature
 - RECOMMEND committing `router.yaml` to version control and running `router config validate` in CI on every PR, with all secrets referenced via `${env.*}` and injected at deploy time
 - NEVER commit secrets (`APOLLO_KEY`, JWKS/Redis URLs, invalidation keys) to the config file; the committed `router.yaml` must be safe to share with anyone holding repo access
+- RECOMMEND starting demand control in `measure` mode to observe operation costs before switching to `enforce`
+- USE per-subgraph demand control limits (v2.12.0+) when subgraphs have different cost profiles
+- NOTE that the Jaeger native tracing exporter was removed in v2 — use OTLP to send traces to Jaeger
+- NOTE that the Zipkin native exporter is deprecated — recommend OTLP as replacement
+- USE `limits.router.max_depth` (nested under `router`) for v2 operation limits, not flat `limits.max_depth`

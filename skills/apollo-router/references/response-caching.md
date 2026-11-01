@@ -136,6 +136,31 @@ response_cache:
           urls: ["${env.PRODUCTS_REDIS_URL:-redis://products-cache:6379}"]
 ```
 
+### Connector response caching
+
+Cache responses from REST API connectors. Each connector source can have its own TTL and Redis configuration. Use `cache_key_headers` to include specific request headers in cache keys when responses vary by header.
+
+```yaml
+response_cache:
+  enabled: true
+  connector:
+    all:
+      enabled: true
+      ttl: 30s
+      cache_key_headers: []            # request headers to include in cache key
+      redis:
+        urls: ["${env.CACHE_REDIS_URL:-redis://localhost:6379}"]
+      invalidation:
+        enabled: false
+    sources:
+      products.rest:
+        ttl: 5m
+        cache_key_headers:
+          - Accept-Language             # vary cache by language
+        redis:
+          urls: ["${env.PRODUCTS_REDIS_URL:-redis://products-cache:6379}"]
+```
+
 ### Redis URL formats
 
 | Scheme | Description |
@@ -335,6 +360,37 @@ If tags depend on runtime data (not entity keys or field args), set them in the 
     "extensions": {"apolloCacheTags": ["homepage", "featured"]}
   }
   ```
+
+### CDN invalidation (v2.17.0+)
+
+Emit cache tags as HTTP response headers so CDN edge caches (Cloudflare, Fastly) can purge entries when data changes. Works independently of Redis invalidation.
+
+```yaml
+response_cache:
+  enabled: true
+  cdn_invalidation:
+    enabled: true
+    header_name: "Cache-Tag"       # default; use "Surrogate-Key" for Fastly
+    header_delimiter: ","          # default; use " " for Fastly
+    max_bytes: 16384               # default 16KB (matches Cloudflare limit)
+    experimental_on_overflow: truncate  # or "drop"
+  subgraph:
+    all:
+      enabled: true
+      redis:
+        urls: ["${env.CACHE_REDIS_URL:-redis://localhost:6379}"]
+```
+
+Three tiers of labels are emitted in order of granularity: subgraph (`subgraph-{name}`), type (`type-{subgraph}-{Type}`), and tag (from `@cacheTag` values). Labels are packed coarsest-first; the finest-grained labels are truncated if `max_bytes` is exceeded.
+
+### `include_cache_control_header_on_router_response`
+
+Controls whether the router includes a `Cache-Control` header on client responses. Defaults to `true`.
+
+```yaml
+response_cache:
+  include_cache_control_header_on_router_response: false  # suppress Cache-Control on client responses
+```
 
 ## Customization
 
