@@ -135,10 +135,12 @@ federation_version: 2
 ```
 
 **Supported versions:**
+- `3.x` - Preview (Federation 3)
 - `2.9.x` - Latest with `@cost` directive
 - `2.8.x` - Stable with `@context`
 - `2.7.x` - `@authenticated`, `@requiresScopes`
-- `1.x` - Legacy (not recommended)
+
+Federation 1 is no longer supported. Attempting to use `federation_version: 1` fails with error E064. Add `@link` directives to your subgraphs and use version `2` or higher.
 
 ### Complete Example
 
@@ -173,6 +175,33 @@ subgraphs:
       introspection_headers:
         Authorization: Bearer ${ORDERS_TOKEN}
 ```
+
+## supergraph config expand
+
+Preview the supergraph configuration with all variable references (`${env.X}`, `${file.X}`) expanded.
+
+```bash
+# Expand a config file
+rover supergraph config expand --config supergraph.yaml
+
+# Read from stdin
+cat supergraph.yaml | rover supergraph config expand --config -
+```
+
+**Options:**
+| Option | Description |
+|--------|-------------|
+| `--config <PATH>` | Path to supergraph config file or `-` for stdin (required) |
+
+## supergraph config schema
+
+Print the JSON Schema for `supergraph.yaml`. Useful for editor autocompletion and validation.
+
+```bash
+rover supergraph config schema
+```
+
+No additional flags. Outputs the JSON Schema to stdout.
 
 ## Composition Errors
 

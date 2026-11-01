@@ -15,7 +15,7 @@ license: MIT
 compatibility: Node.js v18+, Linux/macOS/Windows
 metadata:
   author: apollographql
-  version: "1.2.0"
+  version: "1.3.0"
 allowed-tools: Bash(rover:*) Bash(npm:*) Bash(npx:*) Read Write Edit Glob Grep
 ---
 
@@ -100,8 +100,11 @@ Full reference, ranking rules, and the save-once pattern: [Schema Exploration](#
 | `rover subgraph publish` | Publish subgraph schema to GraphOS | CI/CD, schema updates |
 | `rover subgraph check` | Validate schema changes | PR checks, pre-deploy |
 | `rover subgraph fetch` | Download subgraph schema | Local development |
+| `rover subgraph preview` | Preview supergraph changes without publishing | What-if analysis |
 | `rover supergraph compose` | Compose supergraph locally | Local testing |
+| `rover supergraph config` | Expand or get JSON schema for supergraph.yaml | Config validation |
 | `rover dev` | Local supergraph development | Development workflow |
+| `rover lsp` | Start a language server for schema editing | Editor integration |
 | `rover graph publish` | Publish monograph schema | Non-federated graphs |
 | `rover schema describe` | Explore a schema by coordinate; **takes SDL via stdin/file, not a graph ref** — pipe from `rover graph fetch` | Agent schema discovery |
 | `rover schema search` | Search a schema by keyword; **takes SDL via stdin/file, not a graph ref** — pipe from `rover graph fetch` | Agent schema discovery |
@@ -110,7 +113,9 @@ Full reference, ranking rules, and the save-once pattern: [Schema Exploration](#
 | `rover persisted-queries` | Generate and publish persisted query manifests (alias: `pq`) | Security, performance |
 | `rover client check` | Validate client operations against a graph schema | Client-side CI |
 | `rover auth login` | Authenticate via OAuth browser flow | Local dev auth |
+| `rover auth grants revoke` | Revoke all OAuth grants for a user in an organization | Access management |
 | `rover api-key` | Create, list, delete, rename, rotate API keys | Key management |
+| `rover info` | Print Rover version, OS, and shell info | Troubleshooting |
 | `rover readme` | Fetch or publish graph variant READMEs | Graph documentation |
 | `rover template` | List and use project templates | Scaffolding |
 
@@ -190,9 +195,11 @@ subgraphs:
 
 `federation_version` here is the **composition version** — it only needs to be ≥
 each subgraph's `@link` floor, so subgraphs pinned to a lower version compose
-fine. If a subgraph server throws `UNKNOWN_FEDERATION_LINK_VERSION` at startup,
-that's a client-library lag, not a composition problem. See the apollo-federation
-skill's [Federation versions](../apollo-federation/references/composition.md#federation-versions-floor-vs-composition).
+fine. Federation 3 is available as a preview (`federation_version: 3`). Federation 1
+is no longer supported (error E064). If a subgraph server throws
+`UNKNOWN_FEDERATION_LINK_VERSION` at startup, that's a client-library lag, not a
+composition problem. See the apollo-federation skill's
+[Federation versions](../apollo-federation/references/composition.md#federation-versions-floor-vs-composition).
 
 Compose:
 ```bash
@@ -271,28 +278,38 @@ Detailed documentation for specific topics:
 
 - [Init](references/init.md) - `rover init` project initialization and MCP server setup
 - [Subgraphs](references/subgraphs.md) - fetch, publish, check, lint, introspect, delete
+- [Subgraph Preview](references/subgraph-preview.md) - preview supergraph changes without publishing
 - [Graphs](references/graphs.md) - monograph commands (non-federated)
-- [Supergraphs](references/supergraphs.md) - compose, fetch, config format
+- [Supergraphs](references/supergraphs.md) - compose, fetch, config expand, config schema
 - [Dev](references/dev.md) - rover dev for local development
+- [LSP](references/lsp.md) - language server for schema editing tools
 - [Schema Exploration](references/schema.md) - describe, search, agent schema discovery workflows
 - [Connectors](references/connectors.md) - `rover connector` run, test, list, analyze, generate
 - [Contracts](references/contracts.md) - contract variant describe, preview, publish
 - [Persisted Queries](references/persisted-queries.md) - generate and publish persisted query manifests
 - [Client Operations](references/client.md) - validate client operations, extract GraphQL documents
-- [Configuration](references/configuration.md) - install, auth, env vars, profiles, OAuth login
-- [Additional Commands](references/additional-commands.md) - template, readme, api-key, plugin, license, graph-artifact, completion, explain, docs
+- [Configuration](references/configuration.md) - install, auth, env vars, profiles, credential storage
+- [Project Config](references/project-config.md) - rover.yaml manifest and plugin-versions.lock
+- [Auth Grants](references/auth-grants.md) - revoke OAuth grants for users
+- [Additional Commands](references/additional-commands.md) - info, lsp, template, readme, api-key, plugin, license, graph-artifact, completion, explain, docs
 
 ## Common Patterns
 
 ### CI/CD Pipeline
 
 ```bash
-# 1. Check schema changes
+# Option 1: Check and publish in one command (recommended)
+rover subgraph publish $APOLLO_GRAPH_REF \
+  --name $SUBGRAPH_NAME \
+  --schema ./schema.graphql \
+  --routing-url $ROUTING_URL \
+  --check
+
+# Option 2: Separate check then publish
 rover subgraph check $APOLLO_GRAPH_REF \
   --name $SUBGRAPH_NAME \
   --schema ./schema.graphql
 
-# 2. If check passes, publish
 rover subgraph publish $APOLLO_GRAPH_REF \
   --name $SUBGRAPH_NAME \
   --schema ./schema.graphql \
