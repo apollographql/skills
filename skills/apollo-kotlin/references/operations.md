@@ -40,6 +40,48 @@ fun observeMessages() {
 - Errors from the server that are returned in the GraphQL response are in `response.errors`.
 - Some `data` may be present even if there are `errors`, but `data` will be null if `exception` is present.
 
+## Fragments
+
+### Named fragments
+
+Named fragments are shared across `.graphql` files and generate reusable data classes. Access fragment data via the `.fragmentName` property on the parent:
+
+```kotlin
+val user = response.dataOrThrow().user
+val details = user.userDetails // generated from fragment UserDetails
+```
+
+### Inline fragments
+
+Inline fragments handle polymorphic types (interfaces and unions). Access typed data via `.onTypeName`:
+
+```kotlin
+val hero = response.dataOrThrow().hero
+when {
+  hero.onHuman != null -> println("Human: ${hero.onHuman.height}")
+  hero.onDroid != null -> println("Droid: ${hero.onDroid.primaryFunction}")
+}
+```
+
+## Custom scalars
+
+Map custom scalars to Kotlin types in the Gradle config. See [Setup](setup.md) for `mapScalar()` configuration.
+
+Built-in shorthand mappers:
+
+```kotlin
+apollo {
+  service("service") {
+    mapScalarToKotlinLong("Long")
+    mapScalarToUpload("Upload") // for file uploads
+  }
+}
+```
+
+Additional adapters for `DateTime`, `BigDecimal`, and more are available in the [apollo-kotlin-adapters](https://github.com/apollographql/apollo-kotlin-adapters) repository.
+
+Custom adapters implement `Adapter<T>` with `fromJson` and `toJson` methods. Register them at build time (third argument to `mapScalar`) or at runtime with `.addCustomScalarAdapter()` on `ApolloClient.Builder`.
+
 ## Ground rules
 
 - Only select fields that are needed for the UI or app's logic.
