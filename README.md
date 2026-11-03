@@ -62,6 +62,7 @@ Once installed, skills are available as namespaced slash commands:
 | `/apollo-skills:graphos-factory` | GraphOS Factory — build and iterate on an Apollo Connectors subgraph from a REST API |
 | `/apollo-skills:graphql-operations` | GraphQL operations — queries, mutations, fragments |
 | `/apollo-skills:graphql-schema` | GraphQL schema design — types, naming, pagination, errors |
+| `/apollo-skills:proposal-schema-review` | Proposal schema review — lint plus design review of a GraphOS schema proposal |
 | `/apollo-skills:proposal-variant-diff` | Proposal variant diff — compare a GraphOS schema proposal against another variant, with check results |
 | `/apollo-skills:rover` | Rover CLI — schema management and local supergraph development |
 | `/apollo-skills:rust-best-practices` | Rust best practices — idiomatic Rust following Apollo conventions |
@@ -661,6 +662,43 @@ npx skills add apollographql/skills@proposal-variant-diff
 [SKILL.md](skills/proposal-variant-diff/SKILL.md) ·
 [Diff method](skills/proposal-variant-diff/references/diff-method.md) ·
 [Report template](skills/proposal-variant-diff/references/report-template.md)
+
+---
+
+### proposal-schema-review
+
+Review a GraphOS schema proposal for design quality. Runs `LintSchema` with the source variant's schema as the base so only newly introduced violations are reported, then layers design recommendations from the `graphql-schema` and `apollo-federation` skills. Lint findings (deterministic) and design observations (model judgment) are reported separately. Read-only by default.
+
+**Install:**
+
+```bash
+npx skills add apollographql/skills@proposal-schema-review
+```
+
+**Prerequisite:** the [GraphOS MCP server](https://www.apollographql.com/docs/graphos/platform/graphos-mcp-server/tools) (`graphos-tools`), authenticated with GraphOS sign-in or an API key. The Claude Code plugin registers it automatically.
+
+**Use when:**
+
+- Reviewing a schema proposal or a proposed subgraph schema
+- Finding which lint violations a proposal newly introduces
+- Assessing naming, nullability, pagination, error modeling or federation entity design in proposed changes
+
+**Categories covered:**
+
+- Lint against a base schema, plus graph-level lint context
+- Design review layered on `graphql-schema` and `apollo-federation`
+- Clear separation of lint findings and model judgment
+
+**Examples:**
+
+- "Review proposal <id> for schema design issues"
+- "Which new lint violations does this proposal introduce?"
+- "Is the entity design in this proposal sound?"
+
+**References:**
+[SKILL.md](skills/proposal-schema-review/SKILL.md) ·
+[Review checklist](skills/proposal-schema-review/references/review-checklist.md) ·
+[Report template](skills/proposal-schema-review/references/report-template.md)
 
 ---
 
