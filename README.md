@@ -62,6 +62,7 @@ Once installed, skills are available as namespaced slash commands:
 | `/apollo-skills:graphos-factory` | GraphOS Factory — build and iterate on an Apollo Connectors subgraph from a REST API |
 | `/apollo-skills:graphql-operations` | GraphQL operations — queries, mutations, fragments |
 | `/apollo-skills:graphql-schema` | GraphQL schema design — types, naming, pagination, errors |
+| `/apollo-skills:proposal-variant-diff` | Proposal variant diff — compare a GraphOS schema proposal against another variant, with check results |
 | `/apollo-skills:rover` | Rover CLI — schema management and local supergraph development |
 | `/apollo-skills:rust-best-practices` | Rust best practices — idiomatic Rust following Apollo conventions |
 | `/apollo-skills:skill-creator` | Skill creator — guide for creating new Apollo skills |
@@ -621,6 +622,45 @@ npx skills add apollographql/skills@rust-best-practices
 [Performance](skills/rust-best-practices/references/performance.md) ·
 [Testing](skills/rust-best-practices/references/testing.md) ·
 [Advanced](skills/rust-best-practices/references/advanced.md)
+
+---
+
+### proposal-variant-diff
+
+Compare the schema changes in a GraphOS schema proposal against another variant of the same subgraph, and combine the diff with composition errors and affected client operations from schema checks. Uses the hosted GraphOS MCP server and is read-only by default.
+
+**Install:**
+
+```bash
+npx skills add apollographql/skills@proposal-variant-diff
+```
+
+**Prerequisite:** the [GraphOS MCP server](https://www.apollographql.com/docs/graphos/platform/graphos-mcp-server/tools) (`graphos-tools`), authenticated with GraphOS sign-in or an API key. The Claude Code plugin registers it automatically.
+
+**Use when:**
+
+- Asking what a schema proposal changes compared with its source variant
+- Checking a proposal for breaking changes
+- Comparing a subgraph schema between two variants
+- Summarizing composition errors and affected client operations for a proposal
+
+**Categories covered:**
+
+- Finding a proposal, its source variant, proposal variant and latest revision
+- Structured diff of types, fields, arguments, directives, nullability and deprecations
+- Breaking versus non-breaking classification
+- Reconciling the diff with schema check results
+
+**Examples:**
+
+- "What does proposal <id> change compared with production?"
+- "Are there breaking changes in this proposal?"
+- "Which client operations are affected by this proposal?"
+
+**References:**
+[SKILL.md](skills/proposal-variant-diff/SKILL.md) ·
+[Diff method](skills/proposal-variant-diff/references/diff-method.md) ·
+[Report template](skills/proposal-variant-diff/references/report-template.md)
 
 ---
 
