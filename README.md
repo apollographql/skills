@@ -67,6 +67,7 @@ Once installed, skills are available as namespaced slash commands:
 | `/apollo-skills:rover` | Rover CLI — schema management and local supergraph development |
 | `/apollo-skills:rust-best-practices` | Rust best practices — idiomatic Rust following Apollo conventions |
 | `/apollo-skills:skill-creator` | Skill creator — guide for creating new Apollo skills |
+| `/apollo-skills:subgraph-mcp-readiness` | Subgraph MCP readiness — assess subgraph schemas for use with AI agents through Apollo MCP Server |
 
 ## GitHub CLI
 
@@ -699,6 +700,46 @@ npx skills add apollographql/skills@proposal-schema-review
 [SKILL.md](skills/proposal-schema-review/SKILL.md) ·
 [Review checklist](skills/proposal-schema-review/references/review-checklist.md) ·
 [Report template](skills/proposal-schema-review/references/report-template.md)
+
+---
+
+### subgraph-mcp-readiness
+
+Assess each subgraph in a GraphOS variant for best-practice compliance, with the emphasis on whether the schema is ready to be exposed to AI agents through Apollo MCP Server. Missing descriptions are reported from lint output where the graph's description rule is enabled. Description quality, argument coverage and naming ambiguity are assessed by the agent, not the platform. The two are reported separately. Read-only by default.
+
+**Install:**
+
+```bash
+npx skills add apollographql/skills@subgraph-mcp-readiness
+```
+
+**Prerequisite:** the [GraphOS MCP server](https://www.apollographql.com/docs/graphos/platform/graphos-mcp-server/tools) (`graphos-tools`), authenticated with GraphOS sign-in or an API key. The Claude Code plugin registers it automatically.
+
+**Use when:**
+
+- Asking whether a subgraph or supergraph schema is ready for AI agents or MCP tools
+- Auditing description coverage and quality on types, fields, arguments, enums and input types
+- Reviewing naming for ambiguity that could mislead an agent
+- Preparing a schema before defining Apollo MCP Server tools
+
+**Categories covered:**
+
+- Description coverage and quality (intent, units, formats, constraints)
+- Enum and input type documentation
+- Naming ambiguity
+- Lint results per subgraph
+- Pointers to `apollo-mcp-server` for tool exposure
+
+**Examples:**
+
+- "Is my production graph ready to expose through Apollo MCP Server?"
+- "Audit description coverage on the orders subgraph"
+- "Which fields would confuse an AI agent?"
+
+**References:**
+[SKILL.md](skills/subgraph-mcp-readiness/SKILL.md) ·
+[Description rubric](skills/subgraph-mcp-readiness/references/description-rubric.md) ·
+[Report template](skills/subgraph-mcp-readiness/references/report-template.md)
 
 ---
 
