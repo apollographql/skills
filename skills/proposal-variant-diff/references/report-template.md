@@ -34,8 +34,8 @@ Use this structure. Keep sections that have no entries, and write "None" so the 
 
 - Changed: <subgraphs with differences>
 - Unchanged: <subgraphs on the proposal variant with identical SDL>
-- Added: <subgraphs only on the proposal variant, or None>
-- Not part of the proposal: <subgraphs only on the source variant. Not removals>
+- Only on the proposal variant: <subgraphs, or None. Added by the proposal only if the check's change list shows it, otherwise cause unconfirmed>
+- Only on the source variant: <subgraphs, or None. Not reported as removals. Cause unconfirmed, possibly added upstream after the proposal was created>
 - Removed: <only when comparing two full variants, otherwise None>
 
 ## Affected client operations

@@ -58,10 +58,11 @@ Default comparison: source variant (base) against proposal variant (head). If th
 
 Call `GetVariantDetails` for both variants and compare the subgraph name lists.
 
-A proposal variant is partial. It holds only the subgraphs the proposal changes, so it usually lists far fewer subgraphs than the source variant. Apply these rules:
+A proposal variant starts from the source variant's schema, and the source is not kept in sync afterward. A subgraph that appears on only one side therefore has more than one possible cause, and the subgraph lists alone cannot tell you which. Do not assume the proposal made the change. Apply these rules:
 
-- A subgraph on the source variant but not on the proposal variant is not part of the proposal. Do NOT report it as removed. List it once as "not part of the proposal" and move on.
-- A subgraph on the proposal variant but not on the source variant is new. Report it as added and do not diff it field by field.
+- A subgraph on the source variant but not on the proposal variant may have been added to the source after the proposal was created, or the proposal variant may not carry it. Do NOT report it as removed. List it as "only on the source variant" with the cause marked unconfirmed, and move on.
+- A subgraph on the proposal variant but not on the source variant may have been added by the proposal, or removed from the source after the proposal was created. Report it as "only on the proposal variant" and do not diff it field by field. Say it is added by the proposal only when the check's change list shows it.
+- To narrow the cause, use `hasUpstreamChanges` and compare the source subgraph's `updatedAt` with the proposal's `createdAt` (see step 1). Say what the evidence supports and what it does not.
 - A subgraph on both sides can still be identical. Compare the normalized SDL, not revision labels. A proposal variant's revision label differs from the source variant's even when the SDL is the same. Report identical subgraphs as unchanged.
 
 When you compare two full variants instead of a proposal, a subgraph on only one side is added or removed.
@@ -124,7 +125,7 @@ For design feedback on the proposed schema rather than the change set, use the `
 - ALWAYS report staleness when the source variant changed after the proposal was created
 - NEVER call a proposal write tool, `Publish*` tool or `Delete*` tool unless the user explicitly asks
 - NEVER claim a change is safe because a check found no affected operations
-- NEVER report a subgraph that is missing from the proposal variant as removed
+- NEVER report a subgraph that is missing from one variant as added or removed by the proposal without evidence. It may be upstream drift on the source variant
 - NEVER invent tool names or parameters. Use only the tools named in this skill
 - PREFER an existing check over starting a new one
 - PREFER one subgraph at a time over whole-graph schema reads

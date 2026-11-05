@@ -12,7 +12,7 @@ Keep lint findings and design observations in separate sections. Keep sections w
 - Proposal variant: <graph>@<variant>
 - Subgraphs reviewed: <names, with source and proposal revisions>
 - Subgraphs unchanged (identical on both variants): <names or None>
-- Subgraphs not part of the proposal (source variant only): <names. Not removals>
+- Subgraphs only on the source variant: <names. Not removals. Cause unconfirmed, possibly upstream drift>
 - Source variant changed since proposal creation (hasUpstreamChanges): <yes | no>. If yes, say the flag does not identify which subgraphs changed.
 
 ## Lint findings (deterministic, from LintSchema)
