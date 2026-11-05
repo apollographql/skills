@@ -44,7 +44,7 @@ Everything in this checklist is model judgment. None of it is produced by `LintS
 ## Shared fields and ownership (`apollo-federation`)
 
 - Is each `@shareable` field or type resolved identically by every subgraph that declares it?
-- Is each `@external` field actually used by a `@requires` or `@provides` in the same subgraph?
+- Is each `@external` field actually used by a `@key`, `@requires`, `@provides` or `@fromContext` in the same subgraph? A key field marked `@external` in an `extend type` is used and must stay
 - Do `@requires` and `@provides` selections name fields that exist in the owning subgraph?
 - Is each `@override` part of a planned migration, with the source subgraph updated to match?
 - Is `@inaccessible` used where a field must exist for composition but not appear in the API schema?

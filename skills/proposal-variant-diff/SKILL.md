@@ -13,7 +13,7 @@ compatibility: Requires the GraphOS MCP server (graphos-tools) with an authentic
 metadata:
   author: apollographql
   version: "1.0.0"
-allowed-tools: Read Glob Grep mcp__graphos-tools__GetProposals mcp__graphos-tools__GetProposal mcp__graphos-tools__GetVariantDetails mcp__graphos-tools__GetSubgraphSchema mcp__graphos-tools__GetSchemaChecks mcp__graphos-tools__GetCheckResults
+allowed-tools: Read Glob Grep mcp__graphos-tools__GetProposals mcp__graphos-tools__GetProposal mcp__graphos-tools__GetVariantDetails mcp__graphos-tools__GetSubgraphSchema mcp__graphos-tools__GetSchemaChecks mcp__graphos-tools__GetCheckResults mcp__plugin_apollo-skills_graphos-tools__GetProposals mcp__plugin_apollo-skills_graphos-tools__GetProposal mcp__plugin_apollo-skills_graphos-tools__GetVariantDetails mcp__plugin_apollo-skills_graphos-tools__GetSubgraphSchema mcp__plugin_apollo-skills_graphos-tools__GetSchemaChecks mcp__plugin_apollo-skills_graphos-tools__GetCheckResults
 ---
 
 # Proposal variant diff
@@ -24,7 +24,7 @@ Compare the schema changes in a GraphOS schema proposal against another variant 
 
 This skill needs the hosted GraphOS MCP server, registered as `graphos-tools` (`https://mcp.apollographql.com`). The Claude Code plugin for this repository registers it through `.mcp.json`. For other installs, add the server to your MCP client yourself.
 
-The graph tools require authentication, either GraphOS sign-in through the MCP client or an `x-api-key` header. If a tool fails with an authentication error such as `API_KEY_MISSING_OR_INVALID`, or returns a null identity or empty data, STOP. Tell the user the server is not authenticated and how to fix it. Do not guess at schema contents or produce a diff from memory.
+The graph tools require authentication, either GraphOS sign-in through the MCP client or an `x-api-key` header. If a tool fails with an authentication error such as `API_KEY_MISSING_OR_INVALID`, or returns a null identity, STOP. An empty list is a valid result and does not mean the server is unauthenticated. Tell the user the server is not authenticated and how to fix it. Do not guess at schema contents or produce a diff from memory.
 
 You also need the graph ID. Ask the user if it is not in the conversation.
 

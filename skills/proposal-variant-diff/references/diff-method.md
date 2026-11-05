@@ -7,7 +7,7 @@ There is no diff tool in the GraphOS MCP server. Produce the diff from two SDL d
 Before comparing, normalize both documents so that formatting and ordering do not show up as changes.
 
 - Ignore whitespace, comments and the order of definitions, fields, arguments, enum values and directive applications
-- Treat `extend type` and `type` for the same name as one definition
+- Treat `extend type` and `type` for the same name as one definition, with one exception. In a subgraph with no Federation 2 `@link`, a switch between `extend type` and `type` changes which subgraph owns the entity. Report it as a composition-impacting change and do not merge it away. Merging is safe for Federation 2 subgraphs and for root types such as `Query`
 - Ignore the federation `@link` import list ordering. Do report a changed `@link` URL (federation version) as a change
 - Compare descriptions as text. A description-only change is a non-breaking change, listed separately
 
@@ -47,7 +47,7 @@ This table is a starting classification from the schema alone. The check results
 | Change a field's type | Breaking | Includes list to non-list |
 | Output field `T` to `T!` | Non-breaking | Clients receive fewer nulls |
 | Output field `T!` to `T` | Breaking | Clients may not handle null |
-| Argument or input field `T` to `T!` | Breaking | Unless a default value is added |
+| Argument or input field `T` to `T!` | Breaking | Also breaking when a default is added. The default only helps clients that omit the value, and an explicit `null` is still rejected |
 | Argument or input field `T!` to `T` | Non-breaking | |
 | Add a required argument or input field with no default | Breaking | Existing operations fail validation |
 | Add an optional argument or input field, or one with a default | Non-breaking | |

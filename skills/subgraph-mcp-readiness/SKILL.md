@@ -13,7 +13,7 @@ compatibility: Requires the GraphOS MCP server (graphos-tools) with an authentic
 metadata:
   author: apollographql
   version: "1.0.0"
-allowed-tools: Read Glob Grep mcp__graphos-tools__GetVariantDetails mcp__graphos-tools__GetSubgraphSchema mcp__graphos-tools__LintSchema mcp__graphos-tools__GetLintResults
+allowed-tools: Read Glob Grep mcp__graphos-tools__GetVariantDetails mcp__graphos-tools__GetSubgraphSchema mcp__graphos-tools__LintSchema mcp__graphos-tools__GetLintResults mcp__plugin_apollo-skills_graphos-tools__GetVariantDetails mcp__plugin_apollo-skills_graphos-tools__GetSubgraphSchema mcp__plugin_apollo-skills_graphos-tools__LintSchema mcp__plugin_apollo-skills_graphos-tools__GetLintResults
 ---
 
 # Subgraph MCP readiness
@@ -24,7 +24,7 @@ Assess each subgraph in a variant for best-practice compliance, with the emphasi
 
 This skill needs the hosted GraphOS MCP server, registered as `graphos-tools` (`https://mcp.apollographql.com`). The Claude Code plugin for this repository registers it through `.mcp.json`. For other installs, add the server to your MCP client yourself.
 
-The graph tools require authentication, either GraphOS sign-in through the MCP client or an `x-api-key` header. If a tool fails with an authentication error such as `API_KEY_MISSING_OR_INVALID`, or returns a null identity or empty data, STOP. Tell the user the server is not authenticated and how to fix it. Do not assess a schema you have not fetched.
+The graph tools require authentication, either GraphOS sign-in through the MCP client or an `x-api-key` header. If a tool fails with an authentication error such as `API_KEY_MISSING_OR_INVALID`, or returns a null identity, STOP. An empty list is a valid result and does not mean the server is unauthenticated. Tell the user the server is not authenticated and how to fix it. Do not assess a schema you have not fetched.
 
 You also need the graph ID and variant name. Ask the user if they are not in the conversation.
 
