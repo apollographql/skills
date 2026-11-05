@@ -52,4 +52,4 @@ Everything in this checklist is model judgment. None of it is produced by `LintS
 ## Evolution
 
 - Is a removed or replaced field deprecated first, with a useful `reason`?
-- Does the change set include anything the `proposal-variant-diff` skill would classify as breaking? If so, say the review does not cover impact on clients and point to that skill.
+- Does the change set include anything the breaking-change table in [Diff method](diff-method.md) classifies as breaking? If so, say so, and take the client impact from the check results in step 5
