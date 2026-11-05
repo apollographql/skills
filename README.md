@@ -62,12 +62,10 @@ Once installed, skills are available as namespaced slash commands:
 | `/apollo-skills:graphos-factory` | GraphOS Factory — build and iterate on an Apollo Connectors subgraph from a REST API |
 | `/apollo-skills:graphql-operations` | GraphQL operations — queries, mutations, fragments |
 | `/apollo-skills:graphql-schema` | GraphQL schema design — types, naming, pagination, errors |
-| `/apollo-skills:proposal-schema-review` | Proposal schema review — lint plus design review of a GraphOS schema proposal |
-| `/apollo-skills:proposal-variant-diff` | Proposal variant diff — compare a GraphOS schema proposal against another variant, with check results |
+| `/apollo-skills:proposal-review` | Proposal review — change set, breaking changes, lint and design review of a GraphOS schema proposal |
 | `/apollo-skills:rover` | Rover CLI — schema management and local supergraph development |
 | `/apollo-skills:rust-best-practices` | Rust best practices — idiomatic Rust following Apollo conventions |
 | `/apollo-skills:skill-creator` | Skill creator — guide for creating new Apollo skills |
-| `/apollo-skills:subgraph-mcp-readiness` | Subgraph MCP readiness — assess subgraph schemas for use with AI agents through Apollo MCP Server |
 
 ## GitHub CLI
 
@@ -212,6 +210,7 @@ npx skills add apollographql/skills@apollo-mcp-server
 - Defining MCP tools from GraphQL operations
 - Using introspection tools (introspect, search, validate, execute)
 - Troubleshooting MCP server connectivity issues
+- Assessing whether a subgraph schema is ready for AI agents (description coverage, naming), using the GraphOS MCP server
 
 **Categories covered:**
 
@@ -220,18 +219,21 @@ npx skills add apollographql/skills@apollo-mcp-server
 - Operation sources (files, collections, persisted queries)
 - Authentication and security
 - Health checks and debugging
+- Schema readiness for AI agents (read-only, needs the [GraphOS MCP server](https://www.apollographql.com/docs/graphos/platform/graphos-mcp-server/tools))
 
 **Examples:**
 
 - "Set up Apollo MCP Server for my GraphQL endpoint"
 - "Configure MCP tools from my GraphQL operations"
 - "Debug MCP server connection issues"
+- "Is my production graph ready to expose through Apollo MCP Server?"
 
 **References:**
 [SKILL.md](skills/apollo-mcp-server/SKILL.md) ·
 [Tools](skills/apollo-mcp-server/references/tools.md) ·
 [Configuration](skills/apollo-mcp-server/references/configuration.md) ·
-[Troubleshooting](skills/apollo-mcp-server/references/troubleshooting.md)
+[Troubleshooting](skills/apollo-mcp-server/references/troubleshooting.md) ·
+[Schema readiness](skills/apollo-mcp-server/references/schema-readiness.md)
 
 ---
 
@@ -627,14 +629,14 @@ npx skills add apollographql/skills@rust-best-practices
 
 ---
 
-### proposal-variant-diff
+### proposal-review
 
-Compare the schema changes in a GraphOS schema proposal against another variant of the same subgraph, and combine the diff with composition errors and affected client operations from schema checks. Uses the hosted GraphOS MCP server and is read-only by default.
+Review a GraphOS schema proposal in three separate layers. First, a change set diffed by the agent against the source variant and reconciled with schema check results (breaking changes, composition errors, affected client operations). Second, lint findings from `LintSchema`, run with the source variant's schema as the base so only newly introduced violations appear. Third, design observations layered on the `graphql-schema` and `apollo-federation` skills. Uses the hosted GraphOS MCP server and is read-only by default.
 
 **Install:**
 
 ```bash
-npx skills add apollographql/skills@proposal-variant-diff
+npx skills add apollographql/skills@proposal-review
 ```
 
 **Prerequisite:** the [GraphOS MCP server](https://www.apollographql.com/docs/graphos/platform/graphos-mcp-server/tools) (`graphos-tools`), authenticated with GraphOS sign-in or an API key. The Claude Code plugin registers it automatically.
@@ -645,101 +647,28 @@ npx skills add apollographql/skills@proposal-variant-diff
 - Checking a proposal for breaking changes
 - Comparing a subgraph schema between two variants
 - Summarizing composition errors and affected client operations for a proposal
-
-**Categories covered:**
-
-- Finding a proposal, its source variant, proposal variant and latest revision
-- Structured diff of types, fields, arguments, directives, nullability and deprecations
-- Breaking versus non-breaking classification
-- Reconciling the diff with schema check results
-
-**Examples:**
-
-- "What does proposal <id> change compared with production?"
-- "Are there breaking changes in this proposal?"
-- "Which client operations are affected by this proposal?"
-
-**References:**
-[SKILL.md](skills/proposal-variant-diff/SKILL.md) ·
-[Diff method](skills/proposal-variant-diff/references/diff-method.md) ·
-[Report template](skills/proposal-variant-diff/references/report-template.md)
-
----
-
-### proposal-schema-review
-
-Review a GraphOS schema proposal for design quality. Runs `LintSchema` with the source variant's schema as the base so only newly introduced violations are reported, then layers design recommendations from the `graphql-schema` and `apollo-federation` skills. Lint findings (deterministic) and design observations (model judgment) are reported separately. Read-only by default.
-
-**Install:**
-
-```bash
-npx skills add apollographql/skills@proposal-schema-review
-```
-
-**Prerequisite:** the [GraphOS MCP server](https://www.apollographql.com/docs/graphos/platform/graphos-mcp-server/tools) (`graphos-tools`), authenticated with GraphOS sign-in or an API key. The Claude Code plugin registers it automatically.
-
-**Use when:**
-
-- Reviewing a schema proposal or a proposed subgraph schema
 - Finding which lint violations a proposal newly introduces
 - Assessing naming, nullability, pagination, error modeling or federation entity design in proposed changes
 
 **Categories covered:**
 
-- Lint against a base schema, plus graph-level lint context
-- Design review layered on `graphql-schema` and `apollo-federation`
-- Clear separation of lint findings and model judgment
+- Finding a proposal, its source variant, proposal variant and latest revision
+- Structured diff and breaking versus non-breaking classification
+- Reconciling the diff with schema check results
+- Lint against a base schema, plus design review
+- Clear separation of the change set, lint findings and model judgment
 
 **Examples:**
 
+- "What does proposal <id> change compared with production?"
+- "Are there breaking changes in this proposal?"
 - "Review proposal <id> for schema design issues"
-- "Which new lint violations does this proposal introduce?"
-- "Is the entity design in this proposal sound?"
 
 **References:**
-[SKILL.md](skills/proposal-schema-review/SKILL.md) ·
-[Review checklist](skills/proposal-schema-review/references/review-checklist.md) ·
-[Report template](skills/proposal-schema-review/references/report-template.md)
-
----
-
-### subgraph-mcp-readiness
-
-Assess each subgraph in a GraphOS variant for best-practice compliance, with the emphasis on whether the schema is ready to be exposed to AI agents through Apollo MCP Server. Missing descriptions are reported from lint output where the graph's description rule is enabled. Description quality, argument coverage and naming ambiguity are assessed by the agent, not the platform. The two are reported separately. Read-only by default.
-
-**Install:**
-
-```bash
-npx skills add apollographql/skills@subgraph-mcp-readiness
-```
-
-**Prerequisite:** the [GraphOS MCP server](https://www.apollographql.com/docs/graphos/platform/graphos-mcp-server/tools) (`graphos-tools`), authenticated with GraphOS sign-in or an API key. The Claude Code plugin registers it automatically.
-
-**Use when:**
-
-- Asking whether a subgraph or supergraph schema is ready for AI agents or MCP tools
-- Auditing description coverage and quality on types, fields, arguments, enums and input types
-- Reviewing naming for ambiguity that could mislead an agent
-- Preparing a schema before defining Apollo MCP Server tools
-
-**Categories covered:**
-
-- Description coverage and quality (intent, units, formats, constraints)
-- Enum and input type documentation
-- Naming ambiguity
-- Lint results per subgraph
-- Pointers to `apollo-mcp-server` for tool exposure
-
-**Examples:**
-
-- "Is my production graph ready to expose through Apollo MCP Server?"
-- "Audit description coverage on the orders subgraph"
-- "Which fields would confuse an AI agent?"
-
-**References:**
-[SKILL.md](skills/subgraph-mcp-readiness/SKILL.md) ·
-[Description rubric](skills/subgraph-mcp-readiness/references/description-rubric.md) ·
-[Report template](skills/subgraph-mcp-readiness/references/report-template.md)
+[SKILL.md](skills/proposal-review/SKILL.md) ·
+[Diff method](skills/proposal-review/references/diff-method.md) ·
+[Review checklist](skills/proposal-review/references/review-checklist.md) ·
+[Report template](skills/proposal-review/references/report-template.md)
 
 ---
 

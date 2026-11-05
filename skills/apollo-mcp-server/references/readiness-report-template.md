@@ -58,7 +58,7 @@ Highest-impact gaps (root fields and arguments first):
 
 ## Next steps for tool exposure
 
-For choosing which operations to expose, mutation gating and authentication, use the `apollo-mcp-server` skill.
+For choosing which operations to expose, mutation gating and authentication, see [Best practices](best-practices.md), [Tools](tools.md) and [Authentication](auth.md).
 
 ## Not assessed
 
@@ -71,4 +71,4 @@ For choosing which operations to expose, mutation gating and authentication, use
 - Quote suggested rewrites for the worst offenders only.
 - When many diagnostics share a rule, group them in one row per rule with the coordinates listed. Keep rule names and message text verbatim. Keep the counts exact.
 - Keep platform output and agent judgment in separate sections. Do not call a finding lint output unless `LintSchema` returned it.
-- Do not post the report to a proposal or change the schema. Posting comments and publishing are out of scope for this skill.
+- Do not post the report to a proposal or change the schema. Posting comments and publishing are out of scope for a readiness assessment.
