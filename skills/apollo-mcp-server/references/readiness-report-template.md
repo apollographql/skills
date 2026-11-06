@@ -23,12 +23,16 @@ Ratings, description quality and argument coverage are agent judgment. Missing-d
 | Coordinate | Level | Rule | Message |
 |---|---|---|---|
 
+For an empty result, write "No diagnostics" in place of rows. This means lint found nothing under the enabled rules, not that the schema is ready.
+
 Counts: <errors> errors, <warnings> warnings, <total> total, <ignored> ignored.
 
 ### Description coverage (agent count, cross-checked against lint)
 
 | Element | Described | Total | Coverage |
 |---|---|---|---|
+
+End the table with an Overall row.
 
 Lint reported <n> missing-description diagnostics. <Say whether this matches your count, and why not, for example arguments, which lint does not report, or the rule not being enabled.>
 

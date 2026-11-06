@@ -14,7 +14,7 @@ You also need the graph ID and variant name. Ask the user if they are not in the
 
 ## Security
 
-> **Security: read-only by default.** This workflow reads variant details, schemas and lint results. NEVER call `CreateProposal`, `PublishProposalRevision`, `UpdateProposalStatus`, `ReviewProposal`, `AddProposalComment`, or any `Publish*` or `Delete*` tool unless the user explicitly asks for that action. Posting findings back to a proposal as comments is out of scope.
+> **Security: read-only by default.** This workflow reads variant details, schemas and lint results. NEVER call `CreateProposal`, `PublishProposalRevision`, `UpdateProposalStatus`, `ReviewProposal`, `AddProposalComment`, or any `Run*`, `Publish*`, `Delete*`, `Tag*` or `Untag*` tool unless the user explicitly asks for that action. Posting findings back to a proposal as comments is out of scope.
 
 > **Security: exposure to agents.** Descriptions are read by models, and a field being well described makes it easier for an agent to use. Flag fields that expose sensitive data or write capability, and send the user to [Best practices](best-practices.md) for how to restrict what is exposed. Do not decide what is sensitive yourself. Ask the user.
 
@@ -47,7 +47,7 @@ For each subgraph, call `GetSubgraphSchema` with `graphId`, `variant` and `subgr
 
 ### Step 3: Lint each subgraph
 
-Call `LintSchema` with `graphId` and `sdl` set to the subgraph schema. Omit `baseSdl` so the full set of violations is returned. This is an audit of existing schema, not a review of a change. Pass the SDL exactly as `GetSubgraphSchema` returned it, and if it is too large to pass verbatim, report that subgraph as not linted. An empty diagnostics list means lint found nothing under the enabled rules, not that the schema is ready. Record each diagnostic's coordinate, level, rule and message, and the counts.
+Call `LintSchema` with `graphId` and `sdl` set to the subgraph schema. Omit `baseSdl` so the full set of violations is returned. This is an audit of existing schema, not a review of a change. The SDL is returned as a JSON-escaped string in `activePartialSchema.sdl`, and it is the full subgraph schema. Unescape the newlines and quotes, change nothing else, and pass it exactly as returned. If it is too large to pass verbatim, report that subgraph as not linted. An empty diagnostics list means lint found nothing under the enabled rules, not that the schema is ready. Record each diagnostic's coordinate, level, rule and message, and the counts.
 
 Optionally call `GetLintResults` with `graphId` for graph-level context from recent checks. It takes no variant or subgraph filter, so its results can be old and can describe other variants or subgraphs. Check `implementingServiceName` and `completedAt`, and leave results out of the findings unless they concern the subgraph you are assessing.
 
@@ -86,7 +86,7 @@ Use [Readiness report template](readiness-report-template.md). Produce one secti
 - ALWAYS process one subgraph at a time
 - ALWAYS ask the user which data is sensitive. Do not infer it
 - NEVER present description quality as platform output, and NEVER assume the description lint rule is enabled or covers arguments
-- NEVER call a proposal write tool, `Publish*` tool or `Delete*` tool unless the user explicitly asks
+- NEVER call a proposal write tool, or any `Run*`, `Publish*`, `Delete*`, `Tag*` or `Untag*` tool, unless the user explicitly asks
 - NEVER rewrite descriptions in the schema or publish changes from this assessment
 - NEVER invent tool names or parameters. Use only the tools named here
 - PREFER examples of weak descriptions with a suggested rewrite over abstract advice

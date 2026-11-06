@@ -8,7 +8,7 @@ Count, per subgraph, the elements that have a description and the total:
 
 | Element | Counted |
 |---|---|
-| Object, interface, union, enum, input and custom scalar types | Each type |
+| Object, interface, union, enum, input and custom scalar types | Each type, including the root `Query` and `Mutation` types |
 | Fields on object and interface types | Each field |
 | Arguments | Each argument |
 | Input fields | Each input field |

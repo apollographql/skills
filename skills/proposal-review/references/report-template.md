@@ -7,11 +7,12 @@ Use this structure. Keep sections that have no entries, and write "None" so the 
 
 ## Summary
 
-- Verdict: <Breaking changes found | No breaking changes found | No breaking changes found, client impact unverified | Blocked by composition errors | Check pending>. Use "client impact unverified" when the check passed but tested 0 operations, ran against a different base, predates the latest revision, does not exist, or was not run because the user declined `RunSubgraphCheck`. Use plain "No breaking changes found" only when a current check tested one or more operations against the source variant.
+- Verdict: <Breaking changes found | No breaking changes found | No breaking changes found, client impact unverified | Blocked by composition errors | Check pending>. Use "client impact unverified" when the check passed but tested 0 operations, ran against a different base or for a different subgraph than the one that changed, predates the latest revision, does not exist, or was not run because the user declined `RunSubgraphCheck`. Use plain "No breaking changes found" only when a current check tested one or more operations against the source variant.
 - Proposal: <id>, status <status>, latest revision <revision id>
 - Base: <graph>@<base variant> (<subgraph> revision <revision>, updated <time>)
 - Head: <graph>@<proposal variant> (<subgraph> revision <revision>, updated <time>)
-- Check: <check id or "none">, status <status>, base variant <variant>, run for subgraph <name>, operations checked <n>, created <check createdAt> (<current | stale, as it predates the latest revision created <time>>)
+- Check: <check id or "none">, status <status>, base variant <variant>, run for subgraph <name>, operations checked <n>, created <check createdAt> (<not older than the latest revision | stale, as it predates the latest revision created <time>>)
+- Reviews: <decisions from GetProposal, or None>
 - Source variant changed since proposal creation (hasUpstreamChanges): <yes | no>. If yes, say the flag does not identify which subgraphs changed.
 
 ## Contradictions between the diff and the check
@@ -50,6 +51,8 @@ Linted with the source variant's schema as the base, so only newly introduced vi
 
 | Subgraph | Coordinate | Level | Rule | Message |
 |---|---|---|---|---|
+
+For an empty result, write "No new violations" in place of rows.
 
 Counts: <errors> errors, <warnings> warnings, <total> total, <ignored> ignored.
 

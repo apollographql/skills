@@ -41,7 +41,7 @@ You also need the graph ID. Ask the user if it is not in the conversation.
 
 > **Security: read-only by default.** This skill reads proposals, schemas, check results and lint results. NEVER call `CreateProposal`, `PublishProposalRevision`, `UpdateProposalStatus`, `ReviewProposal`, `AddProposalComment`, or any `Publish*` or `Delete*` tool unless the user explicitly asks for that action. Posting findings back to a proposal as comments is out of scope for this skill.
 
-`RunSubgraphCheck` is not read-only in the strict sense. It starts a check that appears in Studio, but it publishes nothing. It is not pre-approved. Use it only as described in step 5, and tell the user before you call it.
+`RunSubgraphCheck` is not read-only in the strict sense. It starts a check that appears in Studio, but it publishes nothing. It is not pre-approved. Use it only as described in step 5, and tell the user before you call it. Do not call `RunSchemaCheck`, `Tag*` or `Untag*` from this skill.
 
 ## Process
 
@@ -61,7 +61,7 @@ Copy this checklist and complete each step in order. If the user asked only for 
 
 If the user gave a proposal ID, call `GetProposal` with `proposalId`. Otherwise call `GetProposals` with `graphId`, narrowing with `status`, `sourceVariants` or `subgraphs`, and page with `limit` and `offset`. Then call `GetProposal` with the ID, because `GetProposals` does not return `hasUpstreamChanges` or the latest revision. Confirm the match with the user if more than one proposal fits.
 
-From `GetProposal`, record the title, status, source variant (`sourceVariant`), proposal variant (`backingVariant`), latest revision (ID, summary and `createdAt`), the schema check attached to that revision (`latestRevision.checkWorkflow`), the proposal's `createdAt`, and `hasUpstreamChanges`. That flag is true when the source variant has changed since the proposal was created. If it is true, say so prominently, because the diff may then mix the proposal's changes with unrelated changes on the source variant. The flag does not say which subgraphs changed. To narrow it, compare each source subgraph's `updatedAt` (from `GetSubgraphSchema`) with the proposal's `createdAt`. A source subgraph updated after the proposal was created has changed upstream. One updated before has not. This covers only the subgraphs you fetched, so state it as partial evidence.
+From `GetProposal`, record the title, status, source variant (`sourceVariant`), proposal variant (`backingVariant`), latest revision (ID, summary and `createdAt`), the schema check attached to that revision (`latestRevision.checkWorkflow`), the proposal's `createdAt`, `hasUpstreamChanges` and the review decisions in `reviews`. That flag is true when the source variant has changed since the proposal was created. If it is true, say so prominently, because the diff may then mix the proposal's changes with unrelated changes on the source variant. The flag does not say which subgraphs changed. To narrow it, compare each source subgraph's `updatedAt` (from `GetSubgraphSchema`) with the proposal's `createdAt`. A source subgraph updated after the proposal was created has changed upstream. One updated before has not. Subgraphs that exist only on the source variant are where upstream additions show, so fetch those too and read only `updatedAt`. Do not diff them. State what you did not fetch, and treat the result as partial evidence.
 
 If the user supplied a schema directly instead of a proposal, treat it as the proposed schema and ask which variant is the base.
 
@@ -82,7 +82,7 @@ When you compare two full variants instead of a proposal, a subgraph on only one
 
 ### Step 3: Fetch both subgraph schemas
 
-For each subgraph on both sides that is not identical, call `GetSubgraphSchema` with `graphId`, `variant` and `subgraphName`, once for the base and once for the head. Fetch one subgraph at a time. Whole supergraph documents can exceed the model's token limit. If the proposal touches many subgraphs, ask the user which to prioritize, or work through them one at a time and summarize each before moving on. Record the revision and last update time returned for each fetch.
+For each subgraph on both sides, call `GetSubgraphSchema` with `graphId`, `variant` and `subgraphName`, once for the base and once for the head, and compare the normalized SDL. You cannot know a subgraph is identical until you have fetched both. Report identical subgraphs as unchanged and take them no further. Fetch one subgraph at a time. Whole supergraph documents can exceed the model's token limit. If the proposal touches many subgraphs, ask the user which to prioritize, or work through them one at a time and summarize each before moving on. Record the revision and last update time returned for each fetch. A proposal variant's revision can be an opaque label such as `proposal-creation`, so report it as a label and not as a commit. The SDL is returned as a JSON-escaped string in `activePartialSchema.sdl`, and it is the full subgraph schema. Unescape the newlines and quotes before using it, and change nothing else.
 
 ### Step 4: Produce the structured diff
 
@@ -94,16 +94,18 @@ Prefer an existing check over starting a new one:
 
 1. Use the schema check attached to the latest revision in `GetProposal`. It is returned as `latestRevision.checkWorkflow`. Pass its `id` to `GetCheckResults` as `checkId`, with `graphId`.
 2. If the revision has no `checkWorkflow`, call `GetSchemaChecks` filtered by `variants` and `subgraphs` to find a check, then `GetCheckResults`.
-3. Only if no usable check exists, or it predates the latest revision, offer to call `RunSubgraphCheck` with `graphId`, `variant` (the base variant), `subgraphName` and `proposedSchema` (the head SDL from step 3). Wait for the user's go-ahead. The call returns a workflow ID and Studio URL, not a result. Pass the returned ID to `GetCheckResults` as `checkId`. The tool description calls it a workflow ID while `GetCheckResults` takes `checkId`, so if the call is rejected, say so rather than guessing at another ID.
+3. A check is usable only when all of these hold: `implementingServiceName` is a subgraph that changed, `baseVariant` is the source variant, and `createdAt` is not before the latest revision. If no check is usable, offer to call `RunSubgraphCheck` with `graphId`, `variant` (the base variant), `subgraphName` and `proposedSchema` (the head SDL from step 3), once for each changed subgraph that no usable check covers. Wait for the user's go-ahead. The call returns a workflow ID and Studio URL, not a result. Pass the returned ID to `GetCheckResults` as `checkId`. The tool description calls it a workflow ID while `GetCheckResults` takes `checkId`, so if the call is rejected, say so rather than guessing at another ID.
 
 Before you use the results, read these fields and put them in the report:
 
 - `baseVariant`: the variant the check compared against. For a proposal check this can be the proposal variant and not the source variant, so the change list may not match your source-to-proposal diff.
 - `implementingServiceName`: the subgraph the check was run for. The change list can describe a different subgraph. If it does, say so and report what the list says. Do not infer why.
 - `numberOfCheckedOperations`: how many client operations were tested. If it is 0, report "no operations were checked", not "no affected operations".
-- `createdAt`: `GetCheckResults` does not say which revision the check ran against. Compare it with `latestRevision.createdAt` from `GetProposal` and report the comparison. A check created before the latest revision is stale.
+- `createdAt`: `GetCheckResults` does not say which revision the check ran against. Compare it with `latestRevision.createdAt` from `GetProposal` and report the comparison. A check created before the latest revision is stale. A check created after it is not proven current, since the result does not say which revision it ran against, so say "not older than the latest revision" and not "current".
 
 The check may still be running. If so, report it as pending and do not infer results.
+
+Each entry in the check's `changes` list is prose, such as `type Query: field location description changed`, with no schema coordinate. Derive the coordinate yourself and mark it as derived.
 
 `GetCheckResults` pages affected operations with `affectedOperationsLimit` (maximum 50) and `affectedOperationsOffset`, and reports `areChangesTruncated` when the change list was capped. Fetch further pages when the count matters, and note any truncation.
 
@@ -111,7 +113,7 @@ The check may still be running. If so, report it as pending and do not infer res
 
 For each changed subgraph, call `LintSchema` with `graphId`, `sdl` (the proposal variant's subgraph schema) and `baseSdl` (the source variant's schema for the same subgraph). With `baseSdl` set, the tool reports only the diagnostics the proposed schema introduces, so existing debt on the source variant does not drown out the proposal's own findings.
 
-Pass both schemas exactly as `GetSubgraphSchema` returned them, because a transcription slip can add or hide a diagnostic. If a schema is too large to pass verbatim, say so and report that subgraph as not linted. An empty diagnostics list with a base means the proposal introduces no new violations, so report exactly that. Record each diagnostic's coordinate, severity level, rule and message, plus the error, warning, total and ignored counts. For a subgraph that is only on the proposal variant, call `LintSchema` without `baseSdl` and say that every diagnostic is reported because there is no base.
+Pass both schemas exactly as `GetSubgraphSchema` returned them, after unescaping, because a transcription slip can add or hide a diagnostic. If a schema is too large to pass verbatim, say so and report that subgraph as not linted. An empty diagnostics list with a base means the proposal introduces no new violations, so report exactly that. Record each diagnostic's coordinate, severity level, rule and message, plus the error, warning, total and ignored counts. For a subgraph that is only on the proposal variant, call `LintSchema` without `baseSdl` and say that every diagnostic is reported because there is no base.
 
 Optionally call `GetLintResults` with `graphId` for graph-level context. It returns violations from the graph's most recent schema checks across variants and subgraphs, including ones outside this proposal. Label it as graph-level context, use it only to say whether a pattern recurs, and never use it to attribute a violation to the proposal.
 
@@ -127,7 +129,7 @@ Review the proposed schema, concentrating on the changed and added coordinates. 
 | Security exposure in the schema | `graphql-schema` (security reference) |
 | Entities, `@key`, `@shareable`, `@external`, `@requires`, `@provides`, `@override` | `apollo-federation` |
 
-Load those skills and apply their rules. Use [Review checklist](references/review-checklist.md) to make sure nothing is skipped. Do not copy their rules into the report. Cite the area and say what you observed at which coordinate. Do not repeat a lint finding as a design observation. If a design observation overlaps a lint rule, point to the lint finding and add only what lint does not say.
+Load those skills and apply their rules. If they are not installed, say so in the report, give the observation as your own judgment without citing a rule, and use the checklist alone. Use [Review checklist](references/review-checklist.md) to make sure nothing is skipped. Do not copy their rules into the report. Cite the area and say what you observed at which coordinate. Do not repeat a lint finding as a design observation. If a design observation overlaps a lint rule, point to the lint finding and add only what lint does not say.
 
 ### Step 8: Classify and reconcile
 
