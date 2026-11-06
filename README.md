@@ -62,6 +62,7 @@ Once installed, skills are available as namespaced slash commands:
 | `/apollo-skills:graphos-factory` | GraphOS Factory — build and iterate on an Apollo Connectors subgraph from a REST API |
 | `/apollo-skills:graphql-operations` | GraphQL operations — queries, mutations, fragments |
 | `/apollo-skills:graphql-schema` | GraphQL schema design — types, naming, pagination, errors |
+| `/apollo-skills:proposal-review` | Proposal review — change set, breaking changes, lint and design review of a GraphOS schema proposal |
 | `/apollo-skills:rover` | Rover CLI — schema management and local supergraph development |
 | `/apollo-skills:rust-best-practices` | Rust best practices — idiomatic Rust following Apollo conventions |
 | `/apollo-skills:skill-creator` | Skill creator — guide for creating new Apollo skills |
@@ -209,6 +210,7 @@ npx skills add apollographql/skills@apollo-mcp-server
 - Defining MCP tools from GraphQL operations
 - Using introspection tools (introspect, search, validate, execute)
 - Troubleshooting MCP server connectivity issues
+- Assessing whether a subgraph schema is ready for AI agents (description coverage, naming), using the GraphOS MCP server
 
 **Categories covered:**
 
@@ -217,18 +219,21 @@ npx skills add apollographql/skills@apollo-mcp-server
 - Operation sources (files, collections, persisted queries)
 - Authentication and security
 - Health checks and debugging
+- Schema readiness for AI agents (read-only, needs the [GraphOS MCP server](https://www.apollographql.com/docs/graphos/platform/graphos-mcp-server/tools))
 
 **Examples:**
 
 - "Set up Apollo MCP Server for my GraphQL endpoint"
 - "Configure MCP tools from my GraphQL operations"
 - "Debug MCP server connection issues"
+- "Is my production graph ready to expose through Apollo MCP Server?"
 
 **References:**
 [SKILL.md](skills/apollo-mcp-server/SKILL.md) ·
 [Tools](skills/apollo-mcp-server/references/tools.md) ·
 [Configuration](skills/apollo-mcp-server/references/configuration.md) ·
-[Troubleshooting](skills/apollo-mcp-server/references/troubleshooting.md)
+[Troubleshooting](skills/apollo-mcp-server/references/troubleshooting.md) ·
+[Schema readiness](skills/apollo-mcp-server/references/schema-readiness.md)
 
 ---
 
@@ -621,6 +626,49 @@ npx skills add apollographql/skills@rust-best-practices
 [Performance](skills/rust-best-practices/references/performance.md) ·
 [Testing](skills/rust-best-practices/references/testing.md) ·
 [Advanced](skills/rust-best-practices/references/advanced.md)
+
+---
+
+### proposal-review
+
+Review a GraphOS schema proposal in three separate layers. First, a change set diffed by the agent against the source variant and reconciled with schema check results (breaking changes, composition errors, affected client operations). Second, lint findings from `LintSchema`, run with the source variant's schema as the base so only newly introduced violations appear. Third, design observations layered on the `graphql-schema` and `apollo-federation` skills. Uses the hosted GraphOS MCP server and is read-only by default.
+
+**Install:**
+
+```bash
+npx skills add apollographql/skills@proposal-review
+```
+
+**Prerequisite:** the [GraphOS MCP server](https://www.apollographql.com/docs/graphos/platform/graphos-mcp-server/tools) (`graphos-tools`), authenticated with GraphOS sign-in or an API key. The Claude Code plugin registers it automatically.
+
+**Use when:**
+
+- Asking what a schema proposal changes compared with its source variant
+- Checking a proposal for breaking changes
+- Comparing a subgraph schema between two variants
+- Summarizing composition errors and affected client operations for a proposal
+- Finding which lint violations a proposal newly introduces
+- Assessing naming, nullability, pagination, error modeling or federation entity design in proposed changes
+
+**Categories covered:**
+
+- Finding a proposal, its source variant, proposal variant and latest revision
+- Structured diff and breaking versus non-breaking classification
+- Reconciling the diff with schema check results
+- Lint against a base schema, plus design review
+- Clear separation of the change set, lint findings and model judgment
+
+**Examples:**
+
+- "What does proposal <id> change compared with production?"
+- "Are there breaking changes in this proposal?"
+- "Review proposal <id> for schema design issues"
+
+**References:**
+[SKILL.md](skills/proposal-review/SKILL.md) ·
+[Diff method](skills/proposal-review/references/diff-method.md) ·
+[Review checklist](skills/proposal-review/references/review-checklist.md) ·
+[Report template](skills/proposal-review/references/report-template.md)
 
 ---
 

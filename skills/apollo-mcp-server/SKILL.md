@@ -9,13 +9,14 @@ description: >
   scripts for request lifecycle hooks, (6) defining MCP prompts,
   (7) troubleshooting MCP server connectivity or tool execution issues,
   (8) building MCP Apps for interactive UI experiences,
-  (9) deploying Apollo MCP Server to production.
+  (9) deploying Apollo MCP Server to production,
+  (10) assessing whether a subgraph schema is ready for AI agents (description coverage, naming).
 license: MIT
-compatibility: Works with Claude Code, Claude Desktop, Cursor.
+compatibility: Works with Claude Code, Claude Desktop, Cursor. The schema readiness assessment also needs the GraphOS MCP server (graphos-tools) with an authenticated GraphOS session or API key.
 metadata:
   author: apollographql
-  version: "1.3.0"
-allowed-tools: Bash(rover:*) Bash(npx:*) Read Write Edit Glob Grep
+  version: "1.4.0"
+allowed-tools: Bash(rover:*) Bash(npx:*) Read Write Edit Glob Grep mcp__graphos-tools__GetVariantDetails mcp__graphos-tools__GetSubgraphSchema mcp__graphos-tools__LintSchema mcp__graphos-tools__GetLintResults mcp__plugin_apollo-skills_graphos-tools__GetVariantDetails mcp__plugin_apollo-skills_graphos-tools__GetSubgraphSchema mcp__plugin_apollo-skills_graphos-tools__LintSchema mcp__plugin_apollo-skills_graphos-tools__GetLintResults
 ---
 
 # Apollo MCP Server Guide
@@ -173,6 +174,9 @@ operations:
 - [Best Practices](references/best-practices.md) - Security guidance, mutation gating, tool poisoning, token passthrough
 - [Telemetry](references/telemetry.md) - OpenTelemetry metrics, traces, and dashboards
 - [Troubleshooting](references/troubleshooting.md) - Common issues and solutions
+- [Schema readiness](references/schema-readiness.md) - Read-only assessment of whether subgraph schemas are ready for AI agents, using the GraphOS MCP server
+- [Description rubric](references/description-rubric.md) - Coverage measures, quality criteria and weak and strong description examples
+- [Readiness report template](references/readiness-report-template.md) - Per-subgraph output for the readiness assessment
 
 ## Key Rules
 
