@@ -64,7 +64,9 @@ transport:
 |--------|---------|-------------|
 | `address` | `127.0.0.1` | Bind address |
 | `port` | `8000` | Listen port |
+| `path` | `/mcp` | URL path to serve MCP requests on. Must start with `/`. Cannot be `/` or under `/.well-known` |
 | `stateful_mode` | `true` | Enable sessions for pre-`2026-07-28` clients. Clients on `2026-07-28` or later are always sessionless regardless of this setting |
+| `trusted_proxies` | `[]` | Reverse proxies in front of the server, as CIDR ranges or single IPs. The per-client rate limit and `client_address` spans use the original client from `X-Forwarded-For` |
 
 SSE transport was removed in v1.5.0.
 
@@ -145,7 +147,7 @@ Disabled by default. Streamable HTTP only.
 | `match_origins` | `[]` | Regex patterns for origins |
 | `allow_any_origin` | `false` | Allow any origin. Can't be combined with `allow_credentials`; use `origins` or `match_origins` instead |
 | `allow_credentials` | `false` | Allow credentials |
-| `allow_methods` | `["GET", "POST", "OPTIONS"]` | Allowed HTTP methods |
+| `allow_methods` | `["GET", "POST", "DELETE"]` | Allowed HTTP methods. DELETE is needed for session termination |
 | `allow_headers` | `["content-type", "mcp-protocol-version", "mcp-session-id", "traceparent", "tracestate", "baggage"]` | Allowed request headers |
 | `expose_headers` | `["mcp-session-id", "traceparent", "tracestate"]` | Exposed response headers |
 | `max_age` | `86400` | Preflight cache seconds |
@@ -175,6 +177,7 @@ Endpoints: `GET /health`, `GET /health?live`, `GET /health?ready`.
 | `path` | | Directory for rolling log files |
 | `rotation` | `hourly` | `minutely`, `hourly`, `daily`, `never` |
 | `ansi` | `auto` | ANSI styling mode: `auto`, `always`, or `never` |
+| `format` | `text` | Output format: `text` or `json`. JSON output includes `timestamp`, `level`, `target`, `message`, and span fields (`span`, `trace_id`, `span_id`) for log correlation |
 
 ## Tasks
 
