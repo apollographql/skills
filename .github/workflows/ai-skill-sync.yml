@@ -235,6 +235,8 @@ jobs:
           - Create new reference files for features not yet covered
           - Correct content that is inaccurate or outdated
           - Do not add coverage for APIs the product marks as experimental
+          - Base every code example on one in the product docs, and leave out
+            any example you cannot confirm there
           - Follow skill-creator conventions for file structure and style
           PROMPT
           printf '\nTriage reason:\n%s\n' "$TRIAGE_REASON" >> /tmp/update-prompt.txt
