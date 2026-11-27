@@ -48,6 +48,23 @@ apps:
 
 The path can be absolute or relative to the process working directory. Override it with the `APOLLO_MCP_APPS__PATH` environment variable. If the directory does not exist, the server starts without apps.
 
+## Exposing app tools without the app parameter
+
+A client that connects without the `app` parameter sees only server-wide operation tools. To use tools from several apps on one connection, list them under `apps.expose_without_app_param`:
+
+```yaml
+apps:
+  expose_without_app_param:
+    analytics: [usage_chart]
+    records: [lookup]
+```
+
+Clients connecting to `/mcp` then see `usage_chart` and `lookup` alongside server-wide tools. Each tool keeps its manifest name and opens its own app's UI. A connection with `?app=analytics` still loads the whole analytics app.
+
+Tool names must be unique on the connection. Startup fails if two selected apps list the same tool name or if a selected tool has the name of an enabled built-in tool. A selected tool that shares a name with a server-wide operation replaces that operation.
+
+Startup also fails if a listed app or tool doesn't exist. The server restarts when its config file changes, so a mistake in a reloaded config stops the server.
+
 ## Connecting to an app
 
 ### App query parameter

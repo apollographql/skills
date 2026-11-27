@@ -14,7 +14,7 @@ license: MIT
 compatibility: Works with Claude Code, Claude Desktop, Cursor.
 metadata:
   author: apollographql
-  version: "1.3.0"
+  version: "1.4.0"
 allowed-tools: Bash(rover:*) Bash(npx:*) Read Write Edit Glob Grep
 ---
 
@@ -65,7 +65,9 @@ Start the server:
 apollo-mcp-server ./config.yaml
 ```
 
-The MCP endpoint is available at `http://127.0.0.1:8000/mcp` (streamable_http defaults: address `127.0.0.1`, port `8000`). The GraphQL endpoint defaults to `http://localhost:4000/` — override with the `endpoint` key if your API runs elsewhere.
+The MCP endpoint is available at `http://127.0.0.1:8000/mcp` (streamable_http defaults: address `127.0.0.1`, port `8000`, path `/mcp`). The GraphQL endpoint defaults to `http://localhost:4000/` — override with the `endpoint` key if your API runs elsewhere.
+
+The server serves MCP at the exact `transport.path` only — subpaths return 404. Set `transport.path: /` to serve at root.
 
 The server watches the config file for changes and automatically restarts with updated configuration.
 
@@ -241,7 +243,11 @@ Build interactive UI experiences inside MCP Apps-compatible hosts (e.g., ChatGPT
 ```yaml
 apps:
   path: ./apps
+  expose_without_app_param:
+    analytics: [usage_chart]
 ```
+
+Use `expose_without_app_param` to make selected app tools available on connections without the `?app=` query parameter.
 
 ### MCP Tasks
 
@@ -303,11 +309,15 @@ overrides:
 ```yaml
 transport:
   type: streamable_http
+  trusted_proxies:
+    - 10.0.4.0/24
   auth:
     servers:
       - https://auth.example.com
     audiences:
       - https://api.example.com
+    rate_limit:
+      per_client: true
 endpoint: https://api.production.com/graphql
 operations:
   source: manifest
@@ -319,6 +329,8 @@ schema:
   source: uplink # federated graphs; use graphos for non-federated graphs
 health_check:
   enabled: true
+logging:
+  format: json
 telemetry:
   exporters:
     metrics:
@@ -329,6 +341,8 @@ telemetry:
       otlp:
         endpoint: https://your-traces-endpoint
         protocol: http/protobuf
+      parent_based_sampler: false # public-facing servers only; keeps untrusted callers from forcing sampling
+      sampler: 0.1
 ```
 
 ### Docker

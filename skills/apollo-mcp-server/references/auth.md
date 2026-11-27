@@ -126,6 +126,7 @@ Rate limiting protects against brute-force authentication attempts. Enabled by d
 | `rate_limit.enabled` | `bool` | `true` | Rate limit bearer credentials that fail authentication |
 | `rate_limit.requests_per_second` | `number` | `10` | Sustained requests per second for each failing credential |
 | `rate_limit.burst` | `number` | `50` | Burst requests before sustained rate applies |
+| `rate_limit.per_client` | `bool` | `false` | Also rate limit each client address that fails authentication at the same rate and burst. Behind a reverse proxy, add the proxy's IP or CIDR to `transport.trusted_proxies` |
 
 ```yaml
 transport:
@@ -137,6 +138,7 @@ transport:
       enabled: true
       requests_per_second: 10
       burst: 50
+      per_client: false
 ```
 
 Set `enabled: false` when requests are already rate limited before reaching the server.

@@ -64,7 +64,9 @@ transport:
 |--------|---------|-------------|
 | `address` | `127.0.0.1` | Bind address |
 | `port` | `8000` | Listen port |
+| `path` | `/mcp` | URL path for MCP requests. Accepts `/` for root. Exact path matching only — subpaths return 404. Trailing `/` is ignored. Must start with `/`, contain only `[a-zA-Z0-9\-_\.~\/]`, not be under `/.well-known` |
 | `stateful_mode` | `true` | Enable sessions for pre-`2026-07-28` clients. Clients on `2026-07-28` or later are always sessionless regardless of this setting |
+| `trusted_proxies` | `[]` | CIDR ranges or IPs of reverse proxies. Used by `client_address` tracing and `per_client` rate limiting |
 
 SSE transport was removed in v1.5.0.
 
@@ -78,7 +80,7 @@ SSE transport was removed in v1.5.0.
 
 ### Auth
 
-OAuth 2.1 for streamable_http only. Nested under `transport.auth`. Includes `rate_limit` for failing bearer credentials (enabled by default, 10 req/s sustained, 50 burst). See [auth reference](auth.md).
+OAuth 2.1 for streamable_http only. Nested under `transport.auth`. Includes `rate_limit` for failing bearer credentials (enabled by default, 10 req/s sustained, 50 burst) with optional `per_client` limiting by client address. See [auth reference](auth.md).
 
 ## Introspection
 
@@ -175,6 +177,7 @@ Endpoints: `GET /health`, `GET /health?live`, `GET /health?ready`.
 | `path` | | Directory for rolling log files |
 | `rotation` | `hourly` | `minutely`, `hourly`, `daily`, `never` |
 | `ansi` | `auto` | ANSI styling mode: `auto`, `always`, or `never` |
+| `format` | `text` | Output format: `text` or `json`. With `json`, each line is a JSON object with `timestamp`, `level`, `target`, `span`, `trace_id`, `span_id`, `message`. JSON output never contains ANSI styling |
 
 ## Tasks
 
