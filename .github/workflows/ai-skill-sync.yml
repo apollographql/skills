@@ -29,6 +29,7 @@ jobs:
       product: ${{ steps.resolve.outputs.product }}
       repository: ${{ steps.resolve.outputs.repository }}
       version: ${{ steps.version.outputs.target }}
+      outdated: ${{ steps.version.outputs.outdated }}
     permissions:
       contents: read
     steps:
@@ -73,22 +74,27 @@ jobs:
           INPUT_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.event.client_payload.version }}
         run: |
           cd product-repo
-          if [ -n "$INPUT_VERSION" ]; then
-            echo "target=$INPUT_VERSION" >> "$GITHUB_OUTPUT"
-          else
-            LATEST=$(git tag --list 'v*' --sort=-version:refname \
-              | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
-              | head -1)
-            if [ -z "$LATEST" ]; then
-              echo "::error::No stable version tags found in ${{ steps.resolve.outputs.repository }}"
-              exit 1
-            fi
-            echo "target=$LATEST" >> "$GITHUB_OUTPUT"
-            echo "Auto-detected latest stable version: $LATEST"
+          LATEST=$(git tag --list 'v*' --sort=-version:refname \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | head -1)
+          TARGET="${INPUT_VERSION:-$LATEST}"
+          if [ -z "$TARGET" ]; then
+            echo "::error::No stable version tags found in ${{ steps.resolve.outputs.repository }}"
+            exit 1
+          fi
+          echo "target=$TARGET" >> "$GITHUB_OUTPUT"
+          echo "Syncing to $TARGET (latest stable: ${LATEST:-none})"
+
+          # A patch on an older release line would rewrite the skill backwards.
+          NEWEST=$(printf '%s\n' "$TARGET" "$LATEST" | sort -V | tail -1)
+          if [ "$TARGET" != "$LATEST" ] && [ "$NEWEST" = "$LATEST" ]; then
+            echo "::notice::Skipping $TARGET because it is older than the latest stable version $LATEST"
+            echo "outdated=true" >> "$GITHUB_OUTPUT"
           fi
 
   triage:
     needs: resolve-inputs
+    if: needs.resolve-inputs.outputs.outdated != 'true'
     runs-on: ubuntu-latest
     outputs:
       needs_update: ${{ steps.parse.outputs.needs_update }}
@@ -140,6 +146,7 @@ jobs:
           It does NOT need updating if:
           - The skill already accurately and comprehensively reflects the product source
           - Minor differences that don't affect correctness
+          - The only gap is an API the product marks as experimental
           PROMPT
 
           ~/.local/bin/claude \
@@ -227,6 +234,7 @@ jobs:
           - Every major product feature should have coverage in the skill
           - Create new reference files for features not yet covered
           - Correct content that is inaccurate or outdated
+          - Do not add coverage for APIs the product marks as experimental
           - Follow skill-creator conventions for file structure and style
           PROMPT
           printf '\nTriage reason:\n%s\n' "$TRIAGE_REASON" >> /tmp/update-prompt.txt
