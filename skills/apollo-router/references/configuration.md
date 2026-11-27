@@ -8,7 +8,7 @@ The Router is configured via a YAML file (`router.yaml`). This reference covers 
 supergraph:
   listen: 127.0.0.1:4000
   introspection: true
-  path: /graphql
+  path: /
 
 sandbox:
   enabled: true
@@ -44,8 +44,8 @@ supergraph:
   # Address to listen on
   listen: 127.0.0.1:4000
 
-  # GraphQL endpoint path
-  path: /graphql
+  # GraphQL endpoint path (v2 default is "/")
+  path: /
 
   # Enable introspection queries
   introspection: true
@@ -103,14 +103,43 @@ cors:
     - GET
     - POST
     - OPTIONS
-  max_age: 24h  # duration string, not integer
+  max_age: 24h
+  expose_headers: []           # response headers visible to browser scripts
   policies:
     - origins:
-        - http://localhost:3000
+        - https://app.example.com
         - https://studio.apollographql.com
+      match_origins:                      # regex patterns for dynamic origins
+        - "^https://.*\\.example\\.com$"
       allow_headers:
         - Content-Type
         - Authorization
+      expose_headers:
+        - X-Request-Id
+      private_network_access:             # allow requests to private networks
+        access_id: "01:23:45:67:89:0A"   # optional device identifier
+        access_name: "internal device"    # optional device name
+```
+
+Per-policy fields (`allow_credentials`, `allow_headers`, `expose_headers`, `methods`, `max_age`) inherit from global defaults unless explicitly overridden. Set `methods: []` in a policy to allow no methods for that origin.
+
+Additional v2 CORS options (`match_origins`, `expose_headers`, `private_network_access`):
+
+```yaml
+cors:
+  policies:
+    - origins:
+        - "https://app.example.com"
+      match_origins:
+        - "https://*.example.com"    # Regex origin matching
+      allow_headers:
+        - Content-Type
+        - Authorization
+      expose_headers:
+        - X-Custom-Response-Header   # Headers exposed to browser JS
+  private_network_access:             # Enable Private Network Access preflight
+    access_id: "01:23:45:67:89:0A"
+    access_name: "my-corp device"
 ```
 
 ## Subgraph Configuration
@@ -182,10 +211,24 @@ authentication:
         - url: https://auth.example.com/.well-known/jwks.json
           issuers:                              # plural array
             - https://auth.example.com/
+          allow_missing_exp: false              # set true to accept tokens without exp
+          poll_interval: 60s
+      header_name: Authorization               # default
+      header_value_prefix: Bearer              # default
+      ignore_other_prefixes: false             # set true to allow other auth schemes
+      on_error: Error                          # Error | RedactedError | Continue
+      sources:                                 # alternative token locations
+        - type: header
+          name: X-Authorization
+          value_prefix: Bearer
+        - type: cookie
+          name: authz
 
 authorization:
   require_authentication: true
 ```
+
+`on_error` controls behavior on JWT validation failure: `Error` returns details, `RedactedError` returns a generic message (recommended for public APIs), `Continue` proceeds with no claims.
 
 ## Authorization Directives (field-level)
 
@@ -313,16 +356,48 @@ You can opt individual requests out of enforcement from a Rhai script or coproce
 
 ## Limits and Security
 
+All operation and network limits are nested under `limits.router`. Subgraph and connector response size limits are separate sections.
+
 ```yaml
 limits:
-  # Maximum request body size
-  http_max_request_bytes: 2000000  # 2MB
+  router:
+    # Network limits
+    http_max_request_bytes: 2000000      # 2MB (default)
+    http1_max_request_headers: 100       # default
+    http1_max_request_buf_size: 400KiB   # default
+    http2_max_headers_list_bytes: 16KiB  # default
 
-  # Query complexity limits
-  max_depth: 15
-  max_height: 200
-  max_aliases: 30
-  max_root_fields: 20
+    # Parser limits
+    parser_max_tokens: 15000             # default
+    parser_max_recursion: 500            # default
+
+    # Operation limits (require GraphOS license)
+    max_depth: 50
+    max_height: 200
+    max_aliases: 30
+    max_root_fields: 20
+
+    # Available on all plans
+    max_recursive_selections: 10000000   # default
+    introspection_max_depth: true        # default; set false to disable
+
+    # warn_only: true                    # log violations but don't reject
+
+  # Subgraph response size limits
+  subgraph:
+    all:
+      http_max_response_size: 10MiB
+    subgraphs:
+      products:
+        http_max_response_size: 20MiB
+
+  # Connector response size limits
+  connector:
+    all:
+      http_max_response_size: 5MiB
+    sources:
+      products.rest:
+        http_max_response_size: 10MiB
 ```
 
 ## Include Subgraph Errors
@@ -343,16 +418,24 @@ include_subgraph_errors:
 ```yaml
 subscription:
   enabled: true
+  max_lifetime: null             # optional max subscription duration (e.g. 1h)
   mode:
-    # WebSocket-based subscriptions
     passthrough:
       all:
         path: /ws
+        max_reconnect_attempts: 0  # set >0 to auto-reconnect on subgraph drop
+        reconnect_delay: 1s        # delay between reconnect attempts
+      subgraphs:
+        products:
+          max_reconnect_attempts: 5
+          reconnect_delay: 2s
 
     # Or callback-based
     # callback:
     #   public_url: https://router.example.com/callback
 ```
+
+Reconnection re-establishes the subgraph WebSocket connection without interrupting the client. Events emitted during the reconnect window are lost. Only applies to passthrough mode.
 
 ## Development vs Production
 

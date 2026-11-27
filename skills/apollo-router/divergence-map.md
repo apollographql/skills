@@ -85,8 +85,7 @@ Telemetry templates are largely compatible. v2 uses OTLP-first reporting.
 
 ## Traffic Shaping
 
-Schema is identical between v1 and v2. Behavioral change: v2 returns **HTTP 429**
-for rate-limited requests (restored in v2.1.0 after briefly returning 503 in v2.0.0).
+Schema is identical between v1 and v2. Behavioral change: v2 returns **HTTP 503** for rate-limited requests (changed to 503 in v2.13.0; earlier v2 versions returned 429).
 
 ## Context Keys (Coprocessors)
 

@@ -72,7 +72,7 @@ fn supergraph_service(service) {
 ```rhai
 fn supergraph_service(service) {
     service.map_request(|request| {
-        let claims = request.context["apollo_authentication::JWT::claims"];
+        let claims = request.context[Router.APOLLO_AUTHENTICATION_JWT_CLAIMS];
         if claims != () {
             request.headers["x-user-id"] = claims["sub"];
         }
@@ -107,7 +107,8 @@ fn supergraph_service(service) {
 
 | Hook | Description |
 |------|-------------|
-| `supergraph_service` | Entry point for all requests |
+| `router_service` | Earliest hook — raw HTTP request/response |
+| `supergraph_service` | Entry point for all GraphQL requests |
 | `execution_service` | After query planning |
 | `subgraph_service` | Before each subgraph request |
 
@@ -133,11 +134,13 @@ coprocessor:
 
 ### Coprocessor Stages
 
+Five stages are available: `router`, `supergraph`, `execution`, `subgraph`, and `connector`.
+
 ```yaml
 coprocessor:
   url: http://localhost:8080
   
-  # Router-level (full request)
+  # Router-level (full HTTP request)
   router:
     request:
       headers: true
@@ -146,12 +149,44 @@ coprocessor:
       headers: true
       body: false
   
-  # Subgraph-level (per subgraph)
+  # Supergraph-level (parsed GraphQL operation)
+  supergraph:
+    request:
+      headers: true
+      body: true
+      context: true
+    response:
+      headers: true
+      body: true
+      context: true
+
+  # Execution-level (after query planning)
+  execution:
+    request:
+      headers: true
+      body: true
+      context: true
+    response:
+      headers: true
+      body: true
+      context: true
+
+  # Subgraph-level (per subgraph call)
   subgraph:
     all:
       request:
         headers: true
         body: false
+  
+  # Connector-level (per connector HTTP call)
+  connector:
+    all:
+      request:
+        headers: true
+        body: true
+      response:
+        headers: true
+        body: true
 ```
 
 ### Coprocessor Request Format

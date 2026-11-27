@@ -5,7 +5,7 @@
 
 supergraph:
   listen: 0.0.0.0:4000
-  path: /graphql
+  path: /
   introspection: false
   query_planning:
     cache:

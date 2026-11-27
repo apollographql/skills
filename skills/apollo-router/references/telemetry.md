@@ -10,7 +10,7 @@ The Router supports three types of telemetry:
 |------|-------------|-----------|
 | **Logs** | Structured event logging | stdout, file |
 | **Metrics** | Numerical measurements | Prometheus, OTLP, Datadog |
-| **Traces** | Distributed request tracing | Jaeger, Zipkin, OTLP, Datadog |
+| **Traces** | Distributed request tracing | OTLP, Datadog (Zipkin deprecated; Jaeger removed — use OTLP) |
 
 ## Basic Configuration
 
@@ -144,28 +144,26 @@ telemetry:
 
 ### Jaeger
 
+The native Jaeger exporter was removed in Router v2. Jaeger now fully supports OTLP ingestion. Send traces to Jaeger via the OTLP exporter:
+
 ```yaml
 telemetry:
   exporters:
     tracing:
-      jaeger:
+      propagation:
+        jaeger: true    # Jaeger propagation headers (not the exporter)
+      otlp:
         enabled: true
-        agent:
-          endpoint: localhost:6831
+        endpoint: "http://${env.JAEGER_HOST}:4317"
 ```
 
-Or via collector:
-```yaml
-telemetry:
-  exporters:
-    tracing:
-      jaeger:
-        enabled: true
-        collector:
-          endpoint: http://jaeger:14268/api/traces
-```
+Jaeger must have `COLLECTOR_OTLP_ENABLED=true` and expose ports 4317/4318.
 
-### Zipkin
+### Zipkin (deprecated)
+
+> The native Zipkin exporter is deprecated and will be removed in the next major Router version. Use OTLP instead — Zipkin supports OTLP ingestion natively.
+
+**Legacy config (still functional in v2):**
 
 ```yaml
 telemetry:
@@ -174,6 +172,18 @@ telemetry:
       zipkin:
         enabled: true
         endpoint: http://zipkin:9411/api/v2/spans
+```
+
+**Recommended replacement (OTLP):**
+
+```yaml
+telemetry:
+  exporters:
+    tracing:
+      otlp:
+        enabled: true
+        endpoint: "http://${env.ZIPKIN_HOST}:9411"
+        protocol: http
 ```
 
 ### Datadog
@@ -329,7 +339,9 @@ services:
 
   jaeger:
     image: jaegertracing/all-in-one
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
     ports:
-      - "16686:16686"
-      - "6831:6831/udp"
+      - "16686:16686"     # Jaeger UI
+      - "4317:4317"       # OTLP gRPC
 ```
