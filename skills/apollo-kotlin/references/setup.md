@@ -88,9 +88,39 @@ Run it before writing operations:
 
 If multiple modules are desirable, a few rules apply:
 - One and only one module can contain the schema (the "schema module"). This is the schema that all other modules ("feature modules") can reuse.
-- The schema module and modules that want to share fragment definitions must enable the generation of metadata with `generateApolloMetadata.set(true)`.
-- Feature modules that depend on the schema module and/or other modules must declare those dependencies with `dependsOn(project(":schema"))`
-- Also add the reverse dependencies in the schema module with `isADependencyOf(project(":feature"))`, so only the used types are generated in the schema module.
+- The schema module must enable the generation of metadata with `generateApolloMetadata.set(true)`. Feature modules that share fragment definitions must also set this.
+- Scalar mappings and `generateDataBuilders` must be defined in the schema module.
+- Feature modules declare their dependency on the schema module using the `apolloService` Gradle configuration. The configuration name follows the pattern `"apollo${serviceName.capitalize()}"`.
+- For auto-detection of used types (recommended for large schemas), add `apolloServiceUsedCoordinates` dependencies in the schema module.
+
+```kotlin
+// feature/build.gradle.kts
+apollo {
+  service("service") {
+    packageName.set("feature")
+  }
+}
+
+dependencies {
+  // Must come after the apollo {} block
+  add("apolloService", project(":schema"))
+  add("implementation", project(":schema"))
+}
+```
+
+```kotlin
+// schema/build.gradle.kts
+apollo {
+  service("service") {
+    packageName.set("schema")
+    generateApolloMetadata.set(true)
+  }
+}
+
+dependencies {
+  add("apolloServiceUsedCoordinates", project(":feature"))
+}
+```
 
 ## Project layout
 
@@ -125,10 +155,21 @@ src/commonMain/kotlin/
 ```kotlin
 val apolloClient = ApolloClient.Builder()
   .serverUrl("https://your.domain/graphql")
-  .addHttpInterceptor(AuthorizationInterceptor(token))
+  .addHttpInterceptor(object : HttpInterceptor {
+    override suspend fun intercept(
+      request: HttpRequest,
+      chain: HttpInterceptorChain,
+    ): HttpResponse {
+      return chain.proceed(
+        request.newBuilder()
+          .addHeader("Authorization", "Bearer $token")
+          .build()
+      )
+    }
+  })
   .apply {
     if (isDebugBuild) {
-      addHttpInterceptor(LoggingInterceptor(level = Level.BODY))
+      addHttpInterceptor(LoggingInterceptor(level = LoggingInterceptor.Level.BODY))
     }
   }
   .build()

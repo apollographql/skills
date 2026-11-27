@@ -7,11 +7,11 @@ description: >
   (3) configuring an `ApolloClient` with auth, interceptors, and caching,
   (4) writing queries, mutations, or subscriptions,
 license: MIT
-compatibility: JVM 8+, Kotlin 1.9+, Gradle 8+, Android/JVM/Kotlin Multiplatform projects.
+compatibility: JVM 8+, Kotlin 2.1+ (Android/JVM) or 2.2+ (JS/Native), Gradle 8+, AGP 8+. Android API 21+.
 metadata:
   author: apollographql
-  version: "1.0.3"
-allowed-tools: Bash(./gradlew:*) Bash(gradle:*) Bash(curl:*) Read Write Edit Glob Grep WebFetch
+  version: "1.1.0"
+allowed-tools: Bash(./gradlew:*) Bash(gradle:*) Read Write Edit Glob Grep WebFetch
 ---
 
 # Apollo Kotlin Guide
@@ -33,7 +33,9 @@ Follow this process when adding or working with Apollo Kotlin:
 
 - [Setup](references/setup.md) - Gradle plugin, schema download, codegen config (including scalars), client configuration (auth, logging, interceptors)
 - [Operations](references/operations.md) - Queries, mutations, subscriptions, and how to execute them
+- [Subscriptions](references/subscriptions.md) - WebSocket and HTTP subscription transport configuration
 - [Caching](references/caching.md) - Setup and use the normalized cache
+- [Advanced features](references/advanced-features.md) - Persisted queries, file uploads, query batching, @defer
 - [Migration Guide](references/migrating-from-4.md) - Migrate from Apollo Kotlin 4
 
 ## Scripts

@@ -30,9 +30,8 @@ apollo {
   service("service") {
     // Other configurations...
 
-    plugin("com.apollographql.cache:normalized-cache-apollo-compiler-plugin:LATEST_CACHE_VERSION") {
-      argument("com.apollographql.cache.packageName", packageName.get())
-    }
+    plugin("com.apollographql.cache:normalized-cache-apollo-compiler-plugin:LATEST_CACHE_VERSION")
+    pluginArgument("com.apollographql.cache.packageName", packageName.get())
   }
 }
 ```
@@ -70,7 +69,7 @@ Use it in an `extra.graphqls` file next to the `schema.graphqls` file:
 # The directives must be imported
 extend schema
 @link(
-  url: "https://specs.apollo.dev/kotlin_labs/v0.5",
+  url: "https://specs.apollo.dev/cache/v0.4",
   import: ["@typePolicy", "@fieldPolicy"]
 )
 
@@ -112,4 +111,127 @@ The available policies are:
 - `CacheOnly`: Always fetch from cache.
 - `NetworkOnly`: Always fetch from network.
 - `NetworkFirst`: Try network first, then cache.
-- `CacheAndNetwork`: Fetch from cache first, then always fetch from network and update cache.
+- `CacheAndNetwork`: Fetch from cache first, then always fetch from network and update cache. Use with `toFlow()` or `watch()`, not `execute()`.
+
+## Expiration
+
+Configure expiration to automatically invalidate stale cache data.
+
+### Declarative expiration (recommended)
+
+Declare max ages in `extra.graphqls` with `@cacheControl` and `@cacheControlField` directives:
+
+```graphql
+extend schema
+@link(
+  url: "https://specs.apollo.dev/cache/v0.4",
+  import: ["@cacheControl", "@cacheControlField"]
+)
+
+extend type User @cacheControl(maxAge: 300)
+extend type Query @cacheControlField(name: "currentUser", maxAge: 60)
+```
+
+The generated `cache()` extension configures `CacheControlCacheResolver` with the generated `Cache.maxAges` automatically. Enable received date storage on the client:
+
+```kotlin
+val apolloClient = ApolloClient.Builder()
+  .serverUrl("https://your.domain/graphql")
+  .storeReceivedDate(true)
+  .cache(MemoryCacheFactory(), defaultMaxAge = 1.hours)
+  .build()
+```
+
+### Server-controlled expiration
+
+Use the `Cache-Control` HTTP header from the server. This requires the lower-level `.normalizedCache()` API:
+
+```kotlin
+val apolloClient = ApolloClient.Builder()
+  .serverUrl("https://your.domain/graphql")
+  .storeExpirationDate(true)
+  .normalizedCache(
+    normalizedCacheFactory = MemoryCacheFactory(),
+    cacheResolver = CacheControlCacheResolver(),
+  )
+  .build()
+```
+
+### Accepting stale data
+
+Use `maxStale` on a query to accept expired data:
+
+```kotlin
+val response = apolloClient.query(GetUserQuery(id))
+  .fetchPolicy(FetchPolicy.CacheOnly)
+  .maxStale(1.hours)
+  .execute()
+
+if (response.cacheInfo?.isStale == true) {
+  // Response contains at least one stale field
+}
+```
+
+## Garbage collection
+
+Remove expired and unreachable data from the cache:
+
+```kotlin
+val store = apolloClient.apolloStore
+
+store.garbageCollect()
+```
+
+`garbageCollect()` combines three operations:
+- `removeStaleFields()` - remove fields past their expiration
+- `removeDanglingReferences()` - remove references to non-existent keys
+- `removeUnreachableRecords()` - remove records with no reference chain from root
+
+Run garbage collection periodically in the background (e.g., via `WorkManager` on Android).
+
+## Store access
+
+Read and write cache data directly via `apolloClient.apolloStore`:
+
+```kotlin
+val store = apolloClient.apolloStore
+
+val data = store.readOperation(GetUserQuery(id)).data
+store.writeOperation(GetUserQuery(id), data)
+
+store.readFragment(UserFragment(), CacheKey("User:1"))
+store.writeFragment(UserFragment(), CacheKey("User:1"), fragmentData)
+
+store.clearAll()
+```
+
+Fragment reads/writes require `generateFragmentImplementations.set(true)` in Gradle config.
+
+## Optimistic updates
+
+Enable optimistic updates when configuring the cache:
+
+```kotlin
+val apolloClient = ApolloClient.Builder()
+  .serverUrl("https://your.domain/graphql")
+  .cache(MemoryCacheFactory(), enableOptimisticUpdates = true)
+  .build()
+```
+
+Apply optimistic data to mutations so watchers update immediately:
+
+```kotlin
+apolloClient.mutation(UpdateUserMutation(id, newName))
+  .optimisticUpdates(
+    UpdateUserMutation.Data(
+      updateUser = UpdateUserMutation.UpdateUser(id = id, name = newName)
+    )
+  )
+  .execute()
+```
+
+The cache reverts to the server response when the mutation completes.
+
+## Pagination
+
+The normalized cache supports merging paginated results into a single cached field, enabling you to watch a single query for all pages. Relay-style cursor pagination is supported out of the box. Other pagination styles require custom `RecordMerger` configuration.
