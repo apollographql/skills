@@ -196,11 +196,11 @@ Read and write cache data directly via `apolloClient.apolloStore`:
 ```kotlin
 val store = apolloClient.apolloStore
 
-val data = store.readOperation(GetUserQuery(id)).data
+val data = store.readOperation(GetUserQuery(id)).dataOrThrow()
 store.writeOperation(GetUserQuery(id), data)
 
-store.readFragment(UserFragment(), CacheKey("User:1"))
-store.writeFragment(UserFragment(), CacheKey("User:1"), fragmentData)
+store.readFragment(UserFragmentImpl(), CacheKey("User:1"))
+store.writeFragment(UserFragmentImpl(), CacheKey("User:1"), fragmentData)
 
 store.clearAll()
 ```
