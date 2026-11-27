@@ -341,7 +341,7 @@ telemetry:
       otlp:
         endpoint: https://your-traces-endpoint
         protocol: http/protobuf
-      parent_based_sampler: false
+      parent_based_sampler: false # public-facing servers only; keeps untrusted callers from forcing sampling
       sampler: 0.1
 ```
 

@@ -63,6 +63,8 @@ Clients connecting to `/mcp` then see `usage_chart` and `lookup` alongside serve
 
 Tool names must be unique on the connection. Startup fails if two selected apps list the same tool name or if a selected tool has the name of an enabled built-in tool. A selected tool that shares a name with a server-wide operation replaces that operation.
 
+Startup also fails if a listed app or tool doesn't exist. The server restarts when its config file changes, so a mistake in a reloaded config stops the server.
+
 ## Connecting to an app
 
 ### App query parameter

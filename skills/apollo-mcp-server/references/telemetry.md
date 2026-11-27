@@ -59,7 +59,7 @@ telemetry:
 | `otlp.headers` | key-value pairs | | HTTP headers (only with `http/protobuf` protocol) |
 | `sampler` | `string` | `always_on` | `always_on`, `always_off`, or `0.0`-`1.0` percentage |
 | `parent_based_sampler` | `bool` | `true` | Follow the sampling decision of an incoming trace context. Set to `false` for public-facing servers |
-| `client_address` | `bool` | `false` | Record client IP address and port on spans. Behind a proxy, list it under `transport.trusted_proxies` |
+| `client_address` | `bool` | `false` | Record client IP address and port on spans. Behind a reverse proxy, add the proxy's IP or CIDR to `transport.trusted_proxies` |
 | `gen_ai_content` | `bool` | `false` | Export `gen_ai.tool.call.arguments`, `gen_ai.tool.call.result`, and `gen_ai.prompt.variable.<name>` span attributes |
 | `omitted_attributes` | `List<String>` | | Span attributes to omit before export. Omitting an Apollo attribute also removes its `gen_ai.*` counterpart |
 
@@ -103,8 +103,11 @@ The server also emits `mcp.server.operation.duration`, the request duration hist
 | Attribute | Description |
 |-----------|-------------|
 | `mcp.method.name` | The MCP method, such as `tools/call` |
+| `mcp.protocol.version` | MCP protocol version of the request, when known |
+| `network.transport` | `tcp` for Streamable HTTP, `pipe` for stdio |
 | `gen_ai.operation.name` | `execute_tool`, for `tools/call` only |
 | `gen_ai.tool.name` | The tool name, for `tools/call` only |
+| `gen_ai.prompt.name` | The prompt name, for `prompts/get` only |
 | `rpc.response.status_code` | JSON-RPC error code, when the request returns an error |
 | `error.type` | JSON-RPC error code for server errors, or `tool_error` when `isError: true` |
 
@@ -126,7 +129,7 @@ The `apollo.*` metrics and attributes are Apollo's own and don't follow the sema
 Spans are generated for:
 
 - **HTTP requests** to the MCP endpoint (not health checks)
-- **MCP handler methods** — each handler creates a `SERVER` span named after its MCP method (e.g., `tools/list`, `resources/read`). A `tools/call` span includes the tool name (e.g., `tools/call GetUser`). A `prompts/get` span includes the prompt name. These names follow the MCP semantic conventions.
+- **MCP handler methods** — each handler creates a `SERVER` span named after its MCP method (e.g., `tools/list`, `resources/read`). A `tools/call` span includes the tool name (e.g., `tools/call GetUser`). A `prompts/get` span includes the prompt name. These names follow the MCP semantic conventions. Text and JSON logs still show the internal span names, such as `call_tool`.
 - **Tool execution** with nested spans per tool
 - **Downstream GraphQL calls** with `traceparent`, `tracestate`, and `baggage` propagation
 
