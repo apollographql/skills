@@ -73,6 +73,12 @@ rover graph publish my-graph@production \
 | Option | Description |
 |--------|-------------|
 | `--schema <PATH>` | Schema file path or `-` for stdin (required) |
+| `--check` | Run schema checks before publishing; abort if checks fail |
+| `--changelog-message <MESSAGE>` | Associate a message with the publish in the Studio changelog |
+| `--no-launch` | Publish without triggering a launch |
+| `--async-launch` | Return immediately without waiting for launch completion |
+
+By default, publish triggers a launch and polls until it completes. A failed launch fails the command.
 
 ## graph check
 
@@ -101,6 +107,7 @@ rover graph check my-graph@production \
 | `--schema <PATH>` | Schema file path (required) |
 | `--query-count-threshold <N>` | Min operations for breaking change |
 | `--query-count-threshold-percentage <N>` | Min % of operations |
+| `--include-contract-checks` | Fail the check if downstream contract variant builds also fail |
 | `--background` | Run check in background |
 
 **Exit codes:**

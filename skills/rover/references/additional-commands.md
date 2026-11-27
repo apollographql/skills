@@ -2,6 +2,26 @@
 
 Reference for Rover commands that support project scaffolding, API key management, plugin installation, and other utility tasks.
 
+## rover info
+
+Print Rover version, install location, OS, and shell information.
+
+```bash
+rover info
+```
+
+Use this to troubleshoot installation or environment issues.
+
+## rover lsp
+
+Start a language server for schema editing tools. The LSP provides composition diagnostics to editors over stdin/stdout, watching `supergraph.yaml` for schema changes. Requires ELv2 license acceptance.
+
+```bash
+rover lsp
+```
+
+See [LSP](lsp.md) for full details.
+
 ## rover template
 
 Scaffold a new project from an official Apollo template.
@@ -105,8 +125,17 @@ Manage officially supported plugins that Rover downloads and runs: `router`, `su
 # Install a specific version
 rover plugin install router@=1.57.1
 
-# Install a specific supergraph composition plugin
-rover plugin install supergraph@=2.9.3
+# Install globally (shared by all projects)
+rover plugin install router@=1.57.1 --global
+
+# Install relative to a specific manifest
+rover plugin install router@=1.57.1 --manifest-path ./supergraph.yaml
+
+# Use already-installed plugin (never download)
+rover plugin install router@=1.57.1 --no-download
+
+# Install all plugins declared in the project manifest
+rover plugin install
 
 # Force reinstall (overwrites existing)
 rover plugin install router@=1.57.1 --force
@@ -115,7 +144,7 @@ rover plugin install router@=1.57.1 --force
 rover plugin install router@=1.57.1 --elv2-license accept
 ```
 
-Plugins are installed to `~/.rover/bin/` by default. Commands like `rover dev` and `rover supergraph compose` install plugins automatically when needed. Use `rover plugin install` to pre-install in CI or air-gapped environments.
+By default, plugins install relative to the project manifest. Use `--global` to install into `~/.rover/bin/` for use across all projects. Use `--no-download` to require a previously installed version. Commands like `rover dev` and `rover supergraph compose` install plugins automatically when needed. Use `rover plugin install` to pre-install in CI or air-gapped environments.
 
 **Version formats:**
 

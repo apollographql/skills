@@ -97,6 +97,16 @@ rover subgraph publish my-graph@production \
 | `--routing-url <URL>` | URL where Router sends requests |
 | `--allow-invalid-routing-url` | Allow non-HTTPS or non-standard URLs |
 | `--no-url` | Skip URL update (schema only) |
+| `--check` | Run schema checks before publishing; abort if checks fail |
+| `--changelog-message <MESSAGE>` | Associate a message with the publish in the Studio changelog |
+| `--use-example-schema` | Publish a placeholder schema (`type Query { helloWorld: String }`) with URL `https://example.com`. Mutually exclusive with `--schema` |
+| `--no-launch` | Publish without triggering a launch |
+| `--async-launch` | Return immediately without waiting for launch completion |
+| `--include-contract-checks` | With `--check`, also fail if downstream contract variant builds fail |
+
+With `--check`, Rover runs `subgraph check` before publishing and aborts if the check fails.
+
+By default, publish triggers a launch and polls until it completes. A failed launch fails the command.
 
 **Routing URL:**
 - Required on first publish
@@ -134,6 +144,7 @@ rover subgraph check my-graph@production \
 | `--query-count-threshold <N>` | Min operations for breaking change |
 | `--query-count-threshold-percentage <N>` | Min % of operations |
 | `--background` | Run check in background (returns check ID) |
+| `--include-contract-checks` | Fail the check if downstream contract variant builds also fail |
 
 **Exit codes:**
 - `0` - Check passed

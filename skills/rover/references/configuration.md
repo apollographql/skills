@@ -123,6 +123,12 @@ rover config whoami
 rover auth whoami
 ```
 
+## Credential Storage
+
+Rover stores API keys in the OS native keychain when available (macOS Keychain, Windows Credential Manager, Linux secret service). If the keychain is unavailable, Rover falls back to an encrypted file-based store in the config directory.
+
+Error E046 indicates Rover cannot read, write, or delete a credential. Re-run `rover config auth` to re-save the credential. If the issue persists, check your OS keychain configuration.
+
 ## Configuration Profiles
 
 Use profiles for different environments or accounts. Each profile stores its own API key and settings.
@@ -216,6 +222,13 @@ rover config unset APOLLO_REGISTRY_URL --profile staging
 | `APOLLO_CLIENT_TIMEOUT` | Configure HTTP request timeout in seconds (default: 30s) |
 | `APOLLO_ROVER_DOWNLOAD_HOST` | Override the host for plugin binary downloads |
 | `APOLLO_ROVER_SKIP_UPDATE` | Skip all auto-updating (self-update check and plugin downloads) |
+| `APOLLO_ROVER_ALLOW_AUTOMATIC_DOWNLOAD` | Allow or block automatic plugin downloads (`true`/`false`) |
+| `APOLLO_ROVER_NO_CONFIG_NOTICES` | Suppress profile/project override notices |
+| `APOLLO_ROVER_GLOBAL` | Target global install root for plugin operations (same as `--global`) |
+| `APOLLO_ROVER_NO_DOWNLOAD` | Never download plugins (same as `--no-download`) |
+| `APOLLO_ROVER_DEV_ROUTER_VERSION` | Set the Router version for `rover dev` |
+| `APOLLO_ROVER_DEV_COMPOSITION_VERSION` | Set the composition version for `rover dev` |
+| `APOLLO_ROVER_DEV_MCP_VERSION` | Set the MCP server version for `rover dev` |
 | `NO_COLOR` | Disable colored output |
 
 ### CI/CD Environment

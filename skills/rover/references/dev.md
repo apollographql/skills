@@ -9,11 +9,11 @@ Run a local supergraph for development with automatic schema composition and hot
 rover dev --supergraph-config supergraph.yaml
 
 # Start on specific port
-rover dev --supergraph-config supergraph.yaml --router-port 4000
+rover dev --supergraph-config supergraph.yaml --supergraph-port 4000
 ```
 
 **Default behavior:**
-- Router runs on `http://localhost:4000`
+- Router listens on `127.0.0.1:4000` (`--supergraph-address` + `--supergraph-port` defaults)
 - GraphQL endpoint: `http://localhost:4000`
 - Health check: `http://localhost:4000/health`
 
@@ -141,16 +141,14 @@ include_subgraph_errors:
 Enable MCP server alongside Router:
 
 ```bash
+# Enable with default config
 rover dev --supergraph-config supergraph.yaml --mcp
-```
 
-**MCP options:**
-```bash
-# Specify MCP port
-rover dev --supergraph-config supergraph.yaml --mcp --mcp-port 5001
+# Enable with a custom MCP config file
+rover dev --supergraph-config supergraph.yaml --mcp .apollo/mcp.local.yaml
 
-# MCP output format
-rover dev --supergraph-config supergraph.yaml --mcp --mcp-format json
+# Override the MCP server version
+rover dev --supergraph-config supergraph.yaml --mcp --mcp-version 0.3.0
 ```
 
 **Use cases:**
@@ -192,12 +190,18 @@ subgraphs:
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--supergraph-config <PATH>` | Path to supergraph config | Required |
+| `--supergraph-config, -s <PATH>` | Path to supergraph config | Required |
 | `--graph-ref <REF>` | GraphOS variant for baseline | None |
-| `--router-port <PORT>` | Router listen port | 4000 |
-| `--router-config <PATH>` | Custom Router config | None |
-| `--mcp` | Enable MCP server | false |
-| `--mcp-port <PORT>` | MCP server port | 5001 |
+| `--supergraph-port, -p <PORT>` | Supergraph listen port | 4000 |
+| `--supergraph-address <ADDRESS>` | Supergraph listen address | 127.0.0.1 |
+| `--router-config <PATH>` | Custom Router config file (watched for changes) | None |
+| `--router-version <VERSION>` | Override Router version (env: `APOLLO_ROVER_DEV_ROUTER_VERSION`) | Latest |
+| `--composition-version <VERSION>` | Override composition version (env: `APOLLO_ROVER_DEV_COMPOSITION_VERSION`). Must be exact, e.g. `2.9.0` | Latest |
+| `--federation-version <VERSION>` | Federation version for composition (takes precedence over `--composition-version`) | None |
+| `--license <PATH>` | Path to offline enterprise license file | None |
+| `--supergraph-output <PATH>` | Write composed supergraph SDL to this file on every successful composition | None |
+| `--mcp` | Enable MCP server (optionally pass config path) | false |
+| `--mcp-version <VERSION>` | Override MCP server version (env: `APOLLO_ROVER_DEV_MCP_VERSION`) | Latest |
 | `--log <LEVEL>` | Log level | info |
 
 ## Troubleshooting
@@ -209,7 +213,7 @@ subgraphs:
 lsof -i :4000
 
 # Use different port
-rover dev --supergraph-config supergraph.yaml --router-port 4001
+rover dev --supergraph-config supergraph.yaml --supergraph-port 4001
 ```
 
 ### Subgraph Not Reachable
